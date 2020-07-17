@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <com.example.myplayer.VideoRange.DividingView
+        android:id="@+id/dv_kedu"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rl_video_pre_recyclerview"
+        android:layout_width="wrap_content"
+        android:layout_height="80dp"
+        android:layout_below="@+id/dv_kedu"/>
+
+
+    <View
+        android:id="@+id/v_current_line"
+        android:layout_width="1dp"
+        android:layout_height="100dp"
+        android:background="@color/colorAccent"
+        android:layout_marginTop="20dp"
+        android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>

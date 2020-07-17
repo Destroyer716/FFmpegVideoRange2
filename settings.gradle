@@ -1,0 +1,2 @@
+include ':app', ':myplayer'
+rootProject.name='FFmpegVideoRange2'
