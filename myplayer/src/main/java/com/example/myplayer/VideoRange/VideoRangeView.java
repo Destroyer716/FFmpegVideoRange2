@@ -136,24 +136,10 @@ public class VideoRangeView extends FrameLayout {
                  if (videoRangeViewListener != null && (millTime - lastShowTime)>=fps ){
                      videoRangeViewListener.onScrollerX(millTime, null );
                      lastShowTime = millTime;
-
-                     /*Runnable runnable = new Runnable() {
-                         @Override
-                         public void run() {
-                             bw2 = fmmr.getFrameAtTime(finalMillTime * 1000, FFmpegMediaMetadataRetriever.OPTION_CLOSEST);
-                             final Bitmap bitmap2 = Bitmap.createScaledBitmap(bw2, 240, 320, false);
-                             bw2.recycle();
-                             int size = bitmap2.getRowBytes() * bitmap2.getHeight();
-                             Log.e("kzg","**********************bitmapSize222:"+size);
-                             videoRangeViewListener.onScrollerX(finalMillTime,bitmap2);
-                         }
-                     };
-                    threadPoolExecutor.execute(runnable);*/
                 }
             }
         });
 
-        Log.e("kzg","**********************recyclerViewLeftPaddin:"+recyclerViewLeftPaddin);
 
         threadPoolExecutor = new ThreadPoolExecutor(5,8,3, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>(50));
     }
@@ -282,6 +268,9 @@ public class VideoRangeView extends FrameLayout {
     }
 
     private void showFramesModelTow(final int duration){
+        //final long[] frameTimeArr = getFrameTimeArr(videoDuration, 10);
+
+
         final long startTime = System.currentTimeMillis();
         videoToFrames = new VideoToFrames();
         videoToFrames.setCallback(new VideoToFrames.Callback() {
@@ -301,12 +290,14 @@ public class VideoRangeView extends FrameLayout {
                 @Override
                 public void onGetBitmap(final Bitmap bitmap) {
                     bitmapList.add(bitmap);
+                    //videoToFrames.seek(frameTimeArr[i[0] + 1]);
                     ((Activity)mContext).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             adapter.addData(bitmap);
                             if (i[0] == 1){
                                 int with = videoPreRecyclerView.computeHorizontalScrollRange();
+                                Log.e("kzg","**********************ScrollRange:"+with);
                                 itemWidth = with-recyclerViewLeftPaddin;
                                 int maxWidth = itemWidth * duration;
                                 dividingView.setMaxWidth(maxWidth);
@@ -319,6 +310,11 @@ public class VideoRangeView extends FrameLayout {
                             i[0]++;
                         }
                     });
+                }
+
+                @Override
+                public void onCodecStart() {
+                    //videoToFrames.seek(frameTimeArr[0]);
                 }
             });
             videoToFrames.setSaveFrames( Environment.getExternalStorageDirectory() + "/jpe", OutputImageFormat.values()[2]);
@@ -333,6 +329,31 @@ public class VideoRangeView extends FrameLayout {
 
     private void showFrameModelThree(){
 
+    }
+
+
+
+    //
+
+    /**计算显示指定预览图数量，并计算时间点
+     *
+     * @param duration   ms
+     * @param count  需要生成多少张预览图
+     * @return  每一帧的时间 us 值
+     */
+    private long[] getFrameTimeArr(long duration,int count){
+        long[] frameTimeArr = new long[count];
+        long tempTime = duration * 1000 / (count - 1);
+        frameTimeArr[0] = 0;
+        for (int i=0;i<count;i++){
+            if (i == count - 1){
+                frameTimeArr[i] = duration * 1000;
+            }else {
+                frameTimeArr[i] = i * tempTime;
+            }
+        }
+
+        return frameTimeArr;
     }
 
     @Override

@@ -258,7 +258,6 @@ void *videoPlay(void *arg){
                                 kzgVideo->frameQueue->putAvFrame(cropAvframe);
                             }
 
-                            kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
                             av_free(buffer);
                             av_frame_free(&avFrame);
                             av_free(avFrame);
@@ -280,7 +279,7 @@ void *videoPlay(void *arg){
                                 kzgVideo->frameQueue->putAvFrame(avFrame);
                             }
                         }
-
+                        kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
 
                         if (kzgVideo->frameQueue->getQueueSize() == 90){
                             gettimeofday(&tv,NULL);

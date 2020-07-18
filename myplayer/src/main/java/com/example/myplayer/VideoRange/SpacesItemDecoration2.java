@@ -21,7 +21,7 @@ public class SpacesItemDecoration2 extends RecyclerView.ItemDecoration{
     if (position == 0) {
       outRect.left = space;
       outRect.right = 0;
-    } else if (thumbnailsCount > 10 && position == thumbnailsCount - 1) {
+    } else if (thumbnailsCount > 1 && position == thumbnailsCount - 1) {
       outRect.left = 0;
       outRect.right = space;
     } else {
