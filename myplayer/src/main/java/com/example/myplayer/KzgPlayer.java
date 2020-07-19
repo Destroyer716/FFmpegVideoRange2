@@ -279,7 +279,7 @@ public class KzgPlayer {
 
     public void onComplete(){
         stop();
-        if (playerListener == null){
+        if (playerListener != null){
             playerListener.onComplete();
         }
     }
@@ -857,6 +857,14 @@ public class KzgPlayer {
             mediaCodec = null;
             mediaFormat = null;
             bufferInfo = null;
+        }
+        if (surface != null){
+            surface.release();
+            surface = null;
+        }
+        if (kzgGLSurfaceView != null){
+            kzgGLSurfaceView.removeCallbacks(null);
+            kzgGLSurfaceView = null;
         }
     }
 

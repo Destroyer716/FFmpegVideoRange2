@@ -169,7 +169,7 @@ void *videoPlay(void *arg){
             }
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
-                LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
+                //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
 
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
 
@@ -243,7 +243,6 @@ void *videoPlay(void *arg){
                             memcpy(cropAvframe->data[2],buffer + (avFrame->width * avFrame->height + avFrame->width/2 * avFrame->height/2),avFrame->width/2 * avFrame->height/2);
                             cropAvframe->pts = av_frame_get_best_effort_timestamp(avFrame);
 
-                            //avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
                             if ((cropAvframe->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE)==0 && kzgVideo->seekTime == 0){
                                 //显示首帧
                                 int width = cropAvframe->linesize[0] > kzgVideo->avCodecContext->width? cropAvframe->linesize[0]:kzgVideo->avCodecContext->width;
@@ -254,6 +253,10 @@ void *videoPlay(void *arg){
                                         cropAvframe->data[1],
                                         cropAvframe->data[2],
                                         THREAD_CHILD);
+
+                                av_frame_free(&cropAvframe);
+                                av_free(cropAvframe);
+                                cropAvframe = NULL;
                             } else{
                                 kzgVideo->frameQueue->putAvFrame(cropAvframe);
                             }
@@ -275,6 +278,10 @@ void *videoPlay(void *arg){
                                         avFrame->data[1],
                                         avFrame->data[2],
                                         THREAD_CHILD);
+
+                                av_frame_free(&avFrame);
+                                av_free(avFrame);
+                                avFrame = NULL;
                             } else{
                                 kzgVideo->frameQueue->putAvFrame(avFrame);
                             }
@@ -625,6 +632,7 @@ void KzgVideo::showFrame(double timestamp) {
                         }
                     }
                 }
+
                 av_frame_free(&avFrame);
                 av_free(avFrame);
                 avFrame = NULL;
@@ -648,6 +656,7 @@ void KzgVideo::showFrame(double timestamp) {
                 }
             }
         }
+
 
         av_frame_free(&avFrame);
         av_free(avFrame);

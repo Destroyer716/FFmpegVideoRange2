@@ -181,9 +181,16 @@ public class VideoRangeActivity extends AppCompatActivity {
         if (kzgPlayer != null){
             kzgPlayer.stop();
             kzgPlayer.release();
+            kzgPlayer.setPlayerListener(null);
+            kzgPlayer = null;
         }
         if (videoRangeView != null){
             videoRangeView.release();
+            videoRangeView = null;
+        }
+        if(surfaceView != null){
+            surfaceView.removeCallbacks(null);
+            surfaceView = null;
         }
     }
 }

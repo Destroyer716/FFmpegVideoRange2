@@ -169,9 +169,9 @@ public class VideoToFrames implements Runnable {
         final int frameRate = mediaFormat.getInteger(MediaFormat.KEY_FRAME_RATE);
         final int firstFrameUsTime = (1000 * 1000 / frameRate);
         int outputFrameCount = 0;
-        Log.e("kzg","**********************开始解码");
         onGetFrameBitmapCallback.onCodecStart();
         while (!sawOutputEOS && !stopDecode) {
+            Log.e("kzg","**********************开始解码");
             if (waitSeek){
                 try {
                     Thread.sleep(10);
@@ -268,7 +268,7 @@ public class VideoToFrames implements Runnable {
                         int sampleSize = Utils.calculateInSampleSize(options,120, 160);
                         options.inSampleSize = sampleSize;
                         options.inJustDecodeBounds = false;
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
                         Bitmap frameAtTime2 = Bitmap.createScaledBitmap(bitmap, 120, 160, false);
                         bitmap.recycle();
                         bitmap = null;

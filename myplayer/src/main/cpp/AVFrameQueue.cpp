@@ -11,6 +11,7 @@ AVFrameQueue::AVFrameQueue(KzgPlayerStatus *playerStatus1) {
 }
 
 AVFrameQueue::~AVFrameQueue() {
+    LOGE("AVFrameQueue  析构");
     clearAvPacket();
     pthread_mutex_destroy(&mutexPacket);
     pthread_cond_destroy(&condPacket);
@@ -95,6 +96,7 @@ void AVFrameQueue::clearAvPacket() {
     pthread_cond_signal(&condPacket);
     pthread_mutex_lock(&mutexPacket);
     while (!queuePacket.empty()){
+        LOGE("AVFrameQueue  release   isCrop：%d",this->playerStatus->isCrop);
         AVFrame * avFrame = queuePacket.front();
         queuePacket.pop();
         if (this->playerStatus->isCrop){
@@ -110,6 +112,8 @@ void AVFrameQueue::clearAvPacket() {
                 }
             }
         }
+
+
         av_frame_free(&avFrame);
         av_free(avFrame);
         avFrame = NULL;

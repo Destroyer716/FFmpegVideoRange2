@@ -29,7 +29,7 @@ public class VideoPreViewAdapter extends RecyclerView.Adapter<VideoPreViewAdapte
         this.mContext = mContext;
     }
 
-    public void setData(List<Bitmap> bitmapList){
+    public void setDataList(List<Bitmap> bitmapList){
         this.bitmapList = bitmapList;
         notifyDataSetChanged();
     }
@@ -40,6 +40,14 @@ public class VideoPreViewAdapter extends RecyclerView.Adapter<VideoPreViewAdapte
         }
         bitmapList.add(bitmap);
         notifyItemChanged(bitmapList.size() - 1);
+    }
+
+    public void setData(int index,Bitmap bitmap){
+        if (bitmapList == null){
+            bitmapList = new ArrayList<>();
+        }
+        bitmapList.set(index,bitmap);
+        notifyItemChanged(index);
     }
 
     @NonNull

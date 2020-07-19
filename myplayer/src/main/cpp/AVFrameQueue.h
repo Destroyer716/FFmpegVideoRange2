@@ -9,6 +9,7 @@
 #include "KzgPlayerStatus.h"
 #include "queue"
 #include "pthread.h"
+#include "log.h"
 extern "C"{
 #include "include/libavcodec/avcodec.h"
 };

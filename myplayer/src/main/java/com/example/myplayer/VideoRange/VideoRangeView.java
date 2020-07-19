@@ -27,6 +27,7 @@ import com.example.myplayer.mediacodecframes.VideoToFrames;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,7 +59,6 @@ public class VideoRangeView extends FrameLayout {
     private View currentPreLine;
 
 
-    private MediaMetadataRetriever mediaMetadataRetriever;
     private VideoPreViewAdapter adapter;
     private FFmpegMediaMetadataRetriever fmmr;
     private VideoToFrames videoToFrames;
@@ -106,6 +106,8 @@ public class VideoRangeView extends FrameLayout {
         currentPreLine = inflate.findViewById(R.id.v_current_line);
         recyclerViewLeftPaddin = getScreenWidth()/2;
 
+
+
         videoPreRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -113,6 +115,7 @@ public class VideoRangeView extends FrameLayout {
                 long l = System.currentTimeMillis();
 
                 scrollCount += dx;
+                Log.e("kzg","**********************scrollCount:"+scrollCount);
                 dividingView.scrollBy(dx,0);
 
                 if (l - lastChangeTime < 50){
@@ -159,7 +162,7 @@ public class VideoRangeView extends FrameLayout {
      */
     public void setBitmapData(List<Bitmap> bitmapData){
         bitmapList = bitmapData;
-        adapter.setData(bitmapList);
+        adapter.setDataList(bitmapList);
     }
 
 
@@ -178,9 +181,6 @@ public class VideoRangeView extends FrameLayout {
             return;
         }
         videoFilePaht = filePath;
-        /*mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(file.getAbsolutePath());
-        videoDuration = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));*/
 
         long start = System.currentTimeMillis();
         fmmr = new FFmpegMediaMetadataRetriever();
@@ -231,17 +231,12 @@ public class VideoRangeView extends FrameLayout {
             public void run() {
                 for (int i=0;i<duration;i++){
                     final int finalI = i;
-                    //Bitmap frameAtTime = mediaMetadataRetriever.getFrameAtTime(finalI * 1000 * 1000, MediaMetadataRetriever.OPTION_NEXT_SYNC);
                     Bitmap frameAtTime = fmmr.getFrameAtTime(finalI * 1000 * 1000, FFmpegMediaMetadataRetriever.OPTION_CLOSEST);
                     if (frameAtTime == null){
-                        //frameAtTime = mediaMetadataRetriever.getFrameAtTime((finalI - 1) * 1000 * 1000, MediaMetadataRetriever.OPTION_NEXT_SYNC);
                         frameAtTime = fmmr.getFrameAtTime((finalI - 1) * 1000 * 1000, FFmpegMediaMetadataRetriever.OPTION_CLOSEST);
                     }
                     final Bitmap frameAtTime2 = Bitmap.createScaledBitmap(frameAtTime, 120, 160, false);
                     frameAtTime.recycle();
-                    //获取bitmap在内存中占的大小
-                    //int size = frameAtTime2.getRowBytes() * frameAtTime2.getHeight();
-                    //Log.e("kzg","**********************bitmapSize222:"+size);
                     bitmapList.add(frameAtTime2);
                     ((Activity)mContext).runOnUiThread(new Runnable() {
                         @Override
@@ -289,16 +284,29 @@ public class VideoRangeView extends FrameLayout {
             videoToFrames.setOnGetFrameBitmapCallback(new VideoToFrames.OnGetFrameBitmapCallback() {
                 @Override
                 public void onGetBitmap(final Bitmap bitmap) {
-                    bitmapList.add(bitmap);
+                    if (i[0] >= duration){
+                        return;
+                    }
+
+                    //bitmapList.add(bitmap);
                     //videoToFrames.seek(frameTimeArr[i[0] + 1]);
                     ((Activity)mContext).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            adapter.addData(bitmap);
+
+                            if (i[0] == 0){
+                                for (int j=0;j<duration;j++){
+                                    bitmapList.add(bitmap);
+                                }
+                                adapter.setDataList(bitmapList);
+                            }else {
+                                adapter.setData(i[0],bitmap);
+                            }
+                            //adapter.addData(bitmap);
                             if (i[0] == 1){
-                                int with = videoPreRecyclerView.computeHorizontalScrollRange();
-                                Log.e("kzg","**********************ScrollRange:"+with);
-                                itemWidth = with-recyclerViewLeftPaddin;
+                                /*int with = videoPreRecyclerView.computeHorizontalScrollRange();
+                                itemWidth = with-recyclerViewLeftPaddin;*/
+                                itemWidth = videoPreRecyclerView.getChildAt(0).getWidth();
                                 int maxWidth = itemWidth * duration;
                                 dividingView.setMaxWidth(maxWidth);
                                 dividingView.setVideoPicNum(duration);
@@ -373,9 +381,25 @@ public class VideoRangeView extends FrameLayout {
     public void release(){
         if (fixedThreadPool != null){
             fixedThreadPool.shutdown();
+            fixedThreadPool = null;
         }
         if (videoToFrames != null){
             videoToFrames.release();
+            videoToFrames = null;
+        }
+
+        if (player != null){
+            player.release();
+            player = null;
+        }
+        mContext = null;
+        if (bitmapList != null){
+            Iterator<Bitmap> iterator = bitmapList.iterator();
+            while (iterator.hasNext()){
+                Bitmap next = iterator.next();
+                next.recycle();
+                next = null;
+            }
         }
     }
 
