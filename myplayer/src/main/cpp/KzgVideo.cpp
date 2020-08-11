@@ -245,9 +245,9 @@ void *videoPlay(void *arg){
                                     ,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);
                             /****************ffmpeg处理对齐的方式******************/
                             //保存为YUV文件
-                            SaveYuv(avFrame->data[0], avFrame->linesize[0], kzgVideo->avCodecContext->width, kzgVideo->avCodecContext->height, outputfilename);
-                            SaveYuv(avFrame->data[1], avFrame->linesize[1], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
-                            SaveYuv(avFrame->data[2], avFrame->linesize[2], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
+                            //SaveYuv(avFrame->data[0], avFrame->linesize[0], kzgVideo->avCodecContext->width, kzgVideo->avCodecContext->height, outputfilename);
+                            //SaveYuv(avFrame->data[1], avFrame->linesize[1], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
+                            //SaveYuv(avFrame->data[2], avFrame->linesize[2], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
 
 
                             cropAvframe->data[0] = static_cast<uint8_t *>(malloc(avFrame->width * avFrame->height));
@@ -318,6 +318,7 @@ void *videoPlay(void *arg){
                     }
                 }
 
+                LOGE("11111111112222222222");
                 if (!kzgVideo->kzgPlayerStatus->isFramePreview){
                     //享学课堂的同步算法
                     //av_usleep(kzgVideo->myGetDelayTime(avFrame) * AV_TIME_BASE);

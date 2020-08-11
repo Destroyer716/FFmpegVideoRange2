@@ -115,8 +115,8 @@ void KzgFFmpeg::decodeFFmpegThread() {
     }
 
     //关闭非关键帧的环路滤波，seek 大GOP要快100ms左右
-    //kzgVideo->avCodecContext->skip_loop_filter = AVDISCARD_NONKEY;
-    //kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
+    kzgVideo->avCodecContext->skip_loop_filter = AVDISCARD_NONKEY;
+
     if(kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
         helper->onPrepare(THREAD_CHILD);
     } else{
@@ -262,6 +262,12 @@ void KzgFFmpeg::start() {
             }else if (avPacket->stream_index == kzgVideo->streamIndex){
                 //开始解码视频
                 count ++;
+                if ((avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) > (kzgVideo->seekTime - 1000000)){
+                    kzgVideo->avCodecContext->skip_frame = AVDISCARD_DEFAULT;
+                } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
+                    kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
+                }
+
                 /*if (avPacket->flags & AV_PKT_FLAG_KEY){
                     //KEY FRAME
                     LOGE("开始解码 I帧 %lf      pts:%lld    ,dts:%lld     flags:%d,",(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE),avPacket->pts ,avPacket->dts,avPacket->flags);
