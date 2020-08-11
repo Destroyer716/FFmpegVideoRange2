@@ -171,7 +171,6 @@ public class VideoToFrames implements Runnable {
         int outputFrameCount = 0;
         onGetFrameBitmapCallback.onCodecStart();
         while (!sawOutputEOS && !stopDecode) {
-            Log.e("kzg","**********************开始解码");
             if (waitSeek){
                 try {
                     Thread.sleep(10);

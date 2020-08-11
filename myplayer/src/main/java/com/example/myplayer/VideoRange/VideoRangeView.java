@@ -73,14 +73,14 @@ public class VideoRangeView extends FrameLayout {
     private int itemTime = 1000;
     //视频预览条滑动的距离
     private int scrollCount = 0;
-    private Bitmap bw2;
     private long lastChangeTime = 0;
-    private int currentShowFrameIndex = 0;
     private long lastShowTime = 0;
     private float fps;
     private KzgPlayer player;
     private int getPreFramesModel = 1;
     private String videoFilePaht;
+    //预览条的宽度
+    private int maxWidth;
 
 
     public VideoRangeView(@NonNull Context context) {
@@ -115,7 +115,6 @@ public class VideoRangeView extends FrameLayout {
                 long l = System.currentTimeMillis();
 
                 scrollCount += dx;
-                Log.e("kzg","**********************scrollCount:"+scrollCount);
                 dividingView.scrollBy(dx,0);
 
                 if (l - lastChangeTime < 50){
@@ -245,7 +244,7 @@ public class VideoRangeView extends FrameLayout {
                             if (finalI == 1){
                                 int with = videoPreRecyclerView.computeHorizontalScrollRange();
                                 itemWidth = with-recyclerViewLeftPaddin;
-                                int maxWidth = itemWidth * duration;
+                                maxWidth = itemWidth * duration;
                                 dividingView.setMaxWidth(maxWidth);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
@@ -307,7 +306,7 @@ public class VideoRangeView extends FrameLayout {
                                 /*int with = videoPreRecyclerView.computeHorizontalScrollRange();
                                 itemWidth = with-recyclerViewLeftPaddin;*/
                                 itemWidth = videoPreRecyclerView.getChildAt(0).getWidth();
-                                int maxWidth = itemWidth * duration;
+                                maxWidth = itemWidth * duration;
                                 dividingView.setMaxWidth(maxWidth);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
@@ -332,6 +331,16 @@ public class VideoRangeView extends FrameLayout {
             Log.e("kzg","**********************t:"+t.getMessage());
             t.printStackTrace();
         }
+    }
+
+
+    public void setPlayPercent(float percent){
+        /*if (videoPreRecyclerView != null){
+            Log.e("kzg","**********************percent:"+percent);
+            int scrollX = (int) (maxWidth * percent);
+            Log.e("kzg","**********************scrollX:"+scrollX);
+            videoPreRecyclerView.smoothScrollBy(scrollX - scrollCount,0);
+        }*/
     }
 
 

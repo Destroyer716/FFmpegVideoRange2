@@ -68,16 +68,20 @@ void KzgFFmpeg::decodeFFmpegThread() {
         helper->onError(1002,"find audio stream fail",THREAD_CHILD);
         return;
     }
+
     for(int i=0;i<avFormatContext->nb_streams;i++){
         if (avFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
             if (kzgAudio == NULL){
                 //先不处理音频
-                /*kzgAudio = new KzgAudio(kzgPlayerStatus,avFormatContext->streams[i]->codecpar->sample_rate,helper);
+                kzgAudio = new KzgAudio(kzgPlayerStatus,avFormatContext->streams[i]->codecpar->sample_rate,helper);
                 kzgAudio->streamIndex = i;
                 kzgAudio->avCodecParameters = avFormatContext->streams[i]->codecpar;
                 kzgAudio->duration = avFormatContext->duration / AV_TIME_BASE;
                 kzgAudio->time_base = avFormatContext->streams[i]->time_base;
-                duration = kzgAudio->duration;*/
+                if (duration <= 0){
+                    duration = kzgAudio->duration;
+                }
+
             }
         } else if(avFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO){
             if (kzgVideo == NULL){
@@ -102,7 +106,7 @@ void KzgFFmpeg::decodeFFmpegThread() {
 
 
     if (kzgAudio != NULL){
-        //getAVCodecContext(kzgAudio->avCodecParameters,&kzgAudio->avCodecContext);
+        getAVCodecContext(kzgAudio->avCodecParameters,&kzgAudio->avCodecContext);
     }
     if (kzgVideo !=NULL){
         getAVCodecContext(kzgVideo->avCodecParameters,&kzgVideo->avCodecContext);
@@ -110,6 +114,9 @@ void KzgFFmpeg::decodeFFmpegThread() {
         helper->onCallVideoInfo(THREAD_CHILD,kzgVideo->fps,kzgVideo->duration,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height);
     }
 
+    //关闭非关键帧的环路滤波，seek 大GOP要快100ms左右
+    //kzgVideo->avCodecContext->skip_loop_filter = AVDISCARD_NONKEY;
+    //kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
     if(kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
         helper->onPrepare(THREAD_CHILD);
     } else{
@@ -206,20 +213,17 @@ void KzgFFmpeg::start() {
     int count = 0;
     int ret;
 
-    //kzgAudio->play();
+    kzgAudio->play();
     kzgVideo->play();
     while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
 
-        /*if (kzgPlayerStatus->seeking){
-            av_usleep(1000*20);
-            continue;
-        }*/
+        if (!kzgVideo->kzgPlayerStatus->isFramePreview){
+            if (kzgAudio->queue->getQueueSize() > 40){
+                av_usleep(1000*100);
+                continue;
+            }
+        }
 
-
-        /*if (kzgAudio->queue->getQueueSize() > 40){
-            av_usleep(1000*100);
-            continue;
-        }*/
 
         if (kzgVideo->queue->getQueueSize() > 40){
             av_usleep(1000*20);
@@ -246,12 +250,13 @@ void KzgFFmpeg::start() {
         }
 
 
+
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret == 0){
             if (kzgAudio != NULL && avPacket->stream_index == kzgAudio->streamIndex){
                 //开始解码音频
-                LOGE("开始解码音频第 %d 帧",count);
+                //LOGE("开始解码音频第 %d 帧",count);
                 kzgAudio->queue->putAvPacket(avPacket);
 
             }else if (avPacket->stream_index == kzgVideo->streamIndex){
@@ -302,7 +307,7 @@ void KzgFFmpeg::start() {
             }
             tempIndex ++;
         } else{
-            LOGE("read frame fail ");
+            //LOGE("read frame fail ");
             av_packet_free(&avPacket);
             av_free(avPacket);
             while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){

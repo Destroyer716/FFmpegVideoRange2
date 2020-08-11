@@ -54,6 +54,11 @@ int KzgAudio::play_t(void **pcmbuf) {
             continue;
         }
 
+        if (playerStatus->isFramePreview){
+            av_usleep(1000*100);
+            continue;
+        }
+
         if(queue->getQueueSize() == 0)//加载中
         {
             if(!playerStatus->loading)

@@ -12,6 +12,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,7 +23,7 @@ import com.example.myplayer.VideoRange.VideoRangeView;
 import com.example.myplayer.opengl.KzgGLSurfaceView;
 
 
-public class VideoRangeActivity extends AppCompatActivity {
+public class VideoRangeActivity extends AppCompatActivity implements View.OnClickListener {
 
     String inputPath = Environment.getExternalStorageDirectory() + "/video5.mp4";
 
@@ -31,6 +32,7 @@ public class VideoRangeActivity extends AppCompatActivity {
     private Paint paint;
     private KzgPlayer kzgPlayer;
     private RelativeLayout relativeLayout;
+    private ImageView ivPlay;
 
 
 
@@ -38,16 +40,29 @@ public class VideoRangeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_range);
-        relativeLayout = findViewById(R.id.rl_surface_view_parent);
-        surfaceView = findViewById(R.id.sv_video_view);
-        videoRangeView = findViewById(R.id.vrv_video_range);
-        inputPath = getIntent().getStringExtra("filePath");
 
+        initView();
+        initAction();
+        inputPath = getIntent().getStringExtra("filePath");
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
 
+
         init();
+    }
+
+
+    private void  initView(){
+        relativeLayout = findViewById(R.id.rl_surface_view_parent);
+        surfaceView = findViewById(R.id.sv_video_view);
+        videoRangeView = findViewById(R.id.vrv_video_range);
+        ivPlay = findViewById(R.id.iv_play_stop_video);
+    }
+
+
+    private void initAction(){
+        ivPlay.setOnClickListener(this);
     }
 
     private void init(){
@@ -112,8 +127,10 @@ public class VideoRangeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onProgress(int progress) {
-
+            public void onProgress(long currentTime,long totalTime) {
+                if (videoRangeView != null){
+                    videoRangeView.setPlayPercent(((float) currentTime)/totalTime);
+                }
             }
 
             @Override
@@ -191,6 +208,26 @@ public class VideoRangeActivity extends AppCompatActivity {
         if(surfaceView != null){
             surfaceView.removeCallbacks(null);
             surfaceView = null;
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.iv_play_stop_video:
+                if (kzgPlayer == null){
+                    return;
+                }
+                if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
+                    //停止
+                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);
+                    ivPlay.setImageResource(R.drawable.play_ico);
+                }else if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_FRAME_PREVIEW){
+                    //播放
+                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT);
+                    ivPlay.setImageResource(R.drawable.stop_ico);
+                }
+                break;
         }
     }
 }

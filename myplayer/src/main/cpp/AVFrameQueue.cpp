@@ -28,7 +28,7 @@ int AVFrameQueue::putAvFrame(AVFrame *avFrame) {
     return 0;
 }
 
-int AVFrameQueue::getAvFrame(AVFrame *avFrame,double timestamp,AVRational bastTime) {
+int AVFrameQueue::getAvFrameByTime(AVFrame *avFrame,double timestamp,AVRational bastTime) {
     pthread_mutex_lock(&mutexPacket);
     while (playerStatus != NULL && !playerStatus->exit){
         if (queuePacket.size() > 0){
@@ -84,6 +84,31 @@ int AVFrameQueue::getAvFrame(AVFrame *avFrame,double timestamp,AVRational bastTi
     pthread_mutex_unlock(&mutexPacket);
     return 0;
 }
+
+int AVFrameQueue::getAvFrame(AVFrame *avFrame) {
+    pthread_mutex_lock(&mutexPacket);
+    while (playerStatus != NULL && !playerStatus->exit){
+        if (queuePacket.size() > 0){
+            AVFrame * avFrame1 = queuePacket.front();
+            int ret = av_frame_ref(avFrame,avFrame1);
+            avFrame->linesize[0] = avFrame1->linesize[0];
+            if (ret == 0){
+                queuePacket.pop();
+            }
+            av_frame_free(&avFrame1);
+            av_free(avFrame1);
+            avFrame1 = NULL;
+            break;
+        } else{
+            pthread_cond_wait(&condPacket,&mutexPacket);
+        }
+    }
+    pthread_mutex_unlock(&mutexPacket);
+    return 0;
+}
+
+
+
 
 int AVFrameQueue::getQueueSize() {
     pthread_mutex_lock(&mutexPacket);

@@ -30,7 +30,8 @@ public:
 
     int putAvFrame(AVFrame *avFrame);
     int putStructAvFrame(frameStruct *structFrame);
-    int getAvFrame(AVFrame *avFrame,double timestamp,AVRational bastTime);
+    int getAvFrameByTime(AVFrame *avFrame,double timestamp,AVRational bastTime);
+    int getAvFrame(AVFrame *avFrame);
     int getStructAvFrame(frameStruct **structFrame,double timestamp,AVRational bastTime);
     int getQueueSize();
     void clearAvPacket();

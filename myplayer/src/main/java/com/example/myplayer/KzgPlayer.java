@@ -57,7 +57,7 @@ public class KzgPlayer {
     private static float speed = 1.0f;
     private static float amplifyVol = 5.0f;
     private KzgGLSurfaceView kzgGLSurfaceView;
-    private static int playModel = PLAY_MODEL_DEFAULT;
+    public static int playModel = PLAY_MODEL_DEFAULT;
 
     private MediaCodec mediaCodec;
     private MediaFormat mediaFormat;
@@ -98,7 +98,7 @@ public class KzgPlayer {
 
 
     public void showFrame(double timestamp,int seekType){
-        Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
+        //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         if (seekType == seek_back){
             //后退时的逐帧显示
             n_seek((int) (timestamp*1000));
@@ -254,9 +254,10 @@ public class KzgPlayer {
         }
     }
 
-    public void onProgress(int progress){
+    public void onProgress(long currentTime,long totalTime){
+        Log.e("kzg","**********************currentTime:"+currentTime+"   ,totalTime:"+totalTime);
         if (playerListener != null){
-            playerListener.onProgress(progress);
+            playerListener.onProgress(currentTime,totalTime);
         }
     }
 
@@ -298,7 +299,7 @@ public class KzgPlayer {
     }
 
     public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v){
-        //Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
+        Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
         if (kzgGLSurfaceView != null){
             kzgGLSurfaceView.getKzgGlRender().setRenderType(KzgGlRender.RENDER_YUV);
             kzgGLSurfaceView.setYUV(width,height,y,u,v);
@@ -329,7 +330,7 @@ public class KzgPlayer {
         void onError(int code,String msg);
         void onPrepare();
         void onLoadChange(boolean isLoad);
-        void onProgress(int progress);
+        void onProgress(long currentTime,long totalTime);
         void onTimeInfo(TimeInfoBean timeInfoBean);
         void onComplete();
         void onDB(int db);
@@ -665,8 +666,8 @@ public class KzgPlayer {
                                         Image image = mediaCodec.getOutputImage(outputBufferIndex);
 
                                         String fileName;
-                                        fileName = Environment.getExternalStorageDirectory() + "/jpe/" + String.format("frame_%05d.jpg", outputFrameCount);
-                                        compressToJpeg(fileName, image);
+                                        //fileName = Environment.getExternalStorageDirectory() + "/jpe/" + String.format("frame_%05d.jpg", outputFrameCount);
+                                        //compressToJpeg(fileName, image);
                                     } else {
                                         outputBuffer = mediaCodec.getOutputBuffers()[outputBufferIndex];
                                     }

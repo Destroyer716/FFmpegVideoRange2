@@ -26,7 +26,6 @@ KzgVideo::KzgVideo(KzgPlayerStatus *kzgPlayerStatus, JavaCallHelper *helper) {
     this->frameQueue = new AVFrameQueue(kzgPlayerStatus);
     pthread_mutex_init(&codecMutex,NULL);
     pthread_mutex_init(&showFrameMutex,NULL);
-    //yuvFile = fopen("/storage/emulated/0/yuvtest.yuv","wr");
 }
 
 KzgVideo::~KzgVideo() {
@@ -107,12 +106,17 @@ void *videoPlay(void *arg){
         }
 
         AVPacket *avPacket = av_packet_alloc();
-        if (kzgVideo->queue->getAvPacket(avPacket) != 0){
-            av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
-            continue;
+        if (!kzgVideo->kzgPlayerStatus->isFramePreview && kzgVideo->frameQueue->getQueueSize() > 0){
+
+        } else{
+            if (kzgVideo->queue->getAvPacket(avPacket) != 0){
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+                continue;
+            }
         }
+
 
         if (kzgVideo->codectype == CODEC_MEDIACODEC){
             //硬解码
@@ -148,25 +152,36 @@ void *videoPlay(void *arg){
             avPacket = NULL;
         } else if(kzgVideo->codectype == CODEC_YUV){
             pthread_mutex_lock(&kzgVideo->codecMutex);
-            if (avcodec_send_packet(kzgVideo->avCodecContext,avPacket) != 0){
-                av_packet_free(&avPacket);
-                av_free(avPacket);
-                avPacket = NULL;
-                pthread_mutex_unlock(&kzgVideo->codecMutex);
-                continue;
-            }
-            AVFrame *avFrame = av_frame_alloc();
-            if(avcodec_receive_frame(kzgVideo->avCodecContext,avFrame) != 0){
+            if (!kzgVideo->kzgPlayerStatus->isFramePreview && kzgVideo->frameQueue->getQueueSize() > 0){
 
-                av_frame_free(&avFrame);
-                av_free(avFrame);
-                avFrame = NULL;
-                av_packet_free(&avPacket);
-                av_free(avPacket);
-                avPacket = NULL;
-                pthread_mutex_unlock(&kzgVideo->codecMutex);
-                continue;
+            } else{
+                if (avcodec_send_packet(kzgVideo->avCodecContext,avPacket) != 0){
+                    av_packet_free(&avPacket);
+                    av_free(avPacket);
+                    avPacket = NULL;
+                    pthread_mutex_unlock(&kzgVideo->codecMutex);
+                    continue;
+                }
             }
+
+            AVFrame *avFrame = av_frame_alloc();
+
+            if (!kzgVideo->kzgPlayerStatus->isFramePreview && kzgVideo->frameQueue->getQueueSize() > 0){
+                kzgVideo->frameQueue->getAvFrame(avFrame);
+            } else{
+                if(avcodec_receive_frame(kzgVideo->avCodecContext,avFrame) != 0){
+
+                    av_frame_free(&avFrame);
+                    av_free(avFrame);
+                    avFrame = NULL;
+                    av_packet_free(&avPacket);
+                    av_free(avPacket);
+                    avPacket = NULL;
+                    pthread_mutex_unlock(&kzgVideo->codecMutex);
+                    continue;
+                }
+            }
+
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
                 //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
@@ -174,10 +189,10 @@ void *videoPlay(void *arg){
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
 
                     //逐帧预览
-//                    for (int i = 0; i <100 ; ++i) {
-//                        //查看YUV对齐
-//                        LOGE("**********linesize[0] : %d     ,linesize[1] : %d    ,linesize[0] : %d    ,width:%d    ,height:%d",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],avFrame->width,avFrame->height);
-//                    }
+                    /*for (int i = 0; i <100 ; ++i) {
+                        //查看YUV对齐
+                        LOGE("**********linesize[0] : %d     ,linesize[1] : %d    ,linesize[2] : %d    ,width:%d    ,height:%d",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],avFrame->width,avFrame->height);
+                    }*/
 
                     if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
                         //后退专题的逐帧预览
@@ -230,9 +245,9 @@ void *videoPlay(void *arg){
                                     ,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);
                             /****************ffmpeg处理对齐的方式******************/
                             //保存为YUV文件
-                            /*SaveYuv(avFrame->data[0], avFrame->linesize[0], kzgVideo->avCodecContext->width, kzgVideo->avCodecContext->height, outputfilename);
+                            SaveYuv(avFrame->data[0], avFrame->linesize[0], kzgVideo->avCodecContext->width, kzgVideo->avCodecContext->height, outputfilename);
                             SaveYuv(avFrame->data[1], avFrame->linesize[1], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
-                            SaveYuv(avFrame->data[2], avFrame->linesize[2], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);*/
+                            SaveYuv(avFrame->data[2], avFrame->linesize[2], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
 
 
                             cropAvframe->data[0] = static_cast<uint8_t *>(malloc(avFrame->width * avFrame->height));
@@ -303,16 +318,52 @@ void *videoPlay(void *arg){
                     }
                 }
 
-                //享学课堂的同步算法
-                //av_usleep(kzgVideo->myGetDelayTime(avFrame) * AV_TIME_BASE);
-                //杨万里老师的同步算法
-                double diff = kzgVideo->getFrameDiffTime(avFrame,NULL);
-                double delayTime = kzgVideo->getDelayTime(diff);
-                av_usleep(delayTime * AV_TIME_BASE);
-
+                if (!kzgVideo->kzgPlayerStatus->isFramePreview){
+                    //享学课堂的同步算法
+                    //av_usleep(kzgVideo->myGetDelayTime(avFrame) * AV_TIME_BASE);
+                    //杨万里老师的同步算法
+                    double diff = kzgVideo->getFrameDiffTime(avFrame,NULL);
+                    double delayTime = kzgVideo->getDelayTime(diff);
+                    av_usleep(delayTime * AV_TIME_BASE);
+                }
 
                 int width = avFrame->linesize[0] > kzgVideo->avCodecContext->width? avFrame->linesize[0]:kzgVideo->avCodecContext->width;
                 //传回Java进行渲染
+                if (avFrame->linesize[0] > kzgVideo->avCodecContext->width){
+                    /*int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);
+                    //创建一个缓冲区
+                    uint8_t *buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
+                    av_image_copy_to_buffer(buffer,size,avFrame->data,avFrame->linesize,AV_PIX_FMT_YUV420P
+                            ,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);
+                    uint8_t *dataY = static_cast<uint8_t *>(malloc(avFrame->width * avFrame->height));
+                    uint8_t *dataU = static_cast<uint8_t *>(malloc(avFrame->width/2 * avFrame->height/2));
+                    uint8_t *dataV = static_cast<uint8_t *>(malloc(avFrame->width/2 * avFrame->height/2));
+                    memcpy( dataY,buffer,avFrame->width * avFrame->height);
+                    memcpy(dataU,buffer + avFrame->width * avFrame->height,avFrame->width/2 * avFrame->height/2);
+                    memcpy(dataV,buffer + (avFrame->width * avFrame->height + avFrame->width/2 * avFrame->height/2),avFrame->width/2 * avFrame->height/2);
+                    kzgVideo->helper->onCallRenderYUV(
+                            kzgVideo->avCodecContext->width,
+                            kzgVideo->avCodecContext->height,
+                            dataY,
+                            dataU,
+                            dataV,
+                            THREAD_CHILD);
+
+                    av_free(buffer);
+                    av_free(dataY);
+                    av_free(dataU);
+                    av_free(dataV);*/
+                } else{
+                    kzgVideo->helper->onCallRenderYUV(
+                            width,
+                            kzgVideo->avCodecContext->height,
+                            avFrame->data[0],
+                            avFrame->data[1],
+                            avFrame->data[2],
+                            THREAD_CHILD);
+                }
+
+
                 kzgVideo->helper->onCallRenderYUV(
                         width,
                         kzgVideo->avCodecContext->height,
@@ -320,6 +371,11 @@ void *videoPlay(void *arg){
                         avFrame->data[1],
                         avFrame->data[2],
                         THREAD_CHILD);
+
+                //发送进度信息给Java
+                int64_t  currentTime = (avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE);
+                //LOGE("视频帧时间：%lld    总时间：%lld",currentTime,kzgVideo->duration);
+                kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
 
             } else{
                 LOGE("codec  not  AV_PIX_FMT_YUV420P");
@@ -601,7 +657,7 @@ void KzgVideo::showFrame(double timestamp) {
     if (frameQueue != NULL && frameQueue->getQueueSize() > 0){
 
         AVFrame *avFrame = av_frame_alloc();
-        if(frameQueue->getAvFrame(avFrame,timestamp,time_base) == 0){
+        if(frameQueue->getAvFrameByTime(avFrame,timestamp,time_base) == 0){
             if (avFrame->data[0] == NULL){
                 return;
             }

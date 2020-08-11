@@ -58,7 +58,7 @@ private:
     pthread_mutex_t init_mutex;
     pthread_mutex_t seek_mutex;
     bool exit = false;
-    int duration = 0;
+    int64_t duration = 0;
     bool supportMediacodec = false;
     const AVBitStreamFilter *bsFilter = NULL;
     int tempIndex = 0;
