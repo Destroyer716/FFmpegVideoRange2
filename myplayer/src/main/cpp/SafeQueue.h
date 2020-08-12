@@ -26,6 +26,7 @@ public:
     int getQueueSize();
     void clearAvPacket();
     void noticeQueue();
+    void clearByBeforeTime(int64_t time,AVRational time_base);
 
 public:
     std::queue<AVPacket *> queuePacket;

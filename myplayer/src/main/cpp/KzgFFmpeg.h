@@ -62,10 +62,6 @@ private:
     bool supportMediacodec = false;
     const AVBitStreamFilter *bsFilter = NULL;
     int tempIndex = 0;
-    //上个B帧
-    AVPacket *lastBFramePacket = NULL;
-    //上一个帧是否时B帧
-    bool lastIsBFrame = false;
 
 };
 

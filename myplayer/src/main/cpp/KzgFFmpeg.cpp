@@ -220,18 +220,21 @@ void KzgFFmpeg::start() {
         if (!kzgVideo->kzgPlayerStatus->isFramePreview){
             if (kzgAudio->queue->getQueueSize() > 40){
                 av_usleep(1000*100);
+                LOGE("1111111111111111");
                 continue;
             }
         }
 
 
         if (kzgVideo->queue->getQueueSize() > 40){
+            LOGE("22222222222");
             av_usleep(1000*20);
             continue;
         }
 
         if (kzgVideo->kzgPlayerStatus->isFramePreview){
             if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->queue->getQueueSize() > 5 && kzgVideo->kzgPlayerStatus->isSeekPause){
+                LOGE("333333333333");
                 av_usleep(1000*1);
                 continue;
             } else{
@@ -242,13 +245,13 @@ void KzgFFmpeg::start() {
                     queueSize = kzgVideo->frameQueue->getQueueSize();
                 }
                 if (queueSize >= 90){
+                    LOGE("444444444444444");
                     av_usleep(1000*10);
                     continue;
                 }
             }
 
         }
-
 
 
         AVPacket *avPacket = av_packet_alloc();
@@ -262,50 +265,11 @@ void KzgFFmpeg::start() {
             }else if (avPacket->stream_index == kzgVideo->streamIndex){
                 //开始解码视频
                 count ++;
-                if ((avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) > (kzgVideo->seekTime - 1000000)){
+                if ( kzgVideo->avCodecContext->skip_frame != AVDISCARD_DEFAULT && (avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) > (kzgVideo->seekTime - 1000000)){
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_DEFAULT;
-                } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
+                } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview ){
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
                 }
-
-                /*if (avPacket->flags & AV_PKT_FLAG_KEY){
-                    //KEY FRAME
-                    LOGE("开始解码 I帧 %lf      pts:%lld    ,dts:%lld     flags:%d,",(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE),avPacket->pts ,avPacket->dts,avPacket->flags);
-                    kzgVideo->queue->putAvPacket(avPacket);
-                    lastIsBFrame = false;
-                    kzgVideo->tempqueue->clearAvPacket();
-                } else {
-                    if (avPacket->pts < kzgVideo->lastPFramePTS && (avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) < (kzgVideo->seekTime) *//*- 5000000*//*){
-                        //B FRAME
-                        if(!lastIsBFrame){
-                            //lastBFramePacket = av_packet_clone(avPacket);
-                            kzgVideo->tempqueue->clearAvPacket();
-                            LOGE("开始解码 第一个B帧 %lf      pts:%lld    ,dts:%lld     flags:%d,",(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE),avPacket->pts ,avPacket->dts,avPacket->flags);
-                            kzgVideo->tempqueue->putAvPacket(avPacket);
-                        } else{
-                            if (kzgVideo->tempqueue->getQueueSize() > 0){
-                                AVPacket *avPacket22 = av_packet_alloc();
-                                kzgVideo->tempqueue->getAvPacket(avPacket22);
-                                LOGE("第一个B帧 pts:%lld",avPacket22->pts);
-                                if(avPacket->pts < avPacket22->pts){
-                                    kzgVideo->queue->putAvPacket(avPacket22);
-                                }
-                            }
-                            LOGE("丢弃B帧 视频第 %lf 帧      pts:%lld    ,dts:%lld     flags:%d,",(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE),avPacket->pts ,avPacket->dts,avPacket->flags);
-                            av_packet_free(&avPacket);
-                            av_free(avPacket);
-
-                        }
-
-                        lastIsBFrame = true;
-                    } else{
-                        LOGE("开始解码 P帧 %lf      pts:%lld    ,dts:%lld     flags:%d,",(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE),avPacket->pts ,avPacket->dts,avPacket->flags);
-                        kzgVideo->lastPFramePTS = avPacket->pts;
-                        kzgVideo->queue->putAvPacket(avPacket);
-                        lastIsBFrame = false;
-                    }
-
-                }*/
                 kzgVideo->queue->putAvPacket(avPacket);
             }else{
                 av_packet_free(&avPacket);
@@ -319,6 +283,7 @@ void KzgFFmpeg::start() {
             while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
                 if (kzgVideo->queue->getQueueSize() > 0 || kzgVideo->frameQueue->getQueueSize() > 0 || kzgVideo->helper->onCallJavaQueueSize(THREAD_CHILD) > 0){
                     av_usleep(1000*20);
+                    LOGE("55555555555");
                     continue;
                 } else{
                     if (!kzgPlayerStatus->seeking){
@@ -332,6 +297,7 @@ void KzgFFmpeg::start() {
                     break;
                 }
             }
+            LOGE("666666666666666");
             continue;
             //break;
         }
@@ -420,6 +386,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         return;
     }
 
+    LOGE("start  seeking");
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;
@@ -428,6 +395,7 @@ void KzgFFmpeg::seek(int64_t sec) {
             kzgVideo->seekTime = res;
             if (!kzgVideo->kzgPlayerStatus->isShowSeekFrame){
                 pthread_mutex_unlock(&seek_mutex);
+                kzgPlayerStatus->seeking = false;
                 return;
             }
         }
@@ -461,10 +429,10 @@ void KzgFFmpeg::seek(int64_t sec) {
 
         }
         kzgVideo->lastPFramePTS = 0;
-        lastIsBFrame = false;
         kzgVideo->kzgPlayerStatus->isSeekPause = false;
         pthread_mutex_unlock(&seek_mutex);
         kzgPlayerStatus->seeking = false;
+        LOGE("***********seeking:%d",kzgPlayerStatus->seeking);
     }
 }
 
@@ -552,7 +520,16 @@ int KzgFFmpeg::getAVCodecContext(AVCodecParameters *avCodecParameters,
 
 void KzgFFmpeg::setIsFramePreview(bool isFramePreview) {
     if (kzgVideo != NULL){
+        if (!isFramePreview && kzgVideo->showFrameTimestamp > 0){
+            kzgAudio->queue->clearByBeforeTime(kzgVideo->showFrameTimestamp,kzgAudio->time_base);
+        }
+
+
+        if (!isFramePreview){
+            kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = false;
+        }
         kzgVideo->setIsFramePreview(isFramePreview);
+        LOGE("isFramePreview:%d   ,seeking:%d",isFramePreview,kzgPlayerStatus->seeking);
     }
 }
 

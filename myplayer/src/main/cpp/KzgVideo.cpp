@@ -68,6 +68,7 @@ void *videoPlay(void *arg){
         }*/
 
         if (kzgVideo->kzgPlayerStatus->isPause){
+            LOGE("77777777777");
             av_usleep(1000 * 100);
             continue;
         }
@@ -78,6 +79,7 @@ void *videoPlay(void *arg){
                 kzgVideo->kzgPlayerStatus->loading = true;
                 kzgVideo->helper->onLoad(true,THREAD_CHILD);
             }
+            LOGE("888888888");
             av_usleep(1000 * 20);
             continue;
         } else{
@@ -95,6 +97,7 @@ void *videoPlay(void *arg){
                 queueSize = kzgVideo->frameQueue->getQueueSize();
             }
             if (queueSize >= 90){
+                LOGE("99999999");
                 av_usleep(1000*10);
                 continue;
             }
@@ -102,6 +105,7 @@ void *videoPlay(void *arg){
 
         if(kzgVideo->kzgPlayerStatus->isSeekPause && kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
             av_usleep(1000*1);
+            LOGE("1010101010101010");
             continue;
         }
 
@@ -214,7 +218,7 @@ void *videoPlay(void *arg){
                         LOGE("seek 一帧frame 耗时：%ld" ,(endTime-kzgVideo->startSeekTime));
                     } else{
                         //前进状态的逐帧预览
-                        if (avFrame->linesize[0] > kzgVideo->avCodecContext->width){
+                        if (avFrame->linesize[0] > kzgVideo->avCodecContext->width && false){
                             //当Y的宽度大于视频实际的宽度，就进行裁剪到视频实际的宽度
                             kzgVideo->kzgPlayerStatus->isCrop = true;
                             AVFrame *cropAvframe = av_frame_alloc();
@@ -318,7 +322,6 @@ void *videoPlay(void *arg){
                     }
                 }
 
-                LOGE("11111111112222222222");
                 if (!kzgVideo->kzgPlayerStatus->isFramePreview){
                     //享学课堂的同步算法
                     //av_usleep(kzgVideo->myGetDelayTime(avFrame) * AV_TIME_BASE);
@@ -354,6 +357,15 @@ void *videoPlay(void *arg){
                     av_free(dataY);
                     av_free(dataU);
                     av_free(dataV);*/
+
+
+                    kzgVideo->helper->onCallRenderYUV(
+                            width,
+                            kzgVideo->avCodecContext->height,
+                            avFrame->data[0],
+                            avFrame->data[1],
+                            avFrame->data[2],
+                            THREAD_CHILD);
                 } else{
                     kzgVideo->helper->onCallRenderYUV(
                             width,
@@ -365,18 +377,12 @@ void *videoPlay(void *arg){
                 }
 
 
-                kzgVideo->helper->onCallRenderYUV(
-                        width,
-                        kzgVideo->avCodecContext->height,
-                        avFrame->data[0],
-                        avFrame->data[1],
-                        avFrame->data[2],
-                        THREAD_CHILD);
-
                 //发送进度信息给Java
                 int64_t  currentTime = (avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE);
                 //LOGE("视频帧时间：%lld    总时间：%lld",currentTime,kzgVideo->duration);
-                kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
+                if( !kzgVideo->kzgPlayerStatus->isFramePreview){
+                    kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
+                }
 
             } else{
                 LOGE("codec  not  AV_PIX_FMT_YUV420P");
@@ -645,9 +651,7 @@ double KzgVideo::myGetDelayTime(AVFrame *avFrame) {
 }
 
 void KzgVideo::setIsFramePreview(bool isFramePreview) {
-    LOGE("setIsFramePreview:%z",isFramePreview);
     if (kzgPlayerStatus != NULL){
-        LOGE("setIsFramePreview2222:%z",isFramePreview);
         kzgPlayerStatus->isFramePreview = isFramePreview;
     }
 }
@@ -666,10 +670,11 @@ void KzgVideo::showFrame(double timestamp) {
             pts *= av_q2d(time_base);
             //LOGE("kzgVideo get frameQueue pts:%lf ,   timestamp:%lf",pts,timestamp);
             if (timestamp >= (pts - 0.03) && timestamp <= (pts + 0.03)){
-                //int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
+                int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
+                this->showFrameTimestamp = timestamp;
                 //传回Java进行渲染
                 helper->onCallRenderYUV(
-                        avCodecContext->width,
+                        width,
                         avCodecContext->height,
                         avFrame->data[0],
                         avFrame->data[1],

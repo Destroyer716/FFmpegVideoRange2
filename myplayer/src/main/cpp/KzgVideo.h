@@ -49,6 +49,7 @@ public:
     int64_t lastPFramePTS = 0;
 
     long startSeekTime = 0;
+    double showFrameTimestamp = 0;//拖动预览条后当前显示的帧的时间
 
 
 public:

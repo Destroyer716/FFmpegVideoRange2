@@ -75,3 +75,22 @@ void SafeQueue::noticeQueue() {
     pthread_cond_signal(&condPacket);
 }
 
+void SafeQueue::clearByBeforeTime(int64_t time,AVRational time_base) {
+    pthread_mutex_lock(&mutexPacket);
+    LOGE("clearByBeforeTime:%d",queuePacket.size());
+    while (queuePacket.size() > 50){
+        AVPacket * avPacket = queuePacket.front();
+        LOGE("   audio  pts : %lf",avPacket->pts * av_q2d(time_base));
+        if (avPacket->pts * av_q2d(time_base) < time){
+            queuePacket.pop();
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+        } else{
+            break;
+        }
+
+    }
+    pthread_mutex_unlock(&mutexPacket);
+}
+

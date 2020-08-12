@@ -112,14 +112,20 @@ public class VideoRangeView extends FrameLayout {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
+
                 long l = System.currentTimeMillis();
 
                 scrollCount += dx;
                 dividingView.scrollBy(dx,0);
 
+                if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
+                    return;
+                }
+
                 if (l - lastChangeTime < 50){
                     return;
                 }
+                Log.e("kzg","**********************addOnScrollListener22222");
                 lastChangeTime = l;
                 //计算当前的对应的预览图
                 int millTime = 0;
@@ -335,12 +341,12 @@ public class VideoRangeView extends FrameLayout {
 
 
     public void setPlayPercent(float percent){
-        /*if (videoPreRecyclerView != null){
+        if (videoPreRecyclerView != null){
             Log.e("kzg","**********************percent:"+percent);
             int scrollX = (int) (maxWidth * percent);
             Log.e("kzg","**********************scrollX:"+scrollX);
             videoPreRecyclerView.smoothScrollBy(scrollX - scrollCount,0);
-        }*/
+        }
     }
 
 

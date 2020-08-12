@@ -299,7 +299,7 @@ public class KzgPlayer {
     }
 
     public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v){
-        Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
+        //Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
         if (kzgGLSurfaceView != null){
             kzgGLSurfaceView.getKzgGlRender().setRenderType(KzgGlRender.RENDER_YUV);
             kzgGLSurfaceView.setYUV(width,height,y,u,v);
@@ -554,7 +554,6 @@ public class KzgPlayer {
 
 
     public void initMediaCodecVideoByYUV(String codecName,int width,int height,byte[] csd_0,byte[] csd_1){
-        Log.e("kzg","**********************initMediaCodecVideoByYUV: " + width + ", " + height);
         //获取ffmpeg中视频编码格式，在mediaCodec中对应的名字
         String mime = KzglVideoSupportUtil.findVideoCodecName(codecName);
         try {
@@ -569,7 +568,6 @@ public class KzgPlayer {
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
         mediaCodec.configure(mediaFormat, null, null, 0);
         mediaCodec.start();
-        Log.e("kzg","**********************initMediaCodecVideoByYUV start" );
         decodePacket();
 
         /*String mime = KzglVideoSupportUtil.findVideoCodecName(codecName);
@@ -594,8 +592,8 @@ public class KzgPlayer {
 
     long startTime;
     public void decodeAVPacketForYUV(int dataSize,byte[] data,int width,int height,double timestamp){
-        Log.e("kzg","**********************decodeAVPacketForYUV width:" + width + ", height:"
-                + height + " , dataSize:" + dataSize + ", lenght:" + data.length + " ,timestamp" + timestamp);
+       /* Log.e("kzg","**********************decodeAVPacketForYUV width:" + width + ", height:"
+                + height + " , dataSize:" + dataSize + ", lenght:" + data.length + " ,timestamp" + timestamp);*/
 
         PacketBean packetBean = new PacketBean();
         packetBean.setData(data);
