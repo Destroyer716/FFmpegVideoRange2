@@ -49,6 +49,8 @@ public class KzgPlayer {
     private String source;
     public boolean isPlaying = false;
     public boolean isPause = false;
+    //是否可以播放，主要是为了避免未处理完seek 等操作时播放产生BUG
+    public boolean enablePlay = false;
     private TimeInfoBean timeInfoBean;
     private boolean isPlayNext = false;
     private static int duration = -1;
@@ -91,7 +93,6 @@ public class KzgPlayer {
             @Override
             public void onSurfaceCreate(Surface sf) {
                 surface = sf;
-                Log.e("kzg","**********************surface 创建成功："+surface);
             }
         });
     }
@@ -255,7 +256,7 @@ public class KzgPlayer {
     }
 
     public void onProgress(long currentTime,long totalTime){
-        Log.e("kzg","**********************currentTime:"+currentTime+"   ,totalTime:"+totalTime);
+        //Log.e("kzg","**********************currentTime:"+currentTime+"   ,totalTime:"+totalTime);
         if (playerListener != null){
             playerListener.onProgress(currentTime,totalTime);
         }
@@ -298,6 +299,13 @@ public class KzgPlayer {
         }
     }
 
+    public void onEnableStartPlay(boolean enable){
+        enablePlay = enable;
+        if (playerListener != null){
+            playerListener.onEnablePlayChange(enable);
+        }
+    }
+
     public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v){
         //Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
         if (kzgGLSurfaceView != null){
@@ -332,6 +340,7 @@ public class KzgPlayer {
         void onLoadChange(boolean isLoad);
         void onProgress(long currentTime,long totalTime);
         void onTimeInfo(TimeInfoBean timeInfoBean);
+        void onEnablePlayChange(boolean enable);
         void onComplete();
         void onDB(int db);
         void onGetVideoInfo(int fps,long duration,int widht,int height);

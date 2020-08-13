@@ -35,4 +35,5 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:29.0.0'
     implementation 'com.android.support:recyclerview-v7:29.0.0'
     implementation project(path: ':myplayer')
+    implementation 'com.wang.avi:library:2.1.3'
 }

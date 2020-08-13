@@ -26,19 +26,21 @@
 
 
     <RelativeLayout
+        android:id="@+id/relativeLayout"
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        android:background="#8a8a8a"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rl_surface_view_parent"
-        android:background="#8a8a8a">
+        app:layout_constraintTop_toBottomOf="@+id/rl_surface_view_parent">
 
         <ImageView
             android:id="@+id/iv_play_stop_video"
             android:layout_width="20dp"
             android:layout_height="20dp"
+            android:layout_centerInParent="true"
             android:src="@drawable/play_ico"
-            android:layout_centerInParent="true"/>
+            android:visibility="gone" />
 
     </RelativeLayout>
 
@@ -49,5 +51,16 @@
         android:layout_marginTop="136dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rl_surface_view_parent" />
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/av_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:indicatorName="LineScalePulseOutIndicator"
+        app:indicatorColor="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/rl_surface_view_parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

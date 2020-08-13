@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -15,17 +16,22 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.myplayer.KzgPlayer;
 import com.example.myplayer.TimeInfoBean;
 import com.example.myplayer.VideoRange.VideoRangeView;
 import com.example.myplayer.opengl.KzgGLSurfaceView;
+import com.wang.avi.AVLoadingIndicatorView;
 
 
 public class VideoRangeActivity extends AppCompatActivity implements View.OnClickListener {
 
     String inputPath = Environment.getExternalStorageDirectory() + "/video5.mp4";
+
+    private static final int PLAY_ENABLE_CHANGE_HANDLER = 1001;
+
 
     private KzgGLSurfaceView surfaceView;
     private VideoRangeView videoRangeView;
@@ -33,6 +39,25 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
     private KzgPlayer kzgPlayer;
     private RelativeLayout relativeLayout;
     private ImageView ivPlay;
+    private AVLoadingIndicatorView avLoading;
+
+
+    private Handler handler = new Handler(new Handler.Callback(){
+        @Override
+        public boolean handleMessage(@NonNull Message msg) {
+            switch (msg.what){
+                case PLAY_ENABLE_CHANGE_HANDLER:
+                    if (ivPlay != null && ivPlay.getVisibility() == View.GONE && (boolean)msg.obj){
+                        ivPlay.setVisibility(View.VISIBLE);
+                        avLoading.hide();
+                    }
+                    break;
+            }
+
+
+            return false;
+        }
+    });
 
 
 
@@ -48,7 +73,6 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
 
-
         init();
     }
 
@@ -58,6 +82,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
         surfaceView = findViewById(R.id.sv_video_view);
         videoRangeView = findViewById(R.id.vrv_video_range);
         ivPlay = findViewById(R.id.iv_play_stop_video);
+        avLoading = findViewById(R.id.av_loading);
     }
 
 
@@ -66,6 +91,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void init(){
+        avLoading.show();
         kzgPlayer = new KzgPlayer();
         kzgPlayer.setKzgGLSurfaceView(surfaceView);
         videoRangeView.setPlayer(kzgPlayer);
@@ -81,7 +107,6 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                 }*/
             }
         });
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -98,6 +123,8 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                 });
             }
         }).start();
+
+
     }
 
     public void begin() {
@@ -109,6 +136,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             @Override
             public void onError(int code,String msg) {
                 Log.e("kzg","************************error:"+msg);
+                avLoading.hide();
             }
 
             @Override
@@ -137,6 +165,16 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
                 //Log.e("kzg","*********************timeInfoBean:"+timeInfoBean);
 
+            }
+
+            @Override
+            public void onEnablePlayChange(boolean enable) {
+                if (handler != null){
+                    Message message = new Message();
+                    message.what = PLAY_ENABLE_CHANGE_HANDLER;
+                    message.obj = enable;
+                    handler.sendMessage(message);
+                }
             }
 
             @Override
@@ -224,6 +262,9 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                     ivPlay.setImageResource(R.drawable.play_ico);
                 }else if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_FRAME_PREVIEW){
                     //播放
+                    if (!kzgPlayer.enablePlay){
+                        return;
+                    }
                     kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT);
                     ivPlay.setImageResource(R.drawable.stop_ico);
                 }

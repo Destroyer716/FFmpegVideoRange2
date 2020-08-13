@@ -55,8 +55,8 @@ public:
     void onCallInitMediaCodecByYUV(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1);
     void onCallDecodeAVPacketByYUV(int dataSize,uint8_t *data,int width,int height, double timstamp);
     int onCallJavaQueueSize(int thread);
-
     void onCallVideoInfo(int thread,int fps,int64_t duration,int width,int height);
+    void onEnablePlay(bool enable,int thread);
 
 public:
     JavaVM *javaVm;
@@ -78,6 +78,7 @@ public:
     jmethodID jmid_decodeAVPacketYUV;
     jmethodID jmid_calljavaqueuesize;
     jmethodID jmid_getVideoInfo;
+    jmethodID jmid_enablePlay;
 
 };
 

@@ -25,6 +25,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_decodeAVPacketYUV = env->GetMethodID(jclass1,"decodeAVPacketForYUV","(I[BIID)V");
     jmid_calljavaqueuesize = env->GetMethodID(jclass1,"onCallJavaQueueSize","()I");
     jmid_getVideoInfo = env->GetMethodID(jclass1,"onGetVideoInfo","(IJII)V");
+    jmid_enablePlay = env->GetMethodID(jclass1,"onEnableStartPlay","(Z)V");
 }
 
 JavaCallHelper::~JavaCallHelper() {
@@ -308,6 +309,19 @@ JavaCallHelper::onCallVideoInfo(int thread, int fps, int64_t duration, int width
         javaVm->DetachCurrentThread();
     } else{
         env->CallVoidMethod(jobj,jmid_getVideoInfo,fps,duration,width,height);
+    }
+}
+
+void JavaCallHelper::onEnablePlay(bool enable, int thread) {
+    if (thread == THREAD_CHILD){
+        JNIEnv *jniEnv;
+        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+            return;
+        }
+        jniEnv->CallVoidMethod(jobj,jmid_enablePlay,enable);
+        javaVm->DetachCurrentThread();
+    } else{
+        env->CallVoidMethod(jobj,jmid_enablePlay,enable);
     }
 }
 
