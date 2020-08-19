@@ -3,14 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:id="@+id/video_range_view_root">
 
     <com.example.myplayer.VideoRange.DividingView
         android:id="@+id/dv_kedu"
         android:layout_width="wrap_content"
         android:layout_height="30dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
+    <com.example.myplayer.VideoRange.VideoRangeRecyclerView
         android:id="@+id/rl_video_pre_recyclerview"
         android:layout_width="wrap_content"
         android:layout_height="80dp"

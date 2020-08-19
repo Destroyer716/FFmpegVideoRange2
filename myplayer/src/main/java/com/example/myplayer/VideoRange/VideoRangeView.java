@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -53,7 +54,7 @@ public class VideoRangeView extends FrameLayout {
     private ThreadPoolExecutor threadPoolExecutor;
 
     private Context mContext;
-    private RecyclerView videoPreRecyclerView;
+    private VideoRangeRecyclerView videoPreRecyclerView;
     private DividingView dividingView;
     //当前预览位置的线
     private View currentPreLine;
@@ -62,6 +63,9 @@ public class VideoRangeView extends FrameLayout {
     private VideoPreViewAdapter adapter;
     private FFmpegMediaMetadataRetriever fmmr;
     private VideoToFrames videoToFrames;
+
+    //是否拦截触摸事件
+    public static boolean isIntercept = false;
 
     private List<Bitmap> bitmapList = new ArrayList<>();
     private int videoDuration = 0;
@@ -106,6 +110,14 @@ public class VideoRangeView extends FrameLayout {
         currentPreLine = inflate.findViewById(R.id.v_current_line);
         recyclerViewLeftPaddin = getScreenWidth()/2;
 
+        findViewById(R.id.video_range_view_root).setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.e("kzg","**********************video_range_view_root");
+                return false;
+            }
+        });
+
 
 
         videoPreRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -125,7 +137,6 @@ public class VideoRangeView extends FrameLayout {
                 if (l - lastChangeTime < 50){
                     return;
                 }
-                Log.e("kzg","**********************addOnScrollListener22222");
                 lastChangeTime = l;
                 //计算当前的对应的预览图
                 int millTime = 0;
@@ -439,4 +450,75 @@ public class VideoRangeView extends FrameLayout {
         int height = wm.getDefaultDisplay().getHeight();
         return width;
     }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        Log.e("kzg","********************** VideoRangeView dispatchTouchEvent:"+isIntercept);
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+
+        Log.e("kzg","********************** VideoRangeView onInterceptTouchEvent:"+isIntercept);
+        switch (ev.getAction() & MotionEvent.ACTION_MASK) {
+            case MotionEvent.ACTION_DOWN:
+                Log.e("kzg","********************** VideoRangeView ACTION_DOWN111111");
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                //屏幕上已经有一个点按住 再按下一点时触发该事件
+                Log.e("kzg","********************** VideoRangeView ACTION_POINTER_DOWN111111");
+                isIntercept = true;
+                videoPreRecyclerView.setIntercept(!isIntercept);
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                //屏幕上已经有两个点按住 再松开一点时触发该事件
+                Log.e("kzg","********************** VideoRangeView ACTION_POINTER_UP111111");
+                isIntercept = false;
+                videoPreRecyclerView.setIntercept(!isIntercept);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                Log.e("kzg","********************** VideoRangeView ACTION_MOVE111111");
+                break;
+            case MotionEvent.ACTION_UP:
+                Log.e("kzg","********************** VideoRangeView ACTION_UP111111");
+                break;
+        }
+        /*if (isIntercept){
+            return isIntercept;
+        }*/
+
+        return super.onInterceptTouchEvent(ev);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.e("kzg","********************** VideoRangeView onTouchEvent:"+isIntercept);
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+            case MotionEvent.ACTION_DOWN:
+                Log.e("kzg","********************** VideoRangeView ACTION_DOWN222222");
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                //屏幕上已经有一个点按住 再按下一点时触发该事件
+                Log.e("kzg","********************** VideoRangeView ACTION_POINTER_DOWN222222");
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                //屏幕上已经有两个点按住 再松开一点时触发该事件
+                Log.e("kzg","********************** VideoRangeView ACTION_POINTER_UP222222");
+                isIntercept = false;
+                videoPreRecyclerView.setIntercept(!isIntercept);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                Log.e("kzg","********************** VideoRangeView ACTION_MOVE222222");
+                break;
+            case MotionEvent.ACTION_UP:
+                Log.e("kzg","********************** VideoRangeView ACTION_UP222222");
+                break;
+        }
+       /* if (isIntercept){
+            return isIntercept;
+        }*/
+        return  true;
+    }
+
 }

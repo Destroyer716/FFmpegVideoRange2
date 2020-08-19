@@ -220,21 +220,18 @@ void KzgFFmpeg::start() {
         if (!kzgVideo->kzgPlayerStatus->isFramePreview){
             if (kzgAudio->queue->getQueueSize() > 40){
                 av_usleep(1000*100);
-                LOGE("1111111111111111");
                 continue;
             }
         }
 
 
         if (kzgVideo->queue->getQueueSize() > 40){
-            LOGE("22222222222");
             av_usleep(1000*20);
             continue;
         }
 
         if (kzgVideo->kzgPlayerStatus->isFramePreview){
             if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->queue->getQueueSize() > 5 && kzgVideo->kzgPlayerStatus->isSeekPause){
-                LOGE("333333333333");
                 av_usleep(1000*1);
                 continue;
             } else{
@@ -245,7 +242,6 @@ void KzgFFmpeg::start() {
                     queueSize = kzgVideo->frameQueue->getQueueSize();
                 }
                 if (queueSize >= 90){
-                    LOGE("444444444444444");
                     av_usleep(1000*10);
                     continue;
                 }

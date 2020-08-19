@@ -51,13 +51,11 @@ int KzgAudio::play_t(void **pcmbuf) {
 
         if (playerStatus->seeking){
             av_usleep(1000*100);
-            LOGE("121212121212");
             continue;
         }
 
         if (playerStatus->isFramePreview){
             av_usleep(1000*100);
-            LOGE("13131313131313");
             continue;
         }
 
@@ -68,7 +66,6 @@ int KzgAudio::play_t(void **pcmbuf) {
                 playerStatus->loading = true;
                 helper->onLoad(true,THREAD_CHILD);
             }
-            LOGE("14141414141414");
             av_usleep(1000*100);
             continue;
         } else{
@@ -88,7 +85,6 @@ int KzgAudio::play_t(void **pcmbuf) {
                 av_free(avPacket);
                 avPacket = NULL;
                 pthread_mutex_unlock(&codecMute);
-                LOGE("16161616161616");
                 continue;
             }
             ret = avcodec_send_packet(avCodecContext,avPacket);
@@ -97,7 +93,6 @@ int KzgAudio::play_t(void **pcmbuf) {
                 av_free(avPacket);
                 avPacket = NULL;
                 pthread_mutex_unlock(&codecMute);
-                LOGE("17171717171717");
                 continue;
             }
         }
@@ -114,7 +109,6 @@ int KzgAudio::play_t(void **pcmbuf) {
             av_free(avFrame);
             avFrame = NULL;
             pthread_mutex_unlock(&codecMute);
-            LOGE("18181818181818");
             continue;
         }
         isReadFrameFinish = false;

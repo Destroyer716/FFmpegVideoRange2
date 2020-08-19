@@ -68,7 +68,6 @@ void *videoPlay(void *arg){
         }*/
 
         if (kzgVideo->kzgPlayerStatus->isPause){
-            LOGE("77777777777");
             av_usleep(1000 * 100);
             continue;
         }
@@ -79,7 +78,6 @@ void *videoPlay(void *arg){
                 kzgVideo->kzgPlayerStatus->loading = true;
                 kzgVideo->helper->onLoad(true,THREAD_CHILD);
             }
-            LOGE("888888888");
             av_usleep(1000 * 20);
             continue;
         } else{
@@ -97,7 +95,6 @@ void *videoPlay(void *arg){
                 queueSize = kzgVideo->frameQueue->getQueueSize();
             }
             if (queueSize >= 90){
-                LOGE("99999999");
                 av_usleep(1000*10);
                 continue;
             }
@@ -105,7 +102,6 @@ void *videoPlay(void *arg){
 
         if(kzgVideo->kzgPlayerStatus->isSeekPause && kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
             av_usleep(1000*1);
-            LOGE("1010101010101010");
             continue;
         }
 
@@ -311,7 +307,7 @@ void *videoPlay(void *arg){
                             gettimeofday(&tv,NULL);
                             long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
                             kzgVideo->helper->onEnablePlay(true,THREAD_CHILD);
-                            LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
+                            //LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
                         }
 
 

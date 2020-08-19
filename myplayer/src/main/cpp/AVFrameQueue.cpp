@@ -121,7 +121,7 @@ void AVFrameQueue::clearAvPacket() {
     pthread_cond_signal(&condPacket);
     pthread_mutex_lock(&mutexPacket);
     while (!queuePacket.empty()){
-        LOGE("AVFrameQueue  release   isCrop：%d",this->playerStatus->isCrop);
+        //LOGE("AVFrameQueue  release   isCrop：%d",this->playerStatus->isCrop);
         AVFrame * avFrame = queuePacket.front();
         queuePacket.pop();
         if (this->playerStatus->isCrop){
