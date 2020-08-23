@@ -1,6 +1,7 @@
 package com.example.myplayer.VideoRange;
 
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.View;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,7 +24,7 @@ public class SpacesItemDecoration2 extends RecyclerView.ItemDecoration{
       outRect.right = 0;
     } else if (thumbnailsCount > 1 && position == thumbnailsCount - 1) {
       outRect.left = 0;
-      outRect.right = space;
+      outRect.right = 0;
     } else {
       outRect.left = 0;
       outRect.right = 0;

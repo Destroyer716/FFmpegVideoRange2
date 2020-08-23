@@ -271,7 +271,7 @@ public class VideoToFrames implements Runnable {
                         Bitmap frameAtTime2 = Bitmap.createScaledBitmap(bitmap, 120, 160, false);
                         bitmap.recycle();
                         bitmap = null;
-                        onGetFrameBitmapCallback.onGetBitmap(frameAtTime2);
+                        onGetFrameBitmapCallback.onGetBitmap(frameAtTime2,info.presentationTimeUs);
                     }
                     stream.close();
 
@@ -585,7 +585,7 @@ public class VideoToFrames implements Runnable {
         this.onGetFrameBitmapCallback = onGetFrameBitmapCallback;
     }
     public interface OnGetFrameBitmapCallback{
-        void onGetBitmap(Bitmap bitmap);
+        void onGetBitmap(Bitmap bitmap,long usTime);
         void onCodecStart();
     }
 }

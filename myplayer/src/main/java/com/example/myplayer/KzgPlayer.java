@@ -8,13 +8,13 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Build;
-import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.RequiresApi;
 
+import com.example.myplayer.bean.YUVBean;
 import com.example.myplayer.mediacodec.KzglVideoSupportUtil;
 import com.example.myplayer.opengl.KzgGLSurfaceView;
 import com.example.myplayer.opengl.KzgGlRender;
@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.acl.LastOwnerException;
 
 /**
  * Created By Ele

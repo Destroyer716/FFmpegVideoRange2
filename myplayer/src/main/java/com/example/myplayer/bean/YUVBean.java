@@ -1,4 +1,4 @@
-package com.example.myplayer;
+package com.example.myplayer.bean;
 
 /**
  * Created By Ele

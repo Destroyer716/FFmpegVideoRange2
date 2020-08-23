@@ -128,6 +128,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void begin() {
+        Log.e("kzg","**********************begin:"+kzgPlayer);
         kzgPlayer.setSource(inputPath);
         //kzgPlayer.setSource("/storage/emulated/0/嗜人之夜_1080P.x264.官方中文字幕.eng.chs.aac.mp4");
         kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);

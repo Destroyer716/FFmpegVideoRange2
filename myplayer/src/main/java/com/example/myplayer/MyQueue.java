@@ -1,6 +1,7 @@
 package com.example.myplayer;
 
-import java.util.LinkedList;
+import com.example.myplayer.bean.YUVBean;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
