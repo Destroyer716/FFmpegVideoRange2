@@ -1,4 +1,4 @@
-package com.example.myplayer;
+package com.example.myplayer.utils;
 
 import android.graphics.BitmapFactory;
 

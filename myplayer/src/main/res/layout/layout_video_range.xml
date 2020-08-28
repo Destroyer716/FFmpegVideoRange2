@@ -3,20 +3,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:id="@+id/video_range_view_root">
+    android:layout_height="wrap_content">
 
-    <com.example.myplayer.VideoRange.DividingView
-        android:id="@+id/dv_kedu"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp" />
-
-    <com.example.myplayer.VideoRange.VideoRangeRecyclerView
-        android:id="@+id/rl_video_pre_recyclerview"
+    <com.example.myplayer.VideoRange.VideoRangeHorizontalScrollView
+        android:id="@+id/hsv_scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_below="@+id/dv_kedu"
-        android:clipToPadding="false"/>
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.example.myplayer.VideoRange.DividingView
+                android:id="@+id/dv_kedu"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_below="@+id/dv_kedu">
+
+                <com.example.myplayer.VideoRange.VideoTrackView
+                    android:id="@+id/vt_video_track"
+                    android:layout_width="wrap_content"
+                    android:layout_height="80dp"/>
+
+
+            </LinearLayout>
+
+
+        </RelativeLayout>
+
+    </com.example.myplayer.VideoRange.VideoRangeHorizontalScrollView>
+
 
 
     <View
@@ -26,5 +48,7 @@
         android:background="@color/colorAccent"
         android:layout_marginTop="20dp"
         android:layout_centerHorizontal="true"/>
+
+
 
 </RelativeLayout>

@@ -15,7 +15,7 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import com.example.myplayer.Utils;
+import com.example.myplayer.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

@@ -5,12 +5,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 
-import com.example.myplayer.Utils;
+import com.example.myplayer.utils.Utils;
 
 
 /**
@@ -20,6 +20,8 @@ import com.example.myplayer.Utils;
 public class DividingView extends View {
 
     public static final int maxPadding = 50;
+
+    private OnRequestLayoutListener onRequestLayoutListener;
 
     private Paint pointPaint;
     private Paint textPaint;
@@ -34,6 +36,8 @@ public class DividingView extends View {
     private int lastPointPadding = 0;
     //一秒之间有多个个点，最多3个
     private int secondPointNum = 0;
+    //总共缩放的长度
+    private int totalPadding = 0;
 
     public DividingView(Context context) {
         super(context);
@@ -66,7 +70,7 @@ public class DividingView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        super.onMeasure(MeasureSpec.makeMeasureSpec(maxWidth + totalPadding + 2*rvLeftPaddin,MeasureSpec.getMode(widthMeasureSpec)), heightMeasureSpec);
     }
 
     @Override
@@ -79,7 +83,7 @@ public class DividingView extends View {
         super.onDraw(canvas);
         if (videoPic != 0 && maxWidth != 0 ){
             int t = (maxWidth-0*rvLeftPaddin)/videoPic;
-
+            totalPadding = 0;
             for (int i=0;i<videoPic + 1;i++){
                 if (i > 0 && secondPointNum > 0){
                     int lastX = t*(i-1) + rvLeftPaddin +(i-1) *pointPadding;
@@ -94,11 +98,15 @@ public class DividingView extends View {
                 String parseTime = Utils.MilliToMinuteTime(i*1000);
                 float textWidth = textPaint.measureText(parseTime);
                 canvas.drawText(parseTime,t*i - (textWidth / 2) + rvLeftPaddin + i *pointPadding,20,textPaint);
-
-
+            }
+            totalPadding = videoPic *pointPadding;
+            requestLayout();
+            if (onRequestLayoutListener != null){
+                onRequestLayoutListener.onLayout();
             }
         }
     }
+
 
 
     public void setMaxWidth(int width){
@@ -118,7 +126,13 @@ public class DividingView extends View {
     }
 
     public void setPointPadding(int pointPadding) {
-        this.pointPadding = pointPadding;
+        if (pointPadding < 0){
+            pointPadding = 0;
+        }
+        if (pointPadding > maxPadding * 4){
+            pointPadding = maxPadding * 4;
+        }
+        this.pointPadding = pointPadding ;
         secondPointNum = pointPadding / maxPadding;
     }
 
@@ -136,5 +150,22 @@ public class DividingView extends View {
 
     public void setVideoPic(int videoPic) {
         this.videoPic = videoPic;
+    }
+
+    public int getTotalPadding() {
+        return totalPadding;
+    }
+
+    public void setOnRequestLayoutListener(OnRequestLayoutListener onRequestLayoutListener) {
+        this.onRequestLayoutListener = onRequestLayoutListener;
+    }
+
+    public void setTotalPadding(int totalPadding) {
+        this.totalPadding = totalPadding;
+    }
+
+
+    public interface OnRequestLayoutListener{
+        void onLayout();
     }
 }

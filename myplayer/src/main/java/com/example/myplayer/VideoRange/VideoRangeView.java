@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Point;
 import android.graphics.PointF;
-import android.media.MediaMetadataRetriever;
 import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -16,12 +14,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.example.myplayer.KzgPlayer;
@@ -58,16 +53,15 @@ public class VideoRangeView extends FrameLayout {
     private ThreadPoolExecutor threadPoolExecutor;
 
     private Context mContext;
-    private VideoRangeRecyclerView videoPreRecyclerView;
+    private VideoTrackView videoTrackView;
     private DividingView dividingView;
     //当前预览位置的线
     private View currentPreLine;
+    private VideoRangeHorizontalScrollView videoScrollView;
 
 
-    private VideoPreViewAdapter adapter;
     private FFmpegMediaMetadataRetriever fmmr;
     private VideoToFrames videoToFrames;
-    private MyLinearLayoutManager linearLayoutManager;
 
     private List<VideoBitmapBean> bitmapList = new ArrayList<>();
     private long videoDuration = 0;
@@ -87,6 +81,8 @@ public class VideoRangeView extends FrameLayout {
     private String videoFilePaht;
     //预览条的宽度
     private int maxWidth;
+    //初始化时预览条的宽度，未进行缩放的话就与maxWidth相等
+    private int defaultWidth;
 
 
 
@@ -122,31 +118,22 @@ public class VideoRangeView extends FrameLayout {
     private void init(Context context){
         this.mContext = context;
         View inflate = LayoutInflater.from(mContext).inflate(R.layout.layout_video_range, this, true);
-        videoPreRecyclerView = inflate.findViewById(R.id.rl_video_pre_recyclerview);
+        videoTrackView = inflate.findViewById(R.id.vt_video_track);
         dividingView = inflate.findViewById(R.id.dv_kedu);
         currentPreLine = inflate.findViewById(R.id.v_current_line);
+        videoScrollView = inflate.findViewById(R.id.hsv_scroll_view);
         recyclerViewLeftPaddin = getScreenWidth()/2;
+        videoTrackView.setPadding(recyclerViewLeftPaddin,videoTrackView.getTop(),videoTrackView.getRight(),videoTrackView.getBottom());
 
 
-        findViewById(R.id.video_range_view_root).setOnTouchListener(new OnTouchListener() {
+        videoScrollView.setOnScrollChangedListener(new VideoRangeHorizontalScrollView.OnScrollChangedListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                Log.e("kzg","**********************video_range_view_root");
-                return false;
-            }
-        });
-
-
-
-        videoPreRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-
+            public void onScrollChanged(int x, int y, int oldx, int oldy) {
                 long l = System.currentTimeMillis();
 
-                scrollCount += dx;
-                dividingView.scrollBy(dx,0);
+                int changeX = (x - scrollCount);
+                scrollCount = x;
+                //dividingView.scrollBy((x - scrollCount),0);
 
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     return;
@@ -159,36 +146,81 @@ public class VideoRangeView extends FrameLayout {
                 //计算当前的对应的预览图
                 int millTime = 0;
                 if (scrollCount > 0 && itemWidth > 0){
-                    int scrollTime = scrollCount / itemWidth; //获取秒数
-                    millTime = (int) (((float)scrollCount % (float)itemWidth)/itemWidth * 1000) + scrollTime * 1000;
+                    //旧的计算滑动所在的时间戳
+                    /*int scrollTime = scrollCount / itemWidth; //获取秒数
+                    millTime = (int) (((float)scrollCount % (float)itemWidth)/itemWidth * 1000) + scrollTime * 1000;*/
+
+                    double percent = ((double) scrollCount) / maxWidth;
+                    millTime = (int) (percent * videoDuration);
                 }
                 if (player != null){
-                    if (dx > 0){
+                    if (changeX > 0){
                         player.showFrame(millTime / 1000.0,KzgPlayer.seek_advance);
-                    }else if (dx < 0){
+                    }else if (changeX < 0){
                         player.showFrame(millTime / 1000.0,KzgPlayer.seek_back);
                     }
 
                 }
-                 if (videoRangeViewListener != null && (millTime - lastShowTime)>=fps ){
-                     videoRangeViewListener.onScrollerX(millTime, null );
-                     lastShowTime = millTime;
+                if (videoRangeViewListener != null && (millTime - lastShowTime)>=fps ){
+                    videoRangeViewListener.onScrollerX(millTime, null );
+                    lastShowTime = millTime;
                 }
             }
         });
 
+        //预览条随着刻度缩放
+        dividingView.setOnRequestLayoutListener(new DividingView.OnRequestLayoutListener() {
+            @Override
+            public void onLayout() {
+                if (isDoublePoint){
+                    //计算缩放前中线位置对应的百分比
+                    float percent = (float)(scrollCount) /maxWidth;
+
+                    //计算新的预览条宽度，并计算应该增加几张图片
+                    maxWidth = defaultWidth + dividingView.getTotalPadding();
+
+                    //计算缩放后应该将预览条滚动多少才能保持中线所在的位置的比例不变
+                    int scrollX = (int) (percent * maxWidth);
+                    videoScrollView.scrollBy(scrollX - scrollCount,0);
+
+
+                    int currentPicNum = maxWidth /itemWidth;
+                    if (maxWidth /itemWidth > 0){
+                        currentPicNum += 1;
+                    }
+                    //视频预览条
+                    int addNum = currentPicNum - bitmapList.size();
+                    if(addNum > 0){
+                        //拉伸
+                        for (int i=0;i<addNum;i++){
+                            long itemMillTime = videoDuration / bitmapList.size();
+                            stretchVideoPreList(itemMillTime);
+                        }
+                    }else if (addNum < 0){
+                        //缩短
+                        addNum = Math.abs(addNum);
+                        for (int i=0;i<addNum;i++){
+                            long itemMillTime = videoDuration / (bitmapList.size() - 1);
+                            shortenVideoPreList(itemMillTime);
+                        }
+                        videoTrackView.updateData(bitmapList);
+                    }
+
+                    ViewGroup.LayoutParams layoutParamsVideoTrack = videoTrackView.getLayoutParams();
+                    layoutParamsVideoTrack.width = maxWidth + recyclerViewLeftPaddin;
+                    videoTrackView.setLayoutParams(layoutParamsVideoTrack);
+
+
+                }
+            }
+        });
 
         threadPoolExecutor = new ThreadPoolExecutor(5,8,3, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>(50));
     }
 
     private void initRecyclerView(int countItm){
-        adapter = new VideoPreViewAdapter(mContext);
-        linearLayoutManager = new MyLinearLayoutManager(mContext);
-        linearLayoutManager.setOrientation(RecyclerView.HORIZONTAL);
-        videoPreRecyclerView.addItemDecoration(new SpacesItemDecoration2(recyclerViewLeftPaddin,countItm));
-        videoPreRecyclerView.setLayoutManager(linearLayoutManager);
-        videoPreRecyclerView.setPadding(videoPreRecyclerView.getPaddingLeft(),videoPreRecyclerView.getPaddingTop(),recyclerViewLeftPaddin,videoPreRecyclerView.getPaddingBottom());
-        videoPreRecyclerView.setAdapter(adapter);
+
+
     }
 
 
@@ -269,11 +301,12 @@ public class VideoRangeView extends FrameLayout {
                     ((Activity)mContext).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            adapter.addData(videoBitmapBean);
+                            videoTrackView.addData(videoBitmapBean);
                             if (finalI == 1){
-                                int with = videoPreRecyclerView.computeHorizontalScrollRange();
+                                int with = videoTrackView.getItemPicWidth();
                                 itemWidth = with-recyclerViewLeftPaddin;
                                 maxWidth = itemWidth * duration;
+                                defaultWidth = maxWidth;
                                 dividingView.setMaxWidth(maxWidth);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
@@ -330,18 +363,22 @@ public class VideoRangeView extends FrameLayout {
                                     }
                                     bitmapList.add(videoBitmapBean);
                                 }
-                                adapter.setDataList(bitmapList);
+                                videoTrackView.setData(bitmapList);
                             }else {
                                 VideoBitmapBean videoBitmapBean = new VideoBitmapBean(bitmap, usTime);
-                                adapter.setData(i[0],videoBitmapBean);
+                                videoTrackView.updateData(videoBitmapBean,i[0]);
+                                VideoBitmapBean bitmapBean = bitmapList.get(i[0]);
+                                bitmapBean.setBitmap(bitmap);
+                                bitmapBean.setPresentationTimeUs(usTime);
                             }
                             //adapter.addData(bitmap);
                             if (i[0] == 1){
                                 /*int with = videoPreRecyclerView.computeHorizontalScrollRange();
                                 itemWidth = with-recyclerViewLeftPaddin;*/
-                                itemWidth = videoPreRecyclerView.getChildAt(0).getWidth();
+                                itemWidth = videoTrackView.getItemPicWidth();
                                 Log.e("kzg","**********************itemWidth:"+itemWidth);
                                 maxWidth = itemWidth * duration;
+                                defaultWidth = maxWidth;
                                 dividingView.setMaxWidth(maxWidth);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
@@ -371,11 +408,9 @@ public class VideoRangeView extends FrameLayout {
 
 
     public void setPlayPercent(float percent){
-        if (videoPreRecyclerView != null){
-            Log.e("kzg","**********************percent:"+percent);
+        if (videoTrackView != null){
             int scrollX = (int) (maxWidth * percent);
-            Log.e("kzg","**********************scrollX:"+scrollX);
-            videoPreRecyclerView.smoothScrollBy(scrollX - scrollCount,0);
+            //videoTrackView.smoothScrollBy(scrollX - scrollCount,0);
         }
     }
 
@@ -473,7 +508,7 @@ public class VideoRangeView extends FrameLayout {
         return width;
     }
 
-    @Override
+   @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         switch (ev.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
@@ -481,19 +516,20 @@ public class VideoRangeView extends FrameLayout {
             case MotionEvent.ACTION_POINTER_DOWN:
                 //屏幕上已经有一个点按住 再按下一点时触发该事件
                 isIntercept = true;
-                videoPreRecyclerView.setIntercept(!isIntercept);
+                videoScrollView.setIntercept(!isIntercept);
                 doublePointDistance = getDoubleFingerDistance(ev);
                 isDoublePoint = true;
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 //屏幕上已经有两个点按住 再松开一点时触发该事件
                 isIntercept = false;
-                videoPreRecyclerView.setIntercept(!isIntercept);
+                isDoublePoint = false;
+                videoScrollView.setIntercept(!isIntercept);
                 dividingView.setLastPointPadding(dividingView.getPointPadding());
                 totalZoomWidth = 0;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (ev.getPointerCount() == 2 && dividingView.getPointPadding() <=DividingView.maxPadding * 5 && dividingView.getPointPadding() >=0){
+                if (ev.getPointerCount() == 2 /*&& dividingView.getPointPadding() < DividingView.maxPadding * 4 && dividingView.getPointPadding() >=0*/){
                     float tempDoubleDistance = getDoubleFingerDistance(ev);
                     //数字刻度
                     if (tempDoubleDistance - doublePointDistance>0){
@@ -503,21 +539,7 @@ public class VideoRangeView extends FrameLayout {
                         //缩短
                         dividingView.setPointPadding((int) ((tempDoubleDistance - doublePointDistance)*0.3 + dividingView.getLastPointPadding()));
                     }
-                    ViewGroup.LayoutParams layoutParams = dividingView.getLayoutParams();
-                    layoutParams.width = layoutParams.width + dividingView.getPointPadding()*dividingView.getVideoPic();
-                    dividingView.setLayoutParams(layoutParams);
-                    maxWidth = layoutParams.width - 2*recyclerViewLeftPaddin;
                     dividingView.invalidate();
-
-
-                    bitmapList.add(bitmapList.get(bitmapList.size() - 1));
-                    adapter.notifyDataSetChanged();
-                    linearLayoutManager.setMaxWidth(1000);
-                    videoPreRecyclerView.requestLayout();
-
-
-                    //视频预览条
-                    //zoomVideoPreList();
 
                 }
                 break;
@@ -527,7 +549,7 @@ public class VideoRangeView extends FrameLayout {
         return super.dispatchTouchEvent(ev);
     }
 
-    @Override
+    /* @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
 
         switch (ev.getAction() & MotionEvent.ACTION_MASK) {
@@ -536,67 +558,92 @@ public class VideoRangeView extends FrameLayout {
             case MotionEvent.ACTION_POINTER_DOWN:
                 //屏幕上已经有一个点按住 再按下一点时触发该事件
                 isIntercept = true;
-                videoPreRecyclerView.setIntercept(!isIntercept);
+                videoTrackView.setIntercept(!isIntercept);
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 //屏幕上已经有两个点按住 再松开一点时触发该事件
                 isIntercept = false;
-                videoPreRecyclerView.setIntercept(!isIntercept);
+                videoTrackView.setIntercept(!isIntercept);
                 break;
             case MotionEvent.ACTION_MOVE:
                 break;
             case MotionEvent.ACTION_UP:
                 break;
         }
-        /*if (isIntercept){
-            return isIntercept;
-        }*/
+
 
         return super.onInterceptTouchEvent(ev);
-    }
+    }*/
 
+/*
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
+                Log.e("kzg","**********************ACTION_DOWN");
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
                 //屏幕上已经有一个点按住 再按下一点时触发该事件
+                Log.e("kzg","**********************ACTION_POINTER_DOWN");
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 //屏幕上已经有两个点按住 再松开一点时触发该事件
+                Log.e("kzg","**********************ACTION_POINTER_UP");
                 isIntercept = false;
-                videoPreRecyclerView.setIntercept(!isIntercept);
+                videoTrackView.setIntercept(!isIntercept);
                 break;
             case MotionEvent.ACTION_MOVE:
+                Log.e("kzg","**********************ACTION_MOVE");
                 break;
             case MotionEvent.ACTION_UP:
                 break;
         }
-       /* if (isIntercept){
-            return isIntercept;
-        }*/
+
         return  super.onTouchEvent(event);
     }
+*/
 
 
-    private void zoomVideoPreList(){
+    /**
+     * 拉伸预览条
+     * @param itemMillTime
+     */
+    private void stretchVideoPreList(long itemMillTime){
         int i = 1;
         for (;i<bitmapList.size();i++){
             VideoBitmapBean next = bitmapList.get(i);
             long currentDur = (long) (((float)(itemWidth *(i+1))) / maxWidth * videoDuration);
-            if (next.getPresentationTimeUs()/1000 - currentDur > (videoDuration/bitmapList.size())*0.5){
-                Log.e("kzg","**********************i:"+i + "  ,next:"+next.getPresentationTimeUs() + "  ,currentDur:" + currentDur + "  ,bitmapList.size():"+bitmapList.size());
+            if (next.getPresentationTimeUs()/1000 - currentDur > itemMillTime){
                 VideoBitmapBean bitmapBean = new VideoBitmapBean(next.getBitmap(),currentDur * 1000);
                 bitmapList.add(i,bitmapBean);
-                adapter.notifyDataSetChanged();
+                videoTrackView.addData(bitmapBean,i);
                 break;
             }
         }
-        if (i<bitmapList.size() - 1){
-            zoomVideoPreList();
-        }
     }
+
+    /**
+     * 缩短预览条
+     * @param itemMillTime
+     */
+    private void shortenVideoPreList(Long itemMillTime){
+        int i = 0;
+        Iterator<VideoBitmapBean> iterator = bitmapList.iterator();
+        while (iterator.hasNext()){
+            if (i > 0){
+                VideoBitmapBean next = iterator.next();
+                long currentDur = (long) (((float)(itemWidth *(i+1))) / maxWidth * videoDuration);
+                if (currentDur - next.getPresentationTimeUs()/1000 > itemMillTime){
+                    iterator.remove();
+                    //videoTrackView.remove(i);
+                    break;
+                }
+            }
+            i ++ ;
+        }
+
+    }
+
 
     /**
      * 计算零个手指间的距离
