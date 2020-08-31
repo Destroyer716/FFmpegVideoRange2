@@ -153,13 +153,17 @@ public class VideoTrackView extends FrameLayout {
         if (data == null){
             return;
         }
+        int i=0;
         for (VideoBitmapBean bean:data){
             ImageView imageView = new ImageView(mContext);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(itemPicWidth, ViewGroup.LayoutParams.MATCH_PARENT);
             imageView.setLayoutParams(layoutParams);
-            imageView.setImageBitmap(bean.getBitmap());
+            if (i < 100){
+                imageView.setImageBitmap(bean.getBitmap());
+            }
             llVideoPicList.addView(imageView);
+            i ++;
         }
 
     }

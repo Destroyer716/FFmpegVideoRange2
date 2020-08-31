@@ -575,6 +575,10 @@ public class VideoToFrames implements Runnable {
     }
 
 
+    public void setStopDecode(boolean stopDecode) {
+        this.stopDecode = stopDecode;
+    }
+
     private OnGetFrameBitmapCallback onGetFrameBitmapCallback;
 
     public OnGetFrameBitmapCallback getOnGetFrameBitmapCallback() {

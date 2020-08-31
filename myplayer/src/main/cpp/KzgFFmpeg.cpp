@@ -279,7 +279,7 @@ void KzgFFmpeg::start() {
             while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
                 if (kzgVideo->queue->getQueueSize() > 0 || kzgVideo->frameQueue->getQueueSize() > 0 || kzgVideo->helper->onCallJavaQueueSize(THREAD_CHILD) > 0){
                     av_usleep(1000*20);
-                    LOGE("55555555555");
+                    //LOGE("55555555555");
                     continue;
                 } else{
                     if (!kzgPlayerStatus->seeking){
@@ -293,7 +293,7 @@ void KzgFFmpeg::start() {
                     break;
                 }
             }
-            LOGE("666666666666666");
+            //LOGE("666666666666666");
             continue;
             //break;
         }

@@ -185,7 +185,7 @@ public class VideoRangeView extends FrameLayout {
 
 
                     int currentPicNum = maxWidth /itemWidth;
-                    if (maxWidth /itemWidth > 0){
+                    if (maxWidth %itemWidth > 0){
                         currentPicNum += 1;
                     }
                     //视频预览条
@@ -349,6 +349,11 @@ public class VideoRangeView extends FrameLayout {
                         return;
                     }
 
+                    if (i[0] >= 100){
+                        videoToFrames.setStopDecode(true);
+                        bitmap.recycle();
+                        return;
+                    }
                     //bitmapList.add(bitmap);
                     //videoToFrames.seek(frameTimeArr[i[0] + 1]);
                     ((Activity)mContext).runOnUiThread(new Runnable() {
@@ -610,6 +615,7 @@ public class VideoRangeView extends FrameLayout {
      */
     private void stretchVideoPreList(long itemMillTime){
         int i = 1;
+        boolean isAdded = false;
         for (;i<bitmapList.size();i++){
             VideoBitmapBean next = bitmapList.get(i);
             long currentDur = (long) (((float)(itemWidth *(i+1))) / maxWidth * videoDuration);
@@ -617,8 +623,18 @@ public class VideoRangeView extends FrameLayout {
                 VideoBitmapBean bitmapBean = new VideoBitmapBean(next.getBitmap(),currentDur * 1000);
                 bitmapList.add(i,bitmapBean);
                 videoTrackView.addData(bitmapBean,i);
+                isAdded = true;
                 break;
             }
+        }
+        if (!isAdded){
+            //如果需要添加一帧图片，但是最后却没有添加，就主动添加一帧
+            int index = bitmapList.size() * 2 / 3;
+            VideoBitmapBean next = bitmapList.get(index);
+            long currentDur = (long) (((float)(itemWidth *(index+1))) / maxWidth * videoDuration);
+            VideoBitmapBean bitmapBean = new VideoBitmapBean(next.getBitmap(),currentDur * 1000);
+            bitmapList.add(index,bitmapBean);
+            videoTrackView.addData(bitmapBean,index);
         }
     }
 
