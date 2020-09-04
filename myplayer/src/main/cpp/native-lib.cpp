@@ -40,7 +40,6 @@ Java_com_example_myplayer_KzgPlayer_n_1parpared(
         JNIEnv *env,
         jobject jass ,
         jstring source) {
-
    const char *url = env->GetStringUTFChars(source, 0);
     if (kzgFFmpeg == NULL){
         if (helper == NULL){

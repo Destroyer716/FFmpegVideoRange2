@@ -264,11 +264,11 @@ public class VideoToFrames implements Runnable {
                         BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options);
 
                         options.inPreferredConfig = Bitmap.Config.RGB_565;
-                        int sampleSize = Utils.calculateInSampleSize(options,120, 160);
+                        int sampleSize = Utils.calculateInSampleSize(options,60, 80);
                         options.inSampleSize = sampleSize;
                         options.inJustDecodeBounds = false;
                         Bitmap bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
-                        Bitmap frameAtTime2 = Bitmap.createScaledBitmap(bitmap, 120, 160, false);
+                        Bitmap frameAtTime2 = Bitmap.createScaledBitmap(bitmap, 60, 80, false);
                         bitmap.recycle();
                         bitmap = null;
                         onGetFrameBitmapCallback.onGetBitmap(frameAtTime2,info.presentationTimeUs);
@@ -566,6 +566,7 @@ public class VideoToFrames implements Runnable {
     public void release(){
         stopDecode = true;
         if (childThread != null){
+            Log.e("kzg","**********************  VideoToFrames  release");
             try {
                 childThread.join();
             } catch (InterruptedException e) {

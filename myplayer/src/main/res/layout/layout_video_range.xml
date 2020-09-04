@@ -7,13 +7,14 @@
 
     <com.example.myplayer.VideoRange.VideoRangeHorizontalScrollView
         android:id="@+id/hsv_scroll_view"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:scrollbars="none">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <com.example.myplayer.VideoRange.DividingView
                 android:id="@+id/dv_kedu"
@@ -23,19 +24,18 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_below="@+id/dv_kedu">
+                android:orientation="horizontal">
 
                 <com.example.myplayer.VideoRange.VideoTrackView
                     android:id="@+id/vt_video_track"
                     android:layout_width="wrap_content"
-                    android:layout_height="80dp"/>
+                    android:layout_height="60dp"/>
 
 
             </LinearLayout>
 
 
-        </RelativeLayout>
+        </LinearLayout>
 
     </com.example.myplayer.VideoRange.VideoRangeHorizontalScrollView>
 

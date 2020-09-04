@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -38,6 +39,15 @@ public class DividingView extends View {
     private int secondPointNum = 0;
     //总共缩放的长度
     private int totalPadding = 0;
+    //是否改变了长度
+    private boolean isChange = true;
+    //限定绘制的区域
+    private int lefX = 0;
+    private int rightX = 0;
+    //已经滑动过的距离
+    private int scrollCount = 0;
+    //初始化时的预览条宽度
+    private int defaultWidth;
 
     public DividingView(Context context) {
         super(context);
@@ -70,21 +80,34 @@ public class DividingView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(maxWidth + totalPadding + 2*rvLeftPaddin,MeasureSpec.getMode(widthMeasureSpec)), heightMeasureSpec);
+        long start = System.currentTimeMillis();
+        super.onMeasure(MeasureSpec.makeMeasureSpec(defaultWidth + totalPadding + 2*rvLeftPaddin,MeasureSpec.getMode(widthMeasureSpec)), heightMeasureSpec);
+
+        if (onRequestLayoutListener != null){
+            //onRequestLayoutListener.onLayout();
+        }
+        Log.e("kzg","*************************onMeasure:"+(System.currentTimeMillis() - start) + "  ,  "+(defaultWidth + totalPadding));
     }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        long start = System.currentTimeMillis();
         super.onLayout(changed, left, top, right, bottom);
+        //Log.e("kzg","*************************onLayout:"+(System.currentTimeMillis() - start));
+
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        long start = System.currentTimeMillis();
         super.onDraw(canvas);
-        if (videoPic != 0 && maxWidth != 0 ){
-            int t = (maxWidth-0*rvLeftPaddin)/videoPic;
+        if (videoPic != 0 && defaultWidth != 0 ){
+            int t = (defaultWidth-0*rvLeftPaddin)/videoPic;
             totalPadding = 0;
             for (int i=0;i<videoPic + 1;i++){
+                if (t*i + rvLeftPaddin + i *pointPadding < lefX || t*i + rvLeftPaddin + i *pointPadding > rightX){
+                    continue;
+                }
                 if (i > 0 && secondPointNum > 0){
                     int lastX = t*(i-1) + rvLeftPaddin +(i-1) *pointPadding;
                     int currentX = t*i + rvLeftPaddin + i *pointPadding;
@@ -99,12 +122,37 @@ public class DividingView extends View {
                 float textWidth = textPaint.measureText(parseTime);
                 canvas.drawText(parseTime,t*i - (textWidth / 2) + rvLeftPaddin + i *pointPadding,20,textPaint);
             }
+
             totalPadding = videoPic *pointPadding;
-            requestLayout();
             if (onRequestLayoutListener != null){
-                onRequestLayoutListener.onLayout();
+                onRequestLayoutListener.onChangeWidth(totalPadding);
             }
+
+            Log.e("kzg","*************************onDraw11111:"+(System.currentTimeMillis() - start));
+            if (isChange){
+
+            }
+
         }
+        Log.e("kzg","*************************onDraw:"+(System.currentTimeMillis() - start));
+    }
+
+    public void setScaleFactor(float factor){
+        maxWidth = (int) (maxWidth * factor);
+        pointPadding = (maxWidth - defaultWidth)/videoPic;
+        if (pointPadding < 0){
+            pointPadding = 0;
+        }
+        if (pointPadding > maxPadding * 4){
+            pointPadding = maxPadding * 4;
+        }
+        secondPointNum = pointPadding / maxPadding;
+        isChange = true;
+        postInvalidate();
+
+        /*ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        layoutParams.width = defaultWidth + totalPadding + 2*rvLeftPaddin;
+        setLayoutParams(layoutParams);*/
     }
 
 
@@ -115,26 +163,18 @@ public class DividingView extends View {
 
     public void setVideoPicNum(int num){
         videoPic = num;
+        isChange = true;
     }
 
     public void setLeftPaddin(int leftPaddin){
         rvLeftPaddin = leftPaddin;
+        isChange = true;
     }
 
     public int getPointPadding() {
         return pointPadding;
     }
 
-    public void setPointPadding(int pointPadding) {
-        if (pointPadding < 0){
-            pointPadding = 0;
-        }
-        if (pointPadding > maxPadding * 4){
-            pointPadding = maxPadding * 4;
-        }
-        this.pointPadding = pointPadding ;
-        secondPointNum = pointPadding / maxPadding;
-    }
 
     public int getLastPointPadding() {
         return lastPointPadding;
@@ -156,6 +196,42 @@ public class DividingView extends View {
         return totalPadding;
     }
 
+    public void setChange(boolean change) {
+        isChange = change;
+    }
+
+    public int getDefaultWidth() {
+        return defaultWidth;
+    }
+
+    public void setDefaultWidth(int defaultWidth) {
+        this.defaultWidth = defaultWidth;
+    }
+
+    /**
+     * 设置已经滚动的水平距离，并以此计算需要绘制的范围,减小绘制范围，降低draw方法时间
+     *
+     * @param scrollX
+     */
+    public void setDrawAround(int scrollX){
+        scrollCount = scrollX;
+        if (scrollX <= 0){
+            lefX = 0;
+            rightX = defaultWidth + totalPadding + 2*rvLeftPaddin;
+        }else {
+            if (scrollX <=3 * rvLeftPaddin){
+                lefX = 0;
+            }else {
+                lefX =  scrollX - 2 * rvLeftPaddin;
+            }
+            rightX = scrollX + 6 * rvLeftPaddin;
+        }
+    }
+
+
+
+
+
     public void setOnRequestLayoutListener(OnRequestLayoutListener onRequestLayoutListener) {
         this.onRequestLayoutListener = onRequestLayoutListener;
     }
@@ -167,5 +243,6 @@ public class DividingView extends View {
 
     public interface OnRequestLayoutListener{
         void onLayout();
+        void onChangeWidth(int changeWidth);
     }
 }

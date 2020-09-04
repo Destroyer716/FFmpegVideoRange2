@@ -1,6 +1,7 @@
 package com.example.myplayer.VideoRange;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -28,7 +29,10 @@ public class VideoTrackView extends FrameLayout {
     private LinearLayout llVideoPicList;
     private List<VideoBitmapBean>  data;
 
-    private int itemPicWidth = 120;
+    //每一张预览图的宽度
+    private int itemPicWidth = 100;
+    //最多显示多少张预览图
+    public static int maxPicNum = 300;
 
     /**
      * 重新渲染数据
@@ -36,6 +40,7 @@ public class VideoTrackView extends FrameLayout {
      */
     public void setData(List<VideoBitmapBean> data) {
         this.data = data;
+        maxPicNum = 100;
         showVideoPic();
     }
 
@@ -105,11 +110,14 @@ public class VideoTrackView extends FrameLayout {
             return;
         }
         ImageView imageView = new ImageView(mContext);
-        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(itemPicWidth, ViewGroup.LayoutParams.MATCH_PARENT);
         imageView.setLayoutParams(layoutParams);
         imageView.setImageBitmap(videoBitmapBean.getBitmap());
         llVideoPicList.addView(imageView,index);
+        if (llVideoPicList.getChildCount() > 300){
+            llVideoPicList.removeViewAt(llVideoPicList.getChildCount() - 1);
+        }
     }
 
     /**
@@ -120,7 +128,7 @@ public class VideoTrackView extends FrameLayout {
         if (llVideoPicList == null || index >= llVideoPicList.getChildCount()){
             return;
         }
-        llVideoPicList.removeViewAt(index);
+
     }
 
 
@@ -155,14 +163,16 @@ public class VideoTrackView extends FrameLayout {
         }
         int i=0;
         for (VideoBitmapBean bean:data){
+
             ImageView imageView = new ImageView(mContext);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imageView.setScaleType(ImageView.ScaleType.FIT_XY);
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(itemPicWidth, ViewGroup.LayoutParams.MATCH_PARENT);
             imageView.setLayoutParams(layoutParams);
-            if (i < 100){
+            if (i < maxPicNum){
                 imageView.setImageBitmap(bean.getBitmap());
             }
             llVideoPicList.addView(imageView);
+
             i ++;
         }
 
@@ -189,4 +199,5 @@ public class VideoTrackView extends FrameLayout {
         }
         return llVideoPicList.getChildCount();
     }
+
 }

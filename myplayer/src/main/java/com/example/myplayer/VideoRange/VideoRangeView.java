@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -26,6 +27,7 @@ import com.example.myplayer.mediacodecframes.OutputImageFormat;
 import com.example.myplayer.mediacodecframes.VideoToFrames;
 
 import java.io.File;
+import java.security.acl.LastOwnerException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -83,6 +85,7 @@ public class VideoRangeView extends FrameLayout {
     private int maxWidth;
     //初始化时预览条的宽度，未进行缩放的话就与maxWidth相等
     private int defaultWidth;
+    private ScaleGestureDetector mScaleGestureDetector;
 
 
 
@@ -118,6 +121,7 @@ public class VideoRangeView extends FrameLayout {
     private void init(Context context){
         this.mContext = context;
         View inflate = LayoutInflater.from(mContext).inflate(R.layout.layout_video_range, this, true);
+        mScaleGestureDetector = new ScaleGestureDetector(getContext(), onScaleGestureListener);
         videoTrackView = inflate.findViewById(R.id.vt_video_track);
         dividingView = inflate.findViewById(R.id.dv_kedu);
         currentPreLine = inflate.findViewById(R.id.v_current_line);
@@ -134,6 +138,7 @@ public class VideoRangeView extends FrameLayout {
                 int changeX = (x - scrollCount);
                 scrollCount = x;
                 //dividingView.scrollBy((x - scrollCount),0);
+                //dividingView.setChange(false);
 
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     return;
@@ -159,7 +164,6 @@ public class VideoRangeView extends FrameLayout {
                     }else if (changeX < 0){
                         player.showFrame(millTime / 1000.0,KzgPlayer.seek_back);
                     }
-
                 }
                 if (videoRangeViewListener != null && (millTime - lastShowTime)>=fps ){
                     videoRangeViewListener.onScrollerX(millTime, null );
@@ -173,16 +177,10 @@ public class VideoRangeView extends FrameLayout {
             @Override
             public void onLayout() {
                 if (isDoublePoint){
-                    //计算缩放前中线位置对应的百分比
-                    float percent = (float)(scrollCount) /maxWidth;
 
                     //计算新的预览条宽度，并计算应该增加几张图片
                     maxWidth = defaultWidth + dividingView.getTotalPadding();
-
-                    //计算缩放后应该将预览条滚动多少才能保持中线所在的位置的比例不变
-                    int scrollX = (int) (percent * maxWidth);
-                    videoScrollView.scrollBy(scrollX - scrollCount,0);
-
+                    dividingView.setMaxWidth(maxWidth);
 
                     int currentPicNum = maxWidth /itemWidth;
                     if (maxWidth %itemWidth > 0){
@@ -192,10 +190,8 @@ public class VideoRangeView extends FrameLayout {
                     int addNum = currentPicNum - bitmapList.size();
                     if(addNum > 0){
                         //拉伸
-                        for (int i=0;i<addNum;i++){
-                            long itemMillTime = videoDuration / bitmapList.size();
-                            stretchVideoPreList(itemMillTime);
-                        }
+                        long itemMillTime = videoDuration / bitmapList.size();
+                        stretchVideoPreList(itemMillTime,addNum);
                     }else if (addNum < 0){
                         //缩短
                         addNum = Math.abs(addNum);
@@ -212,6 +208,21 @@ public class VideoRangeView extends FrameLayout {
 
 
                 }
+            }
+
+            @Override
+            public void onChangeWidth(int changeWidth) {
+
+                //计算缩放前中线位置对应的百分比
+                float percent = (float)(scrollCount) /maxWidth;
+                //计算新的预览条宽度，并计算应该增加几张图片
+                maxWidth = defaultWidth + changeWidth;
+                //计算缩放后应该将预览条滚动多少才能保持中线所在的位置的比例不变
+                int scrollX = (int) (percent * maxWidth);
+                videoScrollView.scrollTo(scrollX,0);
+                //videoScrollView.scrollBy(scrollX - scrollCount,0);
+                Log.e("kzg","**********************scrollX:"+scrollX);
+                dividingView.setMaxWidth(maxWidth);
             }
         });
 
@@ -307,9 +318,12 @@ public class VideoRangeView extends FrameLayout {
                                 itemWidth = with-recyclerViewLeftPaddin;
                                 maxWidth = itemWidth * duration;
                                 defaultWidth = maxWidth;
+                                dividingView.setDefaultWidth(defaultWidth);
                                 dividingView.setMaxWidth(maxWidth);
+                                dividingView.setChange(true);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
+                                dividingView.setDrawAround(0);
                                 ViewGroup.LayoutParams layoutParams = dividingView.getLayoutParams();
                                 layoutParams.width = maxWidth + 2*recyclerViewLeftPaddin;
                                 dividingView.setLayoutParams(layoutParams);
@@ -349,7 +363,7 @@ public class VideoRangeView extends FrameLayout {
                         return;
                     }
 
-                    if (i[0] >= 100){
+                    if (i[0] >= VideoTrackView.maxPicNum){
                         videoToFrames.setStopDecode(true);
                         bitmap.recycle();
                         return;
@@ -385,8 +399,11 @@ public class VideoRangeView extends FrameLayout {
                                 maxWidth = itemWidth * duration;
                                 defaultWidth = maxWidth;
                                 dividingView.setMaxWidth(maxWidth);
+                                dividingView.setDefaultWidth(defaultWidth);
+                                dividingView.setChange(true);
                                 dividingView.setVideoPicNum(duration);
                                 dividingView.setLeftPaddin(recyclerViewLeftPaddin);
+                                dividingView.setDrawAround(0);
                                 ViewGroup.LayoutParams layoutParams = dividingView.getLayoutParams();
                                 layoutParams.width = maxWidth + 2*recyclerViewLeftPaddin;
                                 dividingView.setLayoutParams(layoutParams);
@@ -455,12 +472,6 @@ public class VideoRangeView extends FrameLayout {
         Log.e("kzg","**********************VideoRangeView--height:"+getHeight());
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        Log.e("kzg","**********************VideoRangeView--onDraw:"+getHeight());
-
-    }
 
 
     public void release(){
@@ -515,6 +526,7 @@ public class VideoRangeView extends FrameLayout {
 
    @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+       mScaleGestureDetector.onTouchEvent(ev);
         switch (ev.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
                 break;
@@ -535,6 +547,8 @@ public class VideoRangeView extends FrameLayout {
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (ev.getPointerCount() == 2 /*&& dividingView.getPointPadding() < DividingView.maxPadding * 4 && dividingView.getPointPadding() >=0*/){
+                    /*dividingView.setChange(true);
+                    dividingView.setDrawAround(scrollCount);
                     float tempDoubleDistance = getDoubleFingerDistance(ev);
                     //数字刻度
                     if (tempDoubleDistance - doublePointDistance>0){
@@ -544,8 +558,10 @@ public class VideoRangeView extends FrameLayout {
                         //缩短
                         dividingView.setPointPadding((int) ((tempDoubleDistance - doublePointDistance)*0.3 + dividingView.getLastPointPadding()));
                     }
-                    dividingView.invalidate();
-
+                    dividingView.invalidate();*/
+                }else if (ev.getPointerCount() == 1){
+                    dividingView.setDrawAround(0);
+                    dividingView.setChange(false);
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -553,6 +569,27 @@ public class VideoRangeView extends FrameLayout {
         }
         return super.dispatchTouchEvent(ev);
     }
+
+
+    ScaleGestureDetector.OnScaleGestureListener onScaleGestureListener = new ScaleGestureDetector.OnScaleGestureListener() {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            dividingView.setDrawAround(scrollCount);
+            dividingView.setScaleFactor(detector.getScaleFactor());
+            return true;
+        }
+
+        @Override
+        public boolean onScaleBegin(ScaleGestureDetector detector) {
+            return true;
+        }
+
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+
+        }
+    };
+
 
     /* @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -580,8 +617,7 @@ public class VideoRangeView extends FrameLayout {
         return super.onInterceptTouchEvent(ev);
     }*/
 
-/*
-    @Override
+    /*@Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
@@ -594,8 +630,6 @@ public class VideoRangeView extends FrameLayout {
             case MotionEvent.ACTION_POINTER_UP:
                 //屏幕上已经有两个点按住 再松开一点时触发该事件
                 Log.e("kzg","**********************ACTION_POINTER_UP");
-                isIntercept = false;
-                videoTrackView.setIntercept(!isIntercept);
                 break;
             case MotionEvent.ACTION_MOVE:
                 Log.e("kzg","**********************ACTION_MOVE");
@@ -604,27 +638,33 @@ public class VideoRangeView extends FrameLayout {
                 break;
         }
 
-        return  super.onTouchEvent(event);
-    }
-*/
+        return  true;
+    }*/
 
 
     /**
      * 拉伸预览条
      * @param itemMillTime
      */
-    private void stretchVideoPreList(long itemMillTime){
+    private void stretchVideoPreList(long itemMillTime,int addNum){
         int i = 1;
+        int added = 0;
         boolean isAdded = false;
         for (;i<bitmapList.size();i++){
+            if (i>= VideoTrackView.maxPicNum){
+                return;
+            }
             VideoBitmapBean next = bitmapList.get(i);
             long currentDur = (long) (((float)(itemWidth *(i+1))) / maxWidth * videoDuration);
             if (next.getPresentationTimeUs()/1000 - currentDur > itemMillTime){
-                VideoBitmapBean bitmapBean = new VideoBitmapBean(next.getBitmap(),currentDur * 1000);
+                final VideoBitmapBean bitmapBean = new VideoBitmapBean(next.getBitmap(),currentDur * 1000);
                 bitmapList.add(i,bitmapBean);
-                videoTrackView.addData(bitmapBean,i);
-                isAdded = true;
-                break;
+                videoTrackView.addData(bitmapBean, i);
+                added ++;
+                if (added == addNum){
+                    isAdded = true;
+                    break;
+                }
             }
         }
         if (!isAdded){
@@ -646,6 +686,9 @@ public class VideoRangeView extends FrameLayout {
         int i = 0;
         Iterator<VideoBitmapBean> iterator = bitmapList.iterator();
         while (iterator.hasNext()){
+            if (i >= VideoTrackView.maxPicNum){
+                return;
+            }
             if (i > 0){
                 VideoBitmapBean next = iterator.next();
                 long currentDur = (long) (((float)(itemWidth *(i+1))) / maxWidth * videoDuration);
@@ -671,5 +714,27 @@ public class VideoRangeView extends FrameLayout {
         float y = event.getY(0) - event.getY(1);
         return  (float)Math.sqrt(x * x + y * y) ;
     }
+
+    /*@Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        long start = System.currentTimeMillis();
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        Log.e("kzg","*************************onMeasure:"+(System.currentTimeMillis() - start));
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        long start = System.currentTimeMillis();
+        super.onLayout(changed, left, top, right, bottom);
+        Log.e("kzg","*************************onLayout:"+(System.currentTimeMillis() - start));
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        long start = System.currentTimeMillis();
+        super.onDraw(canvas);
+        Log.e("kzg","*************************onDraw:"+(System.currentTimeMillis() - start));
+    }*/
+
 
 }

@@ -1,6 +1,7 @@
 package com.example.myplayer.VideoRange;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -44,12 +45,10 @@ public class VideoRangeHorizontalScrollView extends HorizontalScrollView {
         switch (ev.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_POINTER_DOWN:
                 //屏幕上已经有一个点按住 再按下一点时触发该事件
-                Log.e("kzg","**********************VideoRangeHorizontalScrollView dispatchTouchEvent  ACTION_POINTER_DOWN ");
                 isIntercept = false;
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 //屏幕上已经有两个点按住 再松开一点时触发该事件
-                Log.e("kzg","**********************VideoRangeHorizontalScrollView dispatchTouchEvent  ACTION_POINTER_UP ");
                 isIntercept = true;
                 break;
         }
@@ -75,7 +74,6 @@ public class VideoRangeHorizontalScrollView extends HorizontalScrollView {
                 isIntercept = true;
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.e("kzg","**********************VideoRangeHorizontalScrollView onTouchEvent  ACTION_MOVE ");
                 break;
             case MotionEvent.ACTION_UP:
                 break;
@@ -86,6 +84,8 @@ public class VideoRangeHorizontalScrollView extends HorizontalScrollView {
         }
         return super.onTouchEvent(e);
     }
+
+
 
 
     public OnScrollChangedListener getOnScrollChangedListener() {
