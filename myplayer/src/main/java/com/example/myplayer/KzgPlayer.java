@@ -305,11 +305,11 @@ public class KzgPlayer {
         }
     }
 
-    public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v){
+    public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth){
         //Log.e("kzg","获取到视频的yuv数据  y:" + y.length + "   u:" + u.length + "   v:" + v.length + "   ,width:" + width + "    ,height:"+height);
         if (kzgGLSurfaceView != null){
             kzgGLSurfaceView.getKzgGlRender().setRenderType(KzgGlRender.RENDER_YUV);
-            kzgGLSurfaceView.setYUV(width,height,y,u,v);
+            kzgGLSurfaceView.setYUV(width,height,y,u,v,practicalWidth);
         }
 
     }
@@ -890,7 +890,7 @@ public class KzgPlayer {
                 if (yUVQueue.deQueue() == null){
                     Log.e("kzg","**********************从队列删除数据失败");
                 }
-                onCallRenderYUV(yuvBean.getWidth(),yuvBean.getHeight(),yuvBean.getyData(),yuvBean.getuData(),yuvBean.getvData());
+                onCallRenderYUV(yuvBean.getWidth(),yuvBean.getHeight(),yuvBean.getyData(),yuvBean.getuData(),yuvBean.getvData(),yuvBean.getWidth());
             } else{
                 if (timestamp >(pts + 0.03)){
                     if (yUVQueue.deQueue() == null){

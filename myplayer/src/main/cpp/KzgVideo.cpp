@@ -185,7 +185,7 @@ void *videoPlay(void *arg){
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
                 //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
-
+                LOGE("codec AV_PIX_FMT_YUV420P");
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
 
                     //逐帧预览
@@ -222,28 +222,30 @@ void *videoPlay(void *arg){
                             //创建一个缓冲区
                             uint8_t *buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
                             /****************我的处理对齐的方式******************/
-//                            int nYUVBufsize = 0;
-//                            for (int i=0; i < avFrame->height; i++){
-//                                memcpy(buffer + nYUVBufsize , avFrame->data[0] + i * avFrame->linesize[0],
-//                                       avFrame->width);
-//                                nYUVBufsize += avFrame->width;
-//                            }
-//                            for (int i=0; i < avFrame->height/2; i++){
-//                                memcpy(buffer + nYUVBufsize , avFrame->data[1] + i * avFrame->linesize[1],
-//                                       avFrame->width/2);
-//                                nYUVBufsize += avFrame->width/2;
-//                            }
-//                            for (int i=0; i < avFrame->height/2; i++){
-//                                memcpy(buffer + nYUVBufsize , avFrame->data[2] + i * avFrame->linesize[2],
-//                                       avFrame->width/2);
-//                                nYUVBufsize += avFrame->width/2;
-//                            }
+                            int nYUVBufsize = 0;
+                            for (int i=0; i < avFrame->height; i++){
+                                memcpy(buffer + nYUVBufsize , avFrame->data[0] + i * avFrame->linesize[0],
+                                       avFrame->width);
+                                nYUVBufsize += avFrame->width;
+                            }
+                            for (int i=0; i < avFrame->height/2; i++){
+                                memcpy(buffer + nYUVBufsize , avFrame->data[1] + i * avFrame->linesize[1],
+                                       avFrame->width/2);
+                                nYUVBufsize += avFrame->width/2;
+                            }
+                            for (int i=0; i < avFrame->height/2; i++){
+                                memcpy(buffer + nYUVBufsize , avFrame->data[2] + i * avFrame->linesize[2],
+                                       avFrame->width/2);
+                                nYUVBufsize += avFrame->width/2;
+                            }
                             /****************我的处理对齐的方式******************/
 
                             /****************ffmpeg处理对齐的方式******************/
-                            int ret = av_image_copy_to_buffer(buffer,size,avFrame->data,avFrame->linesize,AV_PIX_FMT_YUV420P
-                                    ,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);
+                            /*int ret = av_image_copy_to_buffer(buffer,size,avFrame->data,avFrame->linesize,AV_PIX_FMT_YUV420P
+                                    ,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,1);*/
                             /****************ffmpeg处理对齐的方式******************/
+
+
                             //保存为YUV文件
                             //SaveYuv(avFrame->data[0], avFrame->linesize[0], kzgVideo->avCodecContext->width, kzgVideo->avCodecContext->height, outputfilename);
                             //SaveYuv(avFrame->data[1], avFrame->linesize[1], kzgVideo->avCodecContext->width / 2, kzgVideo->avCodecContext->height / 2, outputfilename);
@@ -260,6 +262,9 @@ void *videoPlay(void *arg){
 
                             if ((cropAvframe->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE)==0 && kzgVideo->seekTime == 0){
                                 //显示首帧
+                                LOGE("isCrop :true %ld,%ld,%ld,width:%ld,height:%ld",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height);
+
+                                LOGE("yuv格式：%d" ,avFrame->format);
                                 int width = cropAvframe->linesize[0] > kzgVideo->avCodecContext->width? cropAvframe->linesize[0]:kzgVideo->avCodecContext->width;
                                 kzgVideo->helper->onCallRenderYUV(
                                         width,
@@ -267,6 +272,7 @@ void *videoPlay(void *arg){
                                         cropAvframe->data[0],
                                         cropAvframe->data[1],
                                         cropAvframe->data[2],
+                                        kzgVideo->avCodecContext->width,
                                         THREAD_CHILD);
 
                                 av_frame_free(&cropAvframe);
@@ -281,9 +287,12 @@ void *videoPlay(void *arg){
                             av_free(avFrame);
                             avFrame = NULL;
                         } else{
+                            LOGE("isCrop :false");
                             kzgVideo->kzgPlayerStatus->isCrop = false;
                             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
                             if ((avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE)==0 && kzgVideo->seekTime == 0){
+                                LOGE("isCrop :true %ld,%ld,%ld,width:%ld,height:%ld",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height);
+                                LOGE("yuv格式：%d" ,avFrame->format);
                                 //显示首帧
                                 int width = avFrame->linesize[0] > kzgVideo->avCodecContext->width? avFrame->linesize[0]:kzgVideo->avCodecContext->width;
                                 kzgVideo->helper->onCallRenderYUV(
@@ -292,6 +301,7 @@ void *videoPlay(void *arg){
                                         avFrame->data[0],
                                         avFrame->data[1],
                                         avFrame->data[2],
+                                        kzgVideo->avCodecContext->width,
                                         THREAD_CHILD);
 
                                 av_frame_free(&avFrame);
@@ -348,6 +358,7 @@ void *videoPlay(void *arg){
                             dataY,
                             dataU,
                             dataV,
+                            kzgVideo->avCodecContext->width,
                             THREAD_CHILD);
 
                     av_free(buffer);
@@ -362,6 +373,7 @@ void *videoPlay(void *arg){
                             avFrame->data[0],
                             avFrame->data[1],
                             avFrame->data[2],
+                            kzgVideo->avCodecContext->width,
                             THREAD_CHILD);
                 } else{
                     kzgVideo->helper->onCallRenderYUV(
@@ -370,6 +382,7 @@ void *videoPlay(void *arg){
                             avFrame->data[0],
                             avFrame->data[1],
                             avFrame->data[2],
+                            kzgVideo->avCodecContext->width,
                             THREAD_CHILD);
                 }
 
@@ -467,6 +480,7 @@ void *videoPlay(void *arg){
                         avFrameYUV420P->data[0],
                         avFrameYUV420P->data[1],
                         avFrameYUV420P->data[2],
+                        kzgVideo->avCodecContext->width,
                         THREAD_CHILD);
 
                 av_frame_free(&avFrameYUV420P);
@@ -675,7 +689,8 @@ void KzgVideo::showFrame(double timestamp) {
                         avCodecContext->height,
                         avFrame->data[0],
                         avFrame->data[1],
-                        avFrame->data[2]);
+                        avFrame->data[2],
+                        avCodecContext->width);
 
             } else{
                 if (kzgPlayerStatus->isCrop){

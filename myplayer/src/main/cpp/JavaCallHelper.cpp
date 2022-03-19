@@ -17,7 +17,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_complete = env->GetMethodID(jclass1,"onComplete","()V");
     jmid_getDB = env->GetMethodID(jclass1,"onDB","(I)V");
     jmid_pcmToAac = env->GetMethodID(jclass1,"enCodecPCMToAAC","(I[B)V");
-    jmid_renderyuv = env->GetMethodID(jclass1,"onCallRenderYUV","(II[B[B[B)V");
+    jmid_renderyuv = env->GetMethodID(jclass1,"onCallRenderYUV","(II[B[B[BI)V");
     jmid_mediacodecsuper = env->GetMethodID(jclass1,"onCallIsSupportMediaCodec","(Ljava/lang/String;)Z");
     jmid_initMediaCodecVideo = env->GetMethodID(jclass1,"initMediaCodecVideo","(Ljava/lang/String;II[B[B)V");
     jmid_decodeAVPacket = env->GetMethodID(jclass1,"decodeAVPacket","(I[B)V");
@@ -150,7 +150,7 @@ void JavaCallHelper::onPcmToAac(int size, void *data, int thread) {
     }
 }
 
-void JavaCallHelper::onCallRenderYUV(int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv,int thread ) {
+void JavaCallHelper::onCallRenderYUV(int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv,int practicalWidth,int thread ) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
         if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
@@ -166,7 +166,7 @@ void JavaCallHelper::onCallRenderYUV(int width, int height, uint8_t *fy, uint8_t
         jbyteArray v = jniEnv->NewByteArray(width * height / 4);
         jniEnv->SetByteArrayRegion(v, 0,width * height / 4, reinterpret_cast<const jbyte *>(fv));
 
-        jniEnv->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v);
+        jniEnv->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v,practicalWidth);
 
         jniEnv->DeleteLocalRef(y);
         jniEnv->DeleteLocalRef(u);
@@ -182,7 +182,7 @@ void JavaCallHelper::onCallRenderYUV(int width, int height, uint8_t *fy, uint8_t
 
         jbyteArray v = env->NewByteArray(width * height / 4);
         env->SetByteArrayRegion(v, 0,width * height / 4, reinterpret_cast<const jbyte *>(fv));
-        env->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v);
+        env->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v,practicalWidth);
 
         env->DeleteLocalRef(y);
         env->DeleteLocalRef(u);

@@ -33,9 +33,9 @@ public class KzgGLSurfaceView extends GLSurfaceView {
     }
 
 
-    public void setYUV(int width,int height,byte[] y,byte[] u,byte[] v){
+    public void setYUV(int width,int height,byte[] y,byte[] u,byte[] v,int practicalWidth){
         if (kzgGlRender != null){
-            kzgGlRender.setYUVRenderData(width,height,y,u,v);
+            kzgGlRender.setYUVRenderData(width,height,y,u,v,practicalWidth);
             //主动调用请求刷新数据
             requestRender();
         }

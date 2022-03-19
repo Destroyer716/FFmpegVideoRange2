@@ -21,6 +21,10 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
 
+import static android.opengl.GLES30.GL_UNPACK_ROW_LENGTH;
+import static android.opengl.GLES30.GL_UNPACK_SKIP_PIXELS;
+import static android.opengl.GLES30.GL_UNPACK_SKIP_ROWS;
+
 /**
  * Created By Ele
  * on 2020/5/30
@@ -38,7 +42,7 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
             1f,1f
     };
 
-    private final float[] textureData = {
+    private float[] textureData = {
             0f,1f,
             1f,1f,
             0f,0f,
@@ -60,6 +64,7 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
     private int[] textureIds_yuv = new int[3];
     private int width_yuv;
     private int height_yuv;
+    private int practicalWidth_yuv;
     private ByteBuffer y;
     private ByteBuffer u;
     private ByteBuffer v;
@@ -76,7 +81,7 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
     private OnSurfaceCreateListener onSurfaceCreateListener;
     private OnRenderListener onRenderListener;
 
-
+    private boolean isInitRender = false;
 
 
     public KzgGlRender(Context context) {
@@ -86,12 +91,6 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
                 .asFloatBuffer()
                 .put(vertexData);
         vertexBuffer.position(0);
-
-        textureBuffer = ByteBuffer.allocateDirect(textureData.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer()
-                .put(textureData);
-        textureBuffer.position(0);
     }
 
     public void setRenderType(int renderType) {
@@ -100,7 +99,7 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        initRenderYUV();
+
         initRenderMediaCodec();
     }
 
@@ -131,6 +130,22 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
 
 
     private void initRenderYUV(){
+        if (isInitRender){
+            return;
+        }
+        isInitRender = true;
+
+        if (practicalWidth_yuv > 0 && practicalWidth_yuv < width_yuv){
+            textureData[2] = practicalWidth_yuv *1.0f / width_yuv;
+            textureData[6] = practicalWidth_yuv *1.0f / width_yuv;
+        }
+
+        textureBuffer = ByteBuffer.allocateDirect(textureData.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(textureData);
+        textureBuffer.position(0);
+
         String vertexSource = KzgShaderUtil.readRawTxt(context, R.raw.vertex_shader);
         String fragmenSource = KzgShaderUtil.readRawTxt(context,R.raw.fragment_shader);
 
@@ -160,24 +175,27 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
         }
     }
 
-    public void setYUVRenderData(int width,int height,byte[] y,byte[] u,byte[] v){
+    public void setYUVRenderData(int width,int height,byte[] y,byte[] u,byte[] v,int practicalWidth){
         this.width_yuv = width;
         this.height_yuv = height;
+        this.practicalWidth_yuv = practicalWidth;
         this.y = ByteBuffer.wrap(y);
         this.u = ByteBuffer.wrap(u);
         this.v = ByteBuffer.wrap(v);
     }
 
     private void renderYUV(){
+
         if (width_yuv > 0 && height_yuv > 0 && y != null && u != null && v != null){
-
+            initRenderYUV();
+            Log.e("kzg","width_yuv:"+width_yuv);
             GLES20.glUseProgram(program_yuv);
-
             GLES20.glEnableVertexAttribArray(avPosition_yuv);
             GLES20.glVertexAttribPointer(avPosition_yuv,2,GLES20.GL_FLOAT,false,8,vertexBuffer);
 
             GLES20.glEnableVertexAttribArray(afPosition_yuv);
             GLES20.glVertexAttribPointer(afPosition_yuv,2,GLES20.GL_FLOAT,false,8,textureBuffer);
+
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textureIds_yuv[0]);
@@ -190,6 +208,7 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
             GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textureIds_yuv[2]);
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,0,GLES20.GL_LUMINANCE,width_yuv/2,height_yuv/2,0,GLES20.GL_LUMINANCE,GLES20.GL_UNSIGNED_BYTE,v);
+
 
             GLES20.glUniform1i(sampler_y,0);
             GLES20.glUniform1i(sampler_u,1);

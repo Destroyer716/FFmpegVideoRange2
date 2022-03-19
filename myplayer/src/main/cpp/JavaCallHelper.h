@@ -48,7 +48,7 @@ public:
     void onComplete(int thread = THREAD_MAIN);
     void onGetDB(int db,int thread = THREAD_MAIN);
     void onPcmToAac(int size,void *data,int thread = THREAD_MAIN);
-    void onCallRenderYUV(int width,int height,uint8_t *fy, uint8_t *fu, uint8_t *fv,int thread = THREAD_MAIN);
+    void onCallRenderYUV(int width,int height,uint8_t *fy, uint8_t *fu, uint8_t *fv,int practicalWidth,int thread = THREAD_MAIN);
     bool onCallIsSupperMediaCodec(const char *ffcodecname,int thread = THREAD_MAIN);
     void onCallInitMediaCodec(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1);
     void onCallDecodeAVPacket(int dataSize,uint8_t *data);

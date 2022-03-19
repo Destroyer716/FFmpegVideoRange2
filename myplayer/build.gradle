@@ -36,6 +36,7 @@ android {
             version "3.10.2"
         }
     }
+    ndkVersion '21.4.7075529'
 
 }
 

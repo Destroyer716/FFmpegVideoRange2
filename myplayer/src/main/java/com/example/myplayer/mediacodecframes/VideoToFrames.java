@@ -125,7 +125,9 @@ public class VideoToFrames implements Runnable {
             }
             decodeFramesToImage(decoder, extractor, mediaFormat);
             decoder.stop();
-        } finally {
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
             if (decoder != null) {
                 decoder.stop();
                 decoder.release();
