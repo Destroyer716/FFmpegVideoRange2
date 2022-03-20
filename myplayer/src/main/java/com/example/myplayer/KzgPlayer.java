@@ -44,6 +44,8 @@ public class KzgPlayer {
     //前进
     public static final int seek_advance = 1;
 
+    private int seekType = seek_advance;
+
     private PlayerListener playerListener;
     private String source;
     public boolean isPlaying = false;
@@ -99,6 +101,7 @@ public class KzgPlayer {
 
     public void showFrame(double timestamp,int seekType){
         //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
+        this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
             n_seek((int) (timestamp*1000));
@@ -207,6 +210,13 @@ public class KzgPlayer {
         n_playmodel(playModel);
     }
 
+    public int getPlayModel(){
+        return playModel;
+    }
+
+    public int getsSeekType(){
+        return seekType;
+    }
 
     public void startRecord(File outFile){
         if (n_sampleRate() > 0 && outFile != null){
@@ -278,6 +288,12 @@ public class KzgPlayer {
         }
     }
 
+    public void onPlayStop(){
+        if (playerListener != null){
+            playerListener.onPlayStop();
+        }
+    }
+
     public void onComplete(){
         stop();
         if (playerListener != null){
@@ -340,6 +356,7 @@ public class KzgPlayer {
         void onProgress(long currentTime,long totalTime);
         void onTimeInfo(TimeInfoBean timeInfoBean);
         void onEnablePlayChange(boolean enable);
+        void onPlayStop();
         void onComplete();
         void onDB(int db);
         void onGetVideoInfo(int fps,long duration,int widht,int height);

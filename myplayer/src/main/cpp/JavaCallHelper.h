@@ -46,6 +46,7 @@ public:
     void onLoad(bool isLoad,int thread=THREAD_MAIN);
     void onTimeInfo(int curr,int total,int thread = THREAD_MAIN);
     void onComplete(int thread = THREAD_MAIN);
+    void onPlayStop(int thread = THREAD_MAIN);
     void onGetDB(int db,int thread = THREAD_MAIN);
     void onPcmToAac(int size,void *data,int thread = THREAD_MAIN);
     void onCallRenderYUV(int width,int height,uint8_t *fy, uint8_t *fu, uint8_t *fv,int practicalWidth,int thread = THREAD_MAIN);
@@ -68,6 +69,7 @@ public:
     jmethodID jmid_load;
     jmethodID jmid_timeInfo;
     jmethodID jmid_complete;
+    jmethodID jmid_playStop;
     jmethodID jmid_getDB;
     jmethodID jmid_pcmToAac;
     jmethodID jmid_renderyuv;

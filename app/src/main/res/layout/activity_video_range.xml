@@ -34,6 +34,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rl_surface_view_parent">
 
+        <TextView
+            android:id="@+id/tv_video_range_play_time"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColor="#ffffff"
+            android:gravity="center"/>
+
         <ImageView
             android:id="@+id/iv_play_stop_video"
             android:layout_width="20dp"
@@ -41,6 +48,14 @@
             android:layout_centerInParent="true"
             android:src="@drawable/play_ico"
             android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_video_range_total_time"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColor="#ffffff"
+            android:layout_alignParentRight="true"
+            android:gravity="center"/>
 
     </RelativeLayout>
 

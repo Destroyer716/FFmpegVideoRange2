@@ -191,10 +191,10 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void * context){
             //计算已播放的时长,固定的公式
             kzgAudio->clock += bufferSize / (double)((kzgAudio->sample_rate) * 2 * 2);
             //不需要调用那么频繁，所以加个限制
-            if (kzgAudio->clock - kzgAudio->last_time >= 0.2){
+            /*if (kzgAudio->clock - kzgAudio->last_time >= 0.2){
                 kzgAudio->last_time = kzgAudio->clock;
                 kzgAudio->helper->onTimeInfo(kzgAudio->clock,kzgAudio->duration,THREAD_CHILD);
-            }
+            }*/
 
 
 

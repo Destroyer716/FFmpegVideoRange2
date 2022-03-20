@@ -15,6 +15,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_load = env->GetMethodID(jclass1,"onLoad","(Z)V");
     jmid_timeInfo = env->GetMethodID(jclass1,"onTimeInfo","(II)V");
     jmid_complete = env->GetMethodID(jclass1,"onComplete","()V");
+    jmid_playStop = env->GetMethodID(jclass1,"onPlayStop","()V");
     jmid_getDB = env->GetMethodID(jclass1,"onDB","(I)V");
     jmid_pcmToAac = env->GetMethodID(jclass1,"enCodecPCMToAAC","(I[B)V");
     jmid_renderyuv = env->GetMethodID(jclass1,"onCallRenderYUV","(II[B[B[BI)V");
@@ -115,6 +116,20 @@ void JavaCallHelper::onComplete(int thread) {
         env->CallVoidMethod(jobj,jmid_complete);
     }
 }
+
+void JavaCallHelper::onPlayStop(int thread) {
+    if (thread == THREAD_CHILD){
+        JNIEnv *jniEnv;
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+            return;
+        }
+        jniEnv->CallVoidMethod(jobj,jmid_playStop);
+        javaVm->DetachCurrentThread();
+    } else{
+        env->CallVoidMethod(jobj,jmid_playStop);
+    }
+}
+
 
 void JavaCallHelper::onGetDB(int db, int thread) {
     if (thread == THREAD_CHILD){

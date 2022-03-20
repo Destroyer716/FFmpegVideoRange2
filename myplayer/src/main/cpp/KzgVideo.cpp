@@ -72,20 +72,24 @@ void *videoPlay(void *arg){
             continue;
         }
 
-
-        if (kzgVideo->queue->getQueueSize() == 0){
-            if (!kzgVideo->kzgPlayerStatus->loading){
-                kzgVideo->kzgPlayerStatus->loading = true;
-                kzgVideo->helper->onLoad(true,THREAD_CHILD);
-            }
-            av_usleep(1000 * 20);
-            continue;
-        } else{
-            if (kzgVideo->kzgPlayerStatus->loading){
-                kzgVideo->kzgPlayerStatus->loading = false;
-                kzgVideo->helper->onLoad(false,THREAD_CHILD);
+        if (!kzgVideo->kzgPlayerStatus->isInited){
+            kzgVideo->kzgPlayerStatus->isInited = true;
+            if (kzgVideo->queue->getQueueSize() == 0){
+                if (!kzgVideo->kzgPlayerStatus->loading){
+                    kzgVideo->kzgPlayerStatus->loading = true;
+                    kzgVideo->helper->onLoad(true,THREAD_CHILD);
+                }
+                av_usleep(1000 * 20);
+                continue;
+            } else{
+                if (kzgVideo->kzgPlayerStatus->loading){
+                    kzgVideo->kzgPlayerStatus->loading = false;
+                    kzgVideo->helper->onLoad(false,THREAD_CHILD);
+                }
             }
         }
+
+
 
         if (kzgVideo->kzgPlayerStatus->isFramePreview){
             int queueSize = 0;
@@ -185,7 +189,7 @@ void *videoPlay(void *arg){
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
                 //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
-                LOGE("codec AV_PIX_FMT_YUV420P");
+                //LOGE("codec AV_PIX_FMT_YUV420P");
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
 
                     //逐帧预览
@@ -287,7 +291,7 @@ void *videoPlay(void *arg){
                             av_free(avFrame);
                             avFrame = NULL;
                         } else{
-                            LOGE("isCrop :false");
+                            //LOGE("isCrop :false");
                             kzgVideo->kzgPlayerStatus->isCrop = false;
                             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
                             if ((avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE)==0 && kzgVideo->seekTime == 0){

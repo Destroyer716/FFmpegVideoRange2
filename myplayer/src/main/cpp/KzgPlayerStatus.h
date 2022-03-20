@@ -16,6 +16,8 @@ public:
     bool exit;
     bool loading = true;
     bool seeking  = false;
+    //是否初始化了
+    bool isInited = false;
     bool frameSeeking = true;
     bool isPause = false;
     //是否是预览模式

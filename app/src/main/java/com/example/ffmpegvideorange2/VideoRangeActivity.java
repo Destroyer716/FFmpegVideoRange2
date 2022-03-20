@@ -2,19 +2,17 @@ package com.example.ffmpegvideorange2;
 
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,7 +38,10 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
     private RelativeLayout relativeLayout;
     private ImageView ivPlay;
     private AVLoadingIndicatorView avLoading;
+    private TextView tvTotalTime, tvPlayTime;
 
+    //记录上次更新播放时间的时间点
+    private long lastTime = 0;
 
     private Handler handler = new Handler(new Handler.Callback(){
         @Override
@@ -83,6 +84,8 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
         videoRangeView = findViewById(R.id.vrv_video_range);
         ivPlay = findViewById(R.id.iv_play_stop_video);
         avLoading = findViewById(R.id.av_loading);
+        tvPlayTime = findViewById(R.id.tv_video_range_play_time);
+        tvTotalTime = findViewById(R.id.tv_video_range_total_time);
     }
 
 
@@ -95,8 +98,12 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
         kzgPlayer = new KzgPlayer();
         kzgPlayer.setKzgGLSurfaceView(surfaceView);
         videoRangeView.setPlayer(kzgPlayer);
-        videoRangeView.setFilePath(inputPath);
         videoRangeView.setVideoRangeViewListener(new VideoRangeView.VideoRangeViewListener() {
+            @Override
+            public void onLoadSuccess(long totalTIme) {
+                tvTotalTime.setText(Utils.MilliToMinuteTime(totalTIme));
+            }
+
             @Override
             public void onScrollerX(int millTime, Bitmap bitmap) {
                 /*if (bitmap != null && surfaceHolder != null){
@@ -106,7 +113,24 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                     bitmap.recycle();
                 }*/
             }
+
+            @Override
+            public void scrollTimestamp(long timestamp) {
+                if (Math.abs(timestamp * 1000 - lastTime) > 500 * 1000){
+                    lastTime = timestamp * 1000;
+                    tvPlayTime.setText(Utils.MilliToMinuteTime(timestamp));
+                    if (kzgPlayer.getsSeekType() == KzgPlayer.seek_advance){
+                        //向前
+
+                    }else {
+                        //后退
+                    }
+
+                }
+
+            }
         });
+        videoRangeView.setFilePath(inputPath);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -156,15 +180,28 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             }
 
             @Override
-            public void onProgress(long currentTime,long totalTime) {
-                if (videoRangeView != null){
+            public void onProgress(final long currentTime, final long totalTime) {
+                //Log.e("kzg","******************onProgress:"+currentTime + " ,totalTime:"+totalTime);
+                //播放时间大于等于500毫米才更新一次播放时间
+                if (currentTime - lastTime > 500 * 1000){
+                    lastTime = currentTime;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            tvPlayTime.setText(Utils.MilliToMinuteTime(currentTime/1000));
+                        }
+                    });
+                }
+
+
+                if (videoRangeView != null && kzgPlayer.getPlayModel() == KzgPlayer.PLAY_MODEL_DEFAULT){
                     videoRangeView.setPlayPercent(((float) currentTime)/totalTime);
                 }
             }
 
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
-                //Log.e("kzg","*********************timeInfoBean:"+timeInfoBean);
+                Log.e("kzg","*********************timeInfoBean:"+timeInfoBean);
 
             }
 
@@ -176,6 +213,13 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                     message.obj = enable;
                     handler.sendMessage(message);
                 }
+            }
+
+            @Override
+            public void onPlayStop() {
+
+                kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);
+                ivPlay.setImageResource(R.drawable.play_ico);
             }
 
             @Override

@@ -188,7 +188,6 @@ public class KzgGlRender implements GLSurfaceView.Renderer,SurfaceTexture.OnFram
 
         if (width_yuv > 0 && height_yuv > 0 && y != null && u != null && v != null){
             initRenderYUV();
-            Log.e("kzg","width_yuv:"+width_yuv);
             GLES20.glUseProgram(program_yuv);
             GLES20.glEnableVertexAttribArray(avPosition_yuv);
             GLES20.glVertexAttribPointer(avPosition_yuv,2,GLES20.GL_FLOAT,false,8,vertexBuffer);

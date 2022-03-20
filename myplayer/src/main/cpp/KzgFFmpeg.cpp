@@ -218,6 +218,7 @@ void KzgFFmpeg::start() {
     while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
 
         if (!kzgVideo->kzgPlayerStatus->isFramePreview){
+            //正常播放只缓存40帧解码前的音频
             if (kzgAudio->queue->getQueueSize() > 40){
                 av_usleep(1000*100);
                 continue;
@@ -225,6 +226,7 @@ void KzgFFmpeg::start() {
         }
 
 
+        //缓存40帧avpacket
         if (kzgVideo->queue->getQueueSize() > 40){
             av_usleep(1000*20);
             continue;
@@ -284,7 +286,8 @@ void KzgFFmpeg::start() {
                 } else{
                     if (!kzgPlayerStatus->seeking){
                         //下面事播放完成退出，这里暂时先不用退出
-                        //av_usleep(1000*20);
+                        av_usleep(1000*100);
+                        helper->onPlayStop(THREAD_CHILD);
                         /*if (!kzgVideo->kzgPlayerStatus->isFramePreview){
                             kzgPlayerStatus->exit = true;
                         }*/

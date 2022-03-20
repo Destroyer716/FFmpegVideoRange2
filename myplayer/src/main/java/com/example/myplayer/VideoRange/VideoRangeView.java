@@ -3,7 +3,6 @@ package com.example.myplayer.VideoRange;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.PointF;
 import android.os.Environment;
 import android.util.AttributeSet;
@@ -27,7 +26,6 @@ import com.example.myplayer.mediacodecframes.OutputImageFormat;
 import com.example.myplayer.mediacodecframes.VideoToFrames;
 
 import java.io.File;
-import java.security.acl.LastOwnerException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +46,10 @@ public class VideoRangeView extends FrameLayout {
     public static int FRAME_MODEL_FFMPEG_PLUS = 0;
     public static int FRAME_MODEL_MEDIACODEC = 1;
 
-
+    //预览图随播放移动的百分比间隔
+    public static final float SCROLL_DELAY_PERCENT = 0.001f;
+    //上次预览图移动的播放百分比
+    private float lastScrollPercent = 0;
 
 
     private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(2);
@@ -164,6 +165,9 @@ public class VideoRangeView extends FrameLayout {
                     }else if (changeX < 0){
                         player.showFrame(millTime / 1000.0,KzgPlayer.seek_back);
                     }
+                    if (videoRangeViewListener != null){
+                        videoRangeViewListener.scrollTimestamp(millTime);
+                    }
                 }
                 if (videoRangeViewListener != null && (millTime - lastShowTime)>=fps ){
                     videoRangeViewListener.onScrollerX(millTime, null );
@@ -265,6 +269,9 @@ public class VideoRangeView extends FrameLayout {
         long end = System.currentTimeMillis();
         Log.e("kzg","**********************获取视频基本信息耗时："+(start - end));
         showVideoRangeImg();
+        if (videoRangeViewListener != null){
+            videoRangeViewListener.onLoadSuccess(videoDuration);
+        }
     }
 
     private void showVideoRangeImg(){
@@ -432,7 +439,8 @@ public class VideoRangeView extends FrameLayout {
     public void setPlayPercent(float percent){
         if (videoTrackView != null){
             int scrollX = (int) (maxWidth * percent);
-            //videoTrackView.smoothScrollBy(scrollX - scrollCount,0);
+            videoScrollView.smoothScrollBy(scrollX - scrollCount,0);
+
         }
     }
 
@@ -511,8 +519,9 @@ public class VideoRangeView extends FrameLayout {
     }
 
     public interface VideoRangeViewListener{
+        void onLoadSuccess(long totalTIme);
         void onScrollerX(int millTime, Bitmap bitmap);
-
+        void scrollTimestamp(long timestamp);
     }
 
 
