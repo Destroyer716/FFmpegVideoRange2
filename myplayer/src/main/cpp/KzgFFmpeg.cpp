@@ -33,6 +33,228 @@ void KzgFFmpeg::parpared() {
     }
 }
 
+
+
+
+
+
+
+static int h264_extradata_to_annexb(const unsigned char *pCodecExtraData, const int codecExtraDataSize,
+                                    AVPacket *pOutExtradata, int padding)
+{
+    const unsigned char *pExtraData = NULL; /* 前四个字节没用 */
+    int len = 0;
+    int spsUnitNum, ppsUnitNum;
+    int unitSize, totolSize = 0;
+    unsigned char startCode[] = {0, 0, 0, 1};
+    unsigned char *pOut = NULL;
+    int err;
+
+    pExtraData = pCodecExtraData+4;
+    len = (*pExtraData++ & 0x3) + 1;
+
+    /* 获取SPS */
+    spsUnitNum = (*pExtraData++ & 0x1f); /* SPS数量 */
+    while(spsUnitNum--)
+    {
+        unitSize = (pExtraData[0]<<8 | pExtraData[1]); /* 两个字节表示这个unit的长度 */
+        pExtraData += 2;
+        totolSize += unitSize + sizeof(startCode);
+        printf("unitSize:%d\n", unitSize);
+
+        if(totolSize > INT_MAX - padding)
+        {
+            av_log(NULL, AV_LOG_ERROR,
+                   "Too big extradata size, corrupted stream or invalid MP4/AVCC bitstream\n");
+            av_free(pOut);
+            return AVERROR(EINVAL);
+        }
+
+        if(pExtraData + unitSize > pCodecExtraData + codecExtraDataSize)
+        {
+            av_log(NULL, AV_LOG_ERROR, "Packet header is not contained in global extradata, "
+                                       "corrupted stream or invalid MP4/AVCC bitstream\n");
+            av_free(pOut);
+            return AVERROR(EINVAL);
+        }
+
+        if((err = av_reallocp(&pOut, totolSize + padding)) < 0)
+            return err;
+
+
+        memcpy(pOut+totolSize-unitSize-sizeof(startCode), startCode, sizeof(startCode));
+        memcpy(pOut+totolSize-unitSize, pExtraData, unitSize);
+
+        pExtraData += unitSize;
+    }
+
+    /* 获取PPS */
+    ppsUnitNum = (*pExtraData++ & 0x1f); /* PPS数量 */
+    while(ppsUnitNum--)
+    {
+        unitSize = (pExtraData[0]<<8 | pExtraData[1]); /* 两个字节表示这个unit的长度 */
+        pExtraData += 2;
+        totolSize += unitSize + sizeof(startCode);
+        printf("unitSize:%d\n", unitSize);
+
+        if(totolSize > INT_MAX - padding)
+        {
+            av_log(NULL, AV_LOG_ERROR,
+                   "Too big extradata size, corrupted stream or invalid MP4/AVCC bitstream\n");
+            av_free(pOut);
+            return AVERROR(EINVAL);
+        }
+
+        if(pExtraData + unitSize > pCodecExtraData + codecExtraDataSize)
+        {
+            av_log(NULL, AV_LOG_ERROR, "Packet header is not contained in global extradata, "
+                                       "corrupted stream or invalid MP4/AVCC bitstream\n");
+            av_free(pOut);
+            return AVERROR(EINVAL);
+        }
+
+        if((err = av_reallocp(&pOut, totolSize + padding)) < 0)
+            return err;
+
+
+        memcpy(pOut+totolSize-unitSize-sizeof(startCode), startCode, sizeof(startCode));
+        memcpy(pOut+totolSize-unitSize, pExtraData, unitSize);
+
+        pExtraData += unitSize;
+    }
+
+    pOutExtradata->data = pOut;
+    pOutExtradata->size = totolSize;
+
+    return len;
+}
+
+/* 将数据复制并且增加start      code */
+static int alloc_and_copy(AVPacket *pOutPkt, const uint8_t *spspps, uint32_t spsppsSize,
+                          const uint8_t *pIn, uint32_t inSize)
+{
+    int err;
+    int startCodeLen = 3; /* start code长度 */
+
+    /* 给pOutPkt->data分配内存 */
+    err = av_grow_packet(pOutPkt, spsppsSize + inSize + startCodeLen);
+    if (err < 0)
+        return err;
+
+    if (spspps)
+    {
+        memcpy(pOutPkt->data , spspps, spsppsSize); /* 拷贝SPS与PPS(前面分离的时候已经加了startcode(00 00 00 01)) */
+    }
+
+    /* 将真正的原始数据写入packet中 */
+    (pOutPkt->data + spsppsSize)[0] = 0;
+    (pOutPkt->data + spsppsSize)[1] = 0;
+    (pOutPkt->data + spsppsSize)[2] = 1;
+    memcpy(pOutPkt->data + spsppsSize + startCodeLen , pIn, inSize);
+
+    return 0;
+}
+
+static int h264Mp4ToAnnexb(AVFormatContext *pAVFormatContext, AVPacket *pAvPkt, FILE *pFd)
+{
+    unsigned char *pData = pAvPkt->data; /* 帧数据 */
+    unsigned char *pEnd = NULL;
+    int dataSize = pAvPkt->size; /* pAvPkt->data的数据量 */
+    int curSize = 0;
+    int naluSize = 0;
+    int i;
+    unsigned char nalHeader, nalType;
+    AVPacket spsppsPkt;
+    AVPacket *pOutPkt;
+    int ret;
+    int len;
+
+    pOutPkt = av_packet_alloc();
+    pOutPkt->data = NULL;
+    pOutPkt->size = 0;
+    spsppsPkt.data = NULL;
+    spsppsPkt.size = 0;
+
+    pEnd = pData + dataSize;
+
+    while(curSize < dataSize)
+    {
+        if(pEnd-pData < 4)
+            goto fail;
+
+        /* 前四个字节表示当前NALU的大小 */
+        for(i = 0; i < 4; i++)
+        {
+            naluSize <<= 8;
+            naluSize |= pData[i];
+        }
+
+        pData += 4;
+
+        if(naluSize > (pEnd-pData+1) || naluSize <= 0)
+        {
+            goto fail;
+        }
+
+        nalHeader = *pData;
+        nalType = nalHeader&0x1F;
+        LOGE("nalType:%d",nalType);
+        if(nalType == 5)
+        {
+            /* 得到SPS与PPS（存在与codec->extradata中） */
+            h264_extradata_to_annexb(pAVFormatContext->streams[pAvPkt->stream_index]->codec->extradata,
+                                     pAVFormatContext->streams[pAvPkt->stream_index]->codec->extradata_size,
+                                     &spsppsPkt, AV_INPUT_BUFFER_PADDING_SIZE);
+            /* 添加start code */
+            ret = alloc_and_copy(pOutPkt, spsppsPkt.data, spsppsPkt.size, pData, naluSize);
+            if(ret < 0)
+                goto fail;
+        }
+        else
+        {
+            /* 添加start code */
+            ret = alloc_and_copy(pOutPkt, NULL, 0, pData, naluSize);
+            if(ret < 0)
+                goto fail;
+        }
+
+        /* 将处理好的数据写入文件中 */
+        len = fwrite(pOutPkt->data, 1, pOutPkt->size, pFd);
+        if(len != pOutPkt->size)
+        {
+            av_log(NULL, AV_LOG_DEBUG, "fwrite warning(%d, %d)!\n", len, pOutPkt->size);
+        }
+
+        /* 将数据从缓冲区写入磁盘 */
+        fflush(pFd);
+
+        curSize += (naluSize+4);
+        pData += naluSize; /* 处理下一个NALU */
+    }
+
+    fail:
+    av_packet_free(&pOutPkt);
+    if(spsppsPkt.data)
+    {
+        free(spsppsPkt.data);
+        spsppsPkt.data = NULL;
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 int avformat_callback(void *ctx){
     KzgFFmpeg *fFmpeg = (KzgFFmpeg *) ctx;
     if(fFmpeg->kzgPlayerStatus->exit)
@@ -213,6 +435,9 @@ void KzgFFmpeg::start() {
     int count = 0;
     int ret;
 
+    FILE *f;
+    char *outputfilename = "/data/data/com.example.ffmpegvideorange2/yuvtest.h264";
+    f = fopen(outputfilename, "ab+");
     kzgAudio->play();
     kzgVideo->play();
     while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
@@ -269,6 +494,12 @@ void KzgFFmpeg::start() {
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
                 }
                 kzgVideo->queue->putAvPacket(avPacket);
+                if (!f){
+                    LOGE("open file fail ");
+                } else{
+                    LOGE("open file success ");
+                    h264Mp4ToAnnexb(avFormatContext, avPacket, f);
+                }
             }else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
