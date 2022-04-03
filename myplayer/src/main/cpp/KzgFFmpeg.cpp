@@ -198,7 +198,7 @@ static int h264Mp4ToAnnexb(AVFormatContext *pAVFormatContext, AVPacket *pAvPkt, 
 
         nalHeader = *pData;
         nalType = nalHeader&0x1F;
-        LOGE("nalType:%d",nalType);
+        LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,(nalHeader >> 5 )&0x03);
         if(nalType == 5)
         {
             /* 得到SPS与PPS（存在与codec->extradata中） */
@@ -246,7 +246,49 @@ static int h264Mp4ToAnnexb(AVFormatContext *pAVFormatContext, AVPacket *pAvPkt, 
 
 
 
+int getAvPacketRefType(AVPacket *pAvPkt){
+    unsigned char *pData = pAvPkt->data; /* 帧数据 */
+    unsigned char *pEnd = NULL;
+    int dataSize = pAvPkt->size; /* pAvPkt->data的数据量 */
+    int curSize = 0;
+    int naluSize = 0;
+    int i;
+    unsigned char nalHeader, nalType,refType;
 
+    while(curSize < dataSize){
+        if(pEnd-pData < 4)
+            goto fail;
+
+        /* 前四个字节表示当前NALU的大小 */
+        for(i = 0; i < 4; i++){
+            naluSize <<= 8;
+            naluSize |= pData[i];
+        }
+
+        pData += 4;
+
+        if(naluSize > (pEnd-pData+1) || naluSize <= 0){
+            goto fail;
+        }
+
+        nalHeader = *pData;
+        nalType = nalHeader&0x1F;
+        refType = (nalHeader >> 5 )&0x03;
+        LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,refType);
+        if(nalType == 5){
+            //IDR帧
+            return 1;
+        } else if (nalType == 1){
+            //I,P,B帧
+            return refType;
+        } else{
+            return 1;
+        }
+    }
+
+    fail:
+    return 0;
+}
 
 
 
@@ -435,9 +477,9 @@ void KzgFFmpeg::start() {
     int count = 0;
     int ret;
 
-    FILE *f;
-    char *outputfilename = "/data/data/com.example.ffmpegvideorange2/yuvtest.h264";
-    f = fopen(outputfilename, "ab+");
+    //FILE *f;
+    //char *outputfilename = "/data/data/com.example.ffmpegvideorange2/yuvtest.h264";
+    //f = fopen(outputfilename, "ab+");
     kzgAudio->play();
     kzgVideo->play();
     while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
@@ -493,13 +535,17 @@ void KzgFFmpeg::start() {
                 } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview ){
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
                 }
-                kzgVideo->queue->putAvPacket(avPacket);
-                if (!f){
+                if (getAvPacketRefType(avPacket) > 0){
+                    kzgVideo->queue->putAvPacket(avPacket);
+                } else{
+                    LOGE("avpacket ref 为 0 ");
+                }
+
+                /*if (!f){
                     LOGE("open file fail ");
                 } else{
-                    LOGE("open file success ");
                     h264Mp4ToAnnexb(avFormatContext, avPacket, f);
-                }
+                }*/
             }else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
