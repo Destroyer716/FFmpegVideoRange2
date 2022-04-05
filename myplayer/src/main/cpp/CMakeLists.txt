@@ -9,6 +9,7 @@ include_directories(/soundtouch/SoundTouch)
 add_library(native-lib
              SHARED
         native-lib.cpp
+        FAvFrameHelper.cpp
         JavaCallHelper.cpp
         KzgFFmpeg.cpp
         KzgAudio.cpp

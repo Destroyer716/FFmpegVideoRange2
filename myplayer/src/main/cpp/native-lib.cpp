@@ -3,6 +3,7 @@
 #include <android/log.h>
 #include "JavaCallHelper.h"
 #include "KzgFFmpeg.h"
+#include "FAvFrameHelper.h"
 
 
 #include <android/bitmap.h>
@@ -30,8 +31,11 @@ extern "C"
 JavaVM *javaVm;
 JavaCallHelper *helper;
 KzgFFmpeg *kzgFFmpeg;
+KzgPlayerStatus *kzgPlayerStatus;
 bool nexit = true;
 pthread_t thread_start;
+FAvFrameHelper *fAvFrameHelper;
+pthread_t thread_start_get_frame;
 
 
 
@@ -46,8 +50,10 @@ Java_com_example_myplayer_KzgPlayer_n_1parpared(
             helper = new JavaCallHelper(javaVm,env,jass);
         }
         helper->onLoad(true,THREAD_MAIN);
-        KzgPlayerStatus *playerStatus = new KzgPlayerStatus();
-        kzgFFmpeg = new KzgFFmpeg(helper,url,playerStatus);
+        if (kzgPlayerStatus == NULL){
+            kzgPlayerStatus = new KzgPlayerStatus();
+        }
+        kzgFFmpeg = new KzgFFmpeg(helper,url,kzgPlayerStatus);
         kzgFFmpeg->parpared();
     }
 }
@@ -110,6 +116,29 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
             helper = NULL;
         }
 
+        if (kzgPlayerStatus != NULL){
+            delete kzgPlayerStatus;
+            kzgPlayerStatus = NULL;
+        }
+
+    }
+
+    if (fAvFrameHelper != NULL){
+        fAvFrameHelper->releas();
+        pthread_join(thread_start_get_frame,NULL);
+
+        delete fAvFrameHelper;
+        fAvFrameHelper = NULL;
+
+        if (helper != NULL){
+            delete helper;
+            helper = NULL;
+        }
+
+        if (kzgPlayerStatus != NULL){
+            delete kzgPlayerStatus;
+            kzgPlayerStatus = NULL;
+        }
     }
     nexit = true;
     env->CallVoidMethod(thiz,playNext);
@@ -759,5 +788,39 @@ JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1showframeFromSeek(JNIEnv *env, jobject thiz, jdouble timestamp) {
     if (kzgFFmpeg != NULL){
         kzgFFmpeg->showFrameFromSeek(timestamp);
+    }
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1init_1frame(JNIEnv *env, jobject thiz, jstring source) {
+    if (helper == NULL){
+        helper = new JavaCallHelper(javaVm,env,thiz);
+    }
+    if (kzgPlayerStatus == NULL){
+        kzgPlayerStatus = new KzgPlayerStatus();
+    }
+    if (fAvFrameHelper == NULL){
+        const char* url = env->GetStringUTFChars(source,0);
+        fAvFrameHelper = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+    }
+
+    fAvFrameHelper->init();
+}
+
+
+void *startGetFrame(void *args){
+    FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
+    fAvFrameHelper1->starDecode();
+    return 0;
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1start_1get_1frame(JNIEnv *env, jobject thiz) {
+    if (fAvFrameHelper != NULL){
+        pthread_create(&thread_start_get_frame,NULL,startGetFrame,fAvFrameHelper);
     }
 }

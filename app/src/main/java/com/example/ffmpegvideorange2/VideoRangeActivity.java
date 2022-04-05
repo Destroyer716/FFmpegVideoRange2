@@ -244,6 +244,16 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
 
             }
         });
+
+
+        /*kzgPlayer.initGetFrame(inputPath);
+        kzgPlayer.setGetFrameListener(new KzgPlayer.GetFrameListener() {
+            @Override
+            public void onInited() {
+                Log.e("kzg","初始化抽帧成功");
+                kzgPlayer.startGetFrame();
+            }
+        });*/
     }
 
 

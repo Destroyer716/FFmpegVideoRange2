@@ -59,6 +59,10 @@ public:
     void onCallVideoInfo(int thread,int fps,int64_t duration,int width,int height);
     void onEnablePlay(bool enable,int thread);
 
+
+
+    void onGetFrameInitSuccess(int thread);
+
 public:
     JavaVM *javaVm;
     JNIEnv *env;
@@ -81,6 +85,7 @@ public:
     jmethodID jmid_calljavaqueuesize;
     jmethodID jmid_getVideoInfo;
     jmethodID jmid_enablePlay;
+    jmethodID jmid_onGetFrameInitSuccess;
 
 };
 

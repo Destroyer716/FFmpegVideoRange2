@@ -538,7 +538,7 @@ void KzgFFmpeg::start() {
                 if (getAvPacketRefType(avPacket) > 0){
                     kzgVideo->queue->putAvPacket(avPacket);
                 } else{
-                    LOGE("avpacket ref 为 0 ");
+                    //LOGE("avpacket ref 为 0 ");
                 }
 
                 /*if (!f){

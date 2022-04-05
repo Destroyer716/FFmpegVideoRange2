@@ -47,6 +47,7 @@ public class KzgPlayer {
     private int seekType = seek_advance;
 
     private PlayerListener playerListener;
+    private GetFrameListener getFrameListener;
     private String source;
     public boolean isPlaying = false;
     public boolean isPause = false;
@@ -225,8 +226,17 @@ public class KzgPlayer {
     }
 
 
+    public void initGetFrame(String source){
+        n_init_frame(source);
+    }
+
+    public void startGetFrame(){
+        n_start_get_frame();
+    }
 
 
+
+/************************播放视频或者逐帧预览*********************************/
     private native void n_parpared(String source);
     private native void n_play();
     private native void n_pause();
@@ -242,6 +252,11 @@ public class KzgPlayer {
     private native void n_playmodel(int model);
     private native void n_showframe(double timestamp);
     private native void n_showframeFromSeek(double timestamp);
+
+
+/************************按时间抽帧******************************************/
+    private native void n_init_frame(String source);
+    private native void n_start_get_frame();
 
 
     public void onError(int code,String msg){
@@ -343,6 +358,17 @@ public class KzgPlayer {
     }
 
 
+    public void onGetFrameInitSuccess(){
+        if (getFrameListener != null){
+            getFrameListener.onInited();
+        }
+    }
+
+
+
+
+
+
     public void setPlayerListener(PlayerListener playerListener) {
         this.playerListener = playerListener;
     }
@@ -360,6 +386,14 @@ public class KzgPlayer {
         void onComplete();
         void onDB(int db);
         void onGetVideoInfo(int fps,long duration,int widht,int height);
+    }
+
+    public void setGetFrameListener(GetFrameListener getFrameListener) {
+        this.getFrameListener = getFrameListener;
+    }
+
+    public interface GetFrameListener{
+        void onInited();
     }
 
 
