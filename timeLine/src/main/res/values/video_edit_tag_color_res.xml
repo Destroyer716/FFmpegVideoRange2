@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--视频编辑颜色组-->
+    <array name="video_tag_img_colors">    <!--贴纸-->
+        <item name="video_tag_img_item1">#6b93d1</item>
+        <item name="video_tag_img_item2">#4da9e8</item>
+        <item name="video_tag_img_item3">#7eb7de</item>
+        <item name="video_tag_img_item4">#777de5</item>
+        <item name="video_tag_img_item5">#5d65b2</item>
+        <item name="video_tag_img_item6">#8c79d3</item>
+        <item name="video_tag_img_item7">#ae85c3</item>
+        <item name="video_tag_img_item8">#6c8baf</item>
+        <item name="video_tag_img_item9">#6a7482</item>
+        <item name="video_tag_img_item10">#6ba9b6</item>
+    </array>
+
+    <array name="video_tag_text_colors">    <!--文字-->
+        <item name="video_tag_img_item1">#00c1a4</item>
+        <item name="video_tag_img_item2">#32d886</item>
+        <item name="video_tag_img_item3">#55d542</item>
+        <item name="video_tag_img_item4">#b3d65c</item>
+        <item name="video_tag_img_item5">#e3d156</item>
+        <item name="video_tag_img_item6">#edc112</item>
+        <item name="video_tag_img_item7">#ff9a57</item>
+        <item name="video_tag_img_item8">#ff819e</item>
+        <item name="video_tag_img_item9">#ff2b6e</item>
+        <item name="video_tag_img_item10">#e9241b</item>
+    </array>
+</resources>

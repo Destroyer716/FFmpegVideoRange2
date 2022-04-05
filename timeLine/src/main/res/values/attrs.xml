@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ColorfulBorderLayout">
+        <attr name="bgColorWithRadius" format="color" />
+        <attr name="strokeColor" format="color" />
+        <attr name="radius" format="dimension" />
+        <attr name="strokeWidth" format="dimension" />
+    </declare-styleable>
+
+
+    <declare-styleable name="RoundImageView">
+        <attr name="iv_radius" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="RoundTextView">
+        <attr name="tv_radius" format="dimension"/>
+    </declare-styleable>
+</resources>

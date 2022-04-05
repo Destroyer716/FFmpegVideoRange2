@@ -30,11 +30,6 @@ import wseemann.media.FFmpegMediaMetadataRetriever;
 
 public class MainActivity extends AppCompatActivity {
 
-    String inputPath = Environment.getExternalStorageDirectory() + "/testVideo";
-
-    private RecyclerView recyclerView;
-    private FileListAdapter adapter;
-    private List<String> dataList;
 
 
     @Override
@@ -42,43 +37,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        recyclerView = findViewById(R.id.recycler_view);
-        adapter = new FileListAdapter(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
-
-        dataList = getFileListData();
-        adapter.setData(dataList);
-        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+        findViewById(R.id.tv_video_list).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(int position) {
-                Intent intent = new Intent(MainActivity.this,VideoRangeActivity.class);
-                intent.putExtra("filePath",dataList.get(position));
-                startActivity(intent);
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,FileListActivity.class));
+            }
+        });
+
+
+        findViewById(R.id.tv_meitu_time_line).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,TimeLineActivity.class));
             }
         });
     }
 
 
-    private List<String> getFileListData(){
-        File file=new File(inputPath);
-        File[] files=file.listFiles();
-        if (files == null){
-            Log.e("error","空目录");
-            return null;
-        }
-        List<String> s = new ArrayList<>();
-        for(int i =0;i<files.length;i++){
-            s.add(files[i].getAbsolutePath());
-        }
-        return s;
-
-    }
-
-
-
-    public void goToVideoRange(View view) {
-        Intent intent = new Intent(MainActivity.this,PreviewFrameActivity.class);
-        startActivity(intent);
-    }
 }

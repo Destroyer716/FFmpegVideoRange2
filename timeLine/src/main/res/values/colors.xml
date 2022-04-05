@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+    <color name="black_15">#26000000</color>
+    <color name="black40">#66000000</color>
+    <color name="black70">#b3000000</color>
+    <color name="setting__item_text_color">#000000</color>
+    <color name="setting_bg">#f7f7f7</color>
+    <color name="setting__quality_item_text_color">#000000</color>
+    <color name="color_e3e3e3">#e3e3e3</color>
+
+    <drawable name="camera__common_white">#FFFFFF</drawable>
+    <color name="color_white_80">#ccffffff</color>
+    <color name="color_white_70">#b3ffffff</color>
+    <color name="color_FFBED4">#FFBED4</color>
+
+    <color name="color_white_10">#19ffffff</color>
+
+    <color name="color_5b5b5b">#5b5b5b</color>
+
+    <color name="color_f0f0f0">#f0f0f0</color>
+
+    <color name="color_dddddd">#dddddd</color>
+    <color name="color_a3d1e9">#A3D1E9</color>
+
+    <color name="camera__camera_welcome_view_bg">#FF3F5B</color>
+    <!--设置页面文字颜色-->
+    <color name="camera__settings_selected">#FC4865</color>
+    <color name="camera__settings_unselected">#B3FFFFFF</color>
+
+    <color name="camera__select_music_text">#2C2E30</color>
+    <color name="color1a1825">#1a1825</color>
+    <color name="color_c067acd5">#c067acd5</color>
+    <color name="color_67acd5">#67acd5</color>
+    <color name="color_fcea9e">#fcea9e</color>
+
+    <color name="c_578fff">#578fff</color>
+    <drawable name="lucency">#00000000</drawable>
+    <color name="c_fd4965">#fd4965</color>
+    <color name="c_fd4965_30">#4dfd4965</color>
+    <color name="white20">#31FFFFFF</color>
+    <color name="white15">#26FFFFFF</color>
+
+    <color name="black90">#e6000000</color>
+    <color name="black95">#f2000000</color>
+    <color name="black80">#cc000000</color>
+    <color name="black50">#80000000</color>
+    <color name="black17">#2A000000</color>
+    <color name="black30">#4c000000</color>
+    <color name="black85">#d9000000</color>
+    <color name="blue">#7D9EC0</color>
+    <color name="c_f9f9f9">#F9F9F9</color>
+    <color name="c_2c2e30">#2c2e30</color>
+    <color name="c_c067acd5">#c067acd5</color>
+    <color name="c_2c2e30_60">#992c2e30</color>
+    <color name="black60">#9a000000</color>
+    <color name="gray70">#BBBBBB</color>
+    <color name="c_e7e7e7">#e7e7e7</color>
+    <color name="color_cacbcc">#cacbcc</color>
+    <color name="color_1e1f21">#1e1f21</color>
+    <color name="color_a2a7ae">#a2a7ae</color>
+
+    <!--首页未选中颜色-->
+    <color name="color_home_tab_unselected">#802c2e30</color>
+    <color name="color_E8E8E8">#E8E8E8</color>
+
+    <color name="colorbfbfbf">#bfbfbf</color>
+    <!--自定义进度条背景颜色-->
+    <color name="color_e6e6e6">#E6E6E6</color>
+
+    <!--自定义进度条渐变颜色-->
+    <color name="progress_color_1">#ff602a</color>
+    <color name="progress_color_2">#ff1383</color>
+
+    <color name="color_2e2e2e">#2e2e2e</color>
+    <color name="color_c1c1c1">#c1c1c1</color>
+    <color name="color_d75036">#D75036</color>
+    <color name="color_f7c69a">#F7C69A</color>
+    <color name="color_f8e7b0">#F8E7B0</color>
+    <color name="color_ffefbf">#FFEFBF</color>
+    <color name="color_fb6548">#FB6548</color>
+
+    <color name="color_f3f3f3">#f3f3f3</color>
+    <color name="color_e0e0e0">#e0e0e0</color>
+
+    <color name="color_bbbbbb">#bbbbbb</color>
+    <color name="color_808080">#808080</color>
+
+    <color name="camera__music_volume_seek_bar_bg">#E7E7E7</color>
+    <color name="camera__music_volume_seek_bar_progress_disable">#E3E3E3</color>
+    <color name="camera__music_volume_seek_bar_progress">#FD4965</color>
+
+    <color name="community_user_bg">#CED0D4</color>
+
+    <color name="colorSelected">#45D9FC</color>
+
+    <color name="colorSelectedBlur">#5093ff</color>
+    <color name="colorSelectedBlurLight">#34dcff</color>
+    <color name="colorSelectedPink">#f9b0d8</color>
+
+    <drawable name="bg_black">#000000</drawable>
+    <color name="color_303030">#303030</color>
+
+    <color name="color_black_20">#34000000</color>
+    <color name="color_black_0">#00000000</color>
+
+
+    <color name="black">#000000</color>
+    <color name="white">#ffffff</color>
+    <color name="white30">#4cffffff</color>
+    <color name="color_f6f6f8">#f6f6f8</color>
+    <color name="color_white">#FFFFFF</color>
+    <color name="color_white90">#e6ffffff</color>
+    <color name="color_f6ede5">#F6EDE5</color>
+
+    <color name="color_white30">#4DFFFFFF</color>
+
+
+    <!-- 主色：红 -->
+    <color name="primary_red">#FF3960</color>
+    <!-- 主色：蓝 -->
+    <color name="primary_blue">#4085FA</color>
+    <!-- 一级灰 -->
+    <color name="primary_gray">#2C2E30</color>
+    <!-- 二级灰 -->
+    <!-- 三级灰 -->
+    <color name="tertiary_gray">#BBBBBB</color>
+    <!-- 四级灰 -->
+    <color name="white_two">#f7f7f7</color>
+    <color name="gray_two">#dddddd</color>
+
+    <color name="color_30_2c2e30">#4c2c2e30</color>
+
+    <color name="primary_red_dim">#fe7f93</color>
+
+    <color name="dark_gray">@color/color_2c2e30</color>
+    <color name="steel_grey">#7f868e</color>
+    <color name="cool_grey">#a0a3a6</color>
+
+    <color name="strongPink">#ff1383</color>
+    <color name="strongPurpule">#8047DD</color>
+
+    <color name="coral">#ff5f3e</color>
+
+    <!-- 44,46,48 -->
+    <color name="color_2c2e30">#2c2e30</color>
+    <color name="color_181818">#181818</color>
+    <color name="color_80_2c2e30">#cc2c2e30</color>
+    <color name="color_20_2c2e30">#332c2e30</color>
+    <!-- 102,102,102 -->
+    <color name="color_666666">#666666</color>
+    <!-- 179,179,179 -->
+    <color name="color_b3b3b3">#B3B3B3</color>
+
+    <color name="color_pinkishGrey">#a0a3a6</color>
+    <color name="color_ababad">#ababad</color>
+    <color name="color_dialog_text_title">@color/color_2c2e30</color>
+    <color name="color_dialog_text_msg">@color/color_666666</color>
+    <color name="color_dialog_text_negative">@color/color_b3b3b3</color>
+    <color name="color_lightBlueGrey">#C8CFD8</color>
+
+    <color name="watermelon">#fd4965</color>
+    <color name="watermelon_two_30">#4DFF3960</color>
+    <color name="watermelon_98">#fafd4965</color>
+    <color name="watermelon_20">#33fd4965</color>
+    <color name="color_e8e8e8">#E8E8E8</color>
+
+    <color name="c_ff3960">#FF3960</color>
+
+    <color name="sb__background">@color/watermelon_98</color>
+    <color name="sb__text_color">#ffffffff</color>
+
+    <color name="color_black50">#80000000</color>
+    <color name="color_black20">#33000000</color>
+
+    <!-- 视频美化蓝色 -->
+    <color name="video_blue">#45d9fc</color>
+    <color name="video_blue_50">#8045D9FC</color>
+
+    <color name="charcoalGreyTwo">#ff46494d</color>
+    <color name="darkGreyTwo">#ff2c2e30</color>
+    <color name="whiteThree">@color/white</color>
+    <color name="coolGrey">@color/cool_grey</color>
+
+
+    <color name="beauty__white50">#7fffffff</color>
+    <color name="white70">#b3ffffff</color>
+    <color name="white80">#ccffffff</color>
+    <color name="white85">#d9ffffff</color>
+    <color name="white60">#99ffffff</color>
+    <color name="white90">#e6ffffff</color>
+    <color name="white95">#f2ffffff</color>
+    <color name="white50">#80ffffff</color>
+    <color name="white10">#1Affffff</color>
+    <color name="black20">#33000000</color>
+    <color name="black10">#1A000000</color>
+    <color name="black6">#0f000000</color>
+    <color name="beauty__black50">#80000000</color>
+    <color name="transet">#00000000</color>
+    <color name="color444648">#2c2e30</color>
+    <color name="colorA0A3A6">#A0A3A6</color>
+    <color name="color818083">#818083</color>
+    <color name="color353437_80">#cc353437</color>
+    <color name="color2d2c2f">#2d2c2f</color>
+    <color name="color181718_90">#E5181718</color>
+    <color name="color1c1b1d_80">#cc1c1b1d</color>
+    <color name="c_2f2f2e">#2f2f2e</color>
+    <color name="c_eeeeee">#EEEEEE</color>
+    <color name="c_d6d6d6">#D6D6D6</color>
+    <color name="c_e5e5e5">#E5E5E5</color>
+</resources>

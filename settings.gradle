@@ -1,2 +1,3 @@
 include ':app', ':myplayer'
 rootProject.name='FFmpegVideoRange2'
+include ':timeLine'

@@ -6,6 +6,32 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/tv_video_list"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:text="视频列表"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:gravity="center"
+        android:background="#32d886"
+        android:textSize="18dp"
+        android:layout_marginTop="20dp"/>
+
+
+    <TextView
+        android:id="@+id/tv_meitu_time_line"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="#32d886"
+        android:gravity="center"
+        android:text="视频时间轴"
+        android:textSize="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_video_list"
+        android:layout_marginTop="20dp"/>
 
     <Button
         android:id="@+id/button"
@@ -14,16 +40,11 @@
         android:onClick="goToVideoRange"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"/>
 
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button" />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
