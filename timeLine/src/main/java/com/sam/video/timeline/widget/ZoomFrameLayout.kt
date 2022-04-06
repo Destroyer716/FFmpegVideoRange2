@@ -3,6 +3,7 @@ package com.sam.video.timeline.widget
 import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -40,6 +41,7 @@ class ZoomFrameLayout : FrameLayout,
     ) {
         timeLineValue.time = timeLineValue.px2time(vlaue)
         dispatchUpdateTime()
+        Log.e("kzg","***************onAnimationUpdate:${timeLineValue.time}")
         timeChangeListener?.updateTimeByScroll(timeLineValue.time)
     }
 
@@ -241,6 +243,7 @@ class ZoomFrameLayout : FrameLayout,
 
     fun updateTimeByScroll(time: Long) {
         updateTime(time)
+        Log.e("kzg","***************updateTimeByScroll:${timeLineValue.time}")
         timeChangeListener?.updateTimeByScroll(timeLineValue.time)
     }
 

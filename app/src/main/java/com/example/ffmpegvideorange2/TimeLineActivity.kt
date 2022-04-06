@@ -46,7 +46,6 @@ class TimeLineActivity : AppCompatActivity(), View.OnClickListener  {
         tvAddTag.setOnClickListener(this)
         ivRemove.setOnClickListener(this)
         zoomFrameLayout.setOnClickListener(this)
-
         val halfScreenWidth = rvFrame.context.getScreenWidth() / 2
         rvFrame.setPadding(halfScreenWidth, 0, halfScreenWidth, 0)
 
@@ -129,6 +128,7 @@ class TimeLineActivity : AppCompatActivity(), View.OnClickListener  {
 
         bindVideoData()
         requestPermission()
+
     }
 
 

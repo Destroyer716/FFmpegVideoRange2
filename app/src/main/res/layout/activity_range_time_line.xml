@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RangeTimeLineActivity"
+    android:background="@color/color_181818">
+
+
+    <RelativeLayout
+        android:id="@+id/rl_surface_view_parent"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="#000000">
+
+        <com.example.myplayer.opengl.KzgGLSurfaceView
+            android:id="@+id/sv_video_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"/>
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:background="@color/color_181818"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rl_surface_view_parent">
+
+        <TextView
+            android:id="@+id/tv_video_range_play_time"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColor="#ffffff"
+            android:gravity="center"/>
+
+        <ImageView
+            android:id="@+id/iv_play_stop_video"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/play_ico"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_video_range_total_time"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColor="#ffffff"
+            android:layout_alignParentRight="true"
+            android:gravity="center"/>
+
+    </RelativeLayout>
+
+
+    <com.sam.video.timeline.widget.ZoomFrameLayout
+        android:id="@+id/zoomFrameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:paddingTop="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/relativeLayout"
+        android:layout_marginTop="20dp">
+
+        <com.sam.video.timeline.widget.VideoFrameRecyclerView
+            android:id="@+id/rvFrame"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <com.sam.video.timeline.widget.SelectAreaView
+            android:id="@+id/selectAreaView"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_gravity="center_vertical"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <View
+            android:id="@+id/lineFrame"
+            android:layout_width="4dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:background="@drawable/video_frame_cursor" />
+
+        <com.sam.video.timeline.widget.RulerView
+            android:id="@+id/rulerView"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="40dp" />
+
+
+        <com.sam.video.timeline.widget.TagLineView
+            android:id="@+id/tagView"
+            android:layout_width="match_parent"
+            android:layout_height="66dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="70dp" />
+    </com.sam.video.timeline.widget.ZoomFrameLayout>
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/av_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:indicatorName="LineScalePulseOutIndicator"
+        app:indicatorColor="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/rl_surface_view_parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

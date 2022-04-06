@@ -131,6 +131,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             }
         });
         videoRangeView.setFilePath(inputPath);
+
         new Thread(new Runnable() {
             @Override
             public void run() {

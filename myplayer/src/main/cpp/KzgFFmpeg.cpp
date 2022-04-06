@@ -535,11 +535,11 @@ void KzgFFmpeg::start() {
                 } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview ){
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_NONREF;
                 }
-                if (getAvPacketRefType(avPacket) > 0){
-                    kzgVideo->queue->putAvPacket(avPacket);
+                kzgVideo->queue->putAvPacket(avPacket);
+                /*if (getAvPacketRefType(avPacket) > 0){
                 } else{
                     //LOGE("avpacket ref 为 0 ");
-                }
+                }*/
 
                 /*if (!f){
                     LOGE("open file fail ");
@@ -662,7 +662,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         return;
     }
 
-    LOGE("start  seeking");
+    LOGE("start  seeking %ld",sec);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;

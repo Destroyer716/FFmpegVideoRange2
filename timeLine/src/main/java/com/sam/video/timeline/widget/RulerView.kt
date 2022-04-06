@@ -65,6 +65,13 @@ class RulerView @JvmOverloads constructor(
         R.color.white50
     )
 
+    private val black30Color: Int = ContextCompat.getColor(context,
+        R.color.black30
+    )
+    private val black50Color: Int = ContextCompat.getColor(context,
+        R.color.black50
+    )
+
     init {
         textPaint.color = white30Color
         textPaint.strokeWidth = this.dp1

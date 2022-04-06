@@ -31,7 +31,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".TimeLineActivity"></activity>
+        <activity android:name=".RangeTimeLineActivity"></activity>
+        <activity android:name=".TimeLineActivity" />
         <activity android:name=".FileListActivity" />
         <activity android:name=".PreviewFrameActivity" />
         <activity android:name=".VideoRangeActivity" />

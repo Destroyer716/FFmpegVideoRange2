@@ -32,7 +32,7 @@ class FileListActivity : AppCompatActivity() {
         adapter?.setOnItemClickListener(FileListAdapter.OnItemClickListener { position ->
             val intent = Intent(
                 this@FileListActivity,
-                VideoRangeActivity::class.java
+                RangeTimeLineActivity::class.java
             )
             intent.putExtra("filePath", dataList!![position])
             startActivity(intent)
