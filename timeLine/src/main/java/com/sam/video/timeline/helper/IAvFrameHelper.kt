@@ -6,7 +6,6 @@ import android.widget.ImageView
  * 视频抽帧接口
  */
 interface IAvFrameHelper {
-
     var filePath:String
     var onGetFrameBitmapCallback:OnGetFrameBitmapCallback?
 

@@ -564,7 +564,7 @@ void KzgFFmpeg::start() {
                     if (!kzgPlayerStatus->seeking){
                         //下面事播放完成退出，这里暂时先不用退出
                         av_usleep(1000*100);
-                        helper->onPlayStop(THREAD_CHILD);
+                        //helper->onPlayStop(THREAD_CHILD);
                         /*if (!kzgVideo->kzgPlayerStatus->isFramePreview){
                             kzgPlayerStatus->exit = true;
                         }*/
@@ -662,7 +662,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         return;
     }
 
-    LOGE("start  seeking %ld",sec);
+    LOGE("start  seeking %lld  , duration:%lld",sec,duration);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;

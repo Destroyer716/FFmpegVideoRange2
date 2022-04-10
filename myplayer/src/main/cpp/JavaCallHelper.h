@@ -61,7 +61,9 @@ public:
 
 
 
-    void onGetFrameInitSuccess(int thread);
+
+    void onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1);
+    void onGetFramePacket(int dataSize,double pts,uint8_t *data);
 
 public:
     JavaVM *javaVm;
@@ -86,6 +88,7 @@ public:
     jmethodID jmid_getVideoInfo;
     jmethodID jmid_enablePlay;
     jmethodID jmid_onGetFrameInitSuccess;
+    jmethodID jmid_onGetFramePacket;
 
 };
 

@@ -15,6 +15,7 @@ public class IFrameSearch implements Runnable {
     private Thread thread;
 
     public IFrameSearch(String path) {
+        IframeUs.clear();
         mediaExtractor = new MediaExtractor();
         thread = new Thread(this,"IFrameSearch");
         try {

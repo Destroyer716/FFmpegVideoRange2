@@ -234,6 +234,10 @@ public class KzgPlayer {
         n_start_get_frame();
     }
 
+    public void seekFrame(double sec,boolean isCurrentGop){
+        n_frame_seek((int) (sec*1000),isCurrentGop);
+    }
+
 
 
 /************************播放视频或者逐帧预览*********************************/
@@ -257,6 +261,7 @@ public class KzgPlayer {
 /************************按时间抽帧******************************************/
     private native void n_init_frame(String source);
     private native void n_start_get_frame();
+    private native void n_frame_seek(int sec,boolean isCurrentGOP);
 
 
     public void onError(int code,String msg){
@@ -358,9 +363,16 @@ public class KzgPlayer {
     }
 
 
-    public void onGetFrameInitSuccess(){
+    public void onGetFrameInitSuccess(String codecName,int width,int height,byte[] csd_0,byte[] csd_1){
         if (getFrameListener != null){
-            getFrameListener.onInited();
+            getFrameListener.onInited(codecName, width, height, csd_0, csd_1);
+        }
+    }
+
+
+    public void getFramePacket(int dataSize,int pts,byte[] data){
+        if (getFrameListener != null){
+            getFrameListener.getFramePacket(dataSize,pts,data);
         }
     }
 
@@ -392,8 +404,14 @@ public class KzgPlayer {
         this.getFrameListener = getFrameListener;
     }
 
+    public GetFrameListener getGetFrameListener() {
+        return getFrameListener;
+    }
+
     public interface GetFrameListener{
-        void onInited();
+        void onInited(String codecName,int width,int height,byte[] csd_0,byte[] csd_1);
+        void onStarGetFrame();
+        void getFramePacket(int dataSize,double pts,byte[] data);
     }
 
 

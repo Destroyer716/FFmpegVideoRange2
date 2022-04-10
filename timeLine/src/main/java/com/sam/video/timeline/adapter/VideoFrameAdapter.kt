@@ -61,18 +61,9 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
             index++
         }
         Log.e("kzg","**************imageView.tag:${imageView.tag}")
-        //avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
+        avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 
-        /*videoDecoder2?.apply {
-            getFrameMs(item.frameClipTime,{
-                imageView.setImageBitmap(it)
-
-            },{
-                Log.e("kzg","****************${it.printStackTrace()}")
-            })
-
-        }*/
 
         Glide.with(imageView)
             .asBitmap()

@@ -27,7 +27,8 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_calljavaqueuesize = env->GetMethodID(jclass1,"onCallJavaQueueSize","()I");
     jmid_getVideoInfo = env->GetMethodID(jclass1,"onGetVideoInfo","(IJII)V");
     jmid_enablePlay = env->GetMethodID(jclass1,"onEnableStartPlay","(Z)V");
-    jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","()V");
+    jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","(Ljava/lang/String;II[B[B)V");
+    jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(I[BD)V");
 }
 
 JavaCallHelper::~JavaCallHelper() {
@@ -341,16 +342,35 @@ void JavaCallHelper::onEnablePlay(bool enable, int thread) {
     }
 }
 
-void JavaCallHelper::onGetFrameInitSuccess(int thread) {
-    if (thread == THREAD_CHILD){
-        JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
-            return;
-        }
-        jniEnv->CallVoidMethod(jobj,jmid_onGetFrameInitSuccess);
-        javaVm->DetachCurrentThread();
-    } else{
-        env->CallVoidMethod(jobj,jmid_onGetFrameInitSuccess);
+void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1) {
+    JNIEnv *jniEnv;
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        return;
     }
+    jstring name = jniEnv->NewStringUTF(reinterpret_cast<const char *>(codecName));
+    jbyteArray csd0 = jniEnv->NewByteArray(csd0_size);
+    jniEnv->SetByteArrayRegion(csd0, 0, csd0_size, reinterpret_cast<const jbyte *>(csd_0));
+    jbyteArray csd1 = jniEnv->NewByteArray(csd1_size);
+    jniEnv->SetByteArrayRegion(csd1, 0, csd1_size, reinterpret_cast<const jbyte *>(csd_1));
+
+    jniEnv->CallVoidMethod(jobj,jmid_onGetFrameInitSuccess,name,width,height,csd0,csd1);
+    jniEnv->DeleteLocalRef(name);
+    jniEnv->DeleteLocalRef(csd0);
+    jniEnv->DeleteLocalRef(csd1);
+    javaVm->DetachCurrentThread();
+}
+
+void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data) {
+    JNIEnv *jniEnv;
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        return;
+    }
+
+    jbyteArray avpacket = jniEnv->NewByteArray(dataSize);
+    jniEnv->SetByteArrayRegion(avpacket, 0, dataSize, reinterpret_cast<const jbyte *>(data));
+
+    jniEnv->CallVoidMethod(jobj,jmid_onGetFramePacket,dataSize,pts,avpacket);
+    jniEnv->DeleteLocalRef(avpacket);
+    javaVm->DetachCurrentThread();
 }
 

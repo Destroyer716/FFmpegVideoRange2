@@ -9,8 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.KzgPlayer.PlayerListener
+import com.example.myplayer.PacketBean
 import com.example.myplayer.TimeInfoBean
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.helper.IFrameSearch
@@ -42,7 +44,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
     private val videos = mutableListOf<VideoClip>()
     val timeLineValue = TimeLineBaseValue()
-    private var lastScrollTime = 0
+    private var lastScrollTime = 0L
 
     private val handler = Handler { msg ->
         when (msg.what) {
@@ -73,7 +75,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
         val halfScreenWidth = rvFrame.context.getScreenWidth() / 2
         rvFrame.setPadding(halfScreenWidth, 0, halfScreenWidth, 0)
-
         rvFrame.addOnItemTouchListener(object : OnFrameClickListener(rvFrame) {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 return true
@@ -184,10 +185,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun updateTimeByScroll(time: Long) {
                 if (time > lastScrollTime){
-                    kzgPlayer?.showFrame(time.toDouble(), KzgPlayer.seek_advance)
-                }else {
-                    kzgPlayer?.showFrame(time.toDouble(), KzgPlayer.seek_back)
+                    kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance)
+                }else if(time < lastScrollTime) {
+                    kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back)
                 }
+                lastScrollTime = time
             }
 
         }
@@ -195,9 +197,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
 
     fun begin() {
-        Log.e("kzg", "**********************begin  isMainThread:${isMainThread()}")
         kzgPlayer!!.setSource(inputPath)
-        //kzgPlayer.setSource("/storage/emulated/0/嗜人之夜_1080P.x264.官方中文字幕.eng.chs.aac.mp4");
         kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
         kzgPlayer!!.parpared()
         kzgPlayer!!.setPlayerListener(object : PlayerListener {
@@ -267,14 +267,36 @@ class RangeTimeLineActivity : AppCompatActivity(){
         })
 
 
-        /*kzgPlayer.initGetFrame(inputPath);
-        kzgPlayer.setGetFrameListener(new KzgPlayer.GetFrameListener() {
-            @Override
-            public void onInited() {
-                Log.e("kzg","初始化抽帧成功");
-                kzgPlayer.startGetFrame();
+        val avFrameHelper = IMediaCodecFrameHelper("",null)
+        avFrameHelper.setKzgPlayer(kzgPlayer!!)
+        rvFrame.setAvFrameHelper(avFrameHelper)
+
+        kzgPlayer!!.initGetFrame(inputPath);
+        kzgPlayer!!.setGetFrameListener(object :KzgPlayer.GetFrameListener{
+            override fun onInited(
+                codecName: String?,
+                width: Int,
+                height: Int,
+                csd_0: ByteArray?,
+                csd_1: ByteArray?
+            ) {
+                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1)
             }
-        });*/
+
+            override fun onStarGetFrame() {
+                runOnUiThread { rvFrame.adapter?.notifyDataSetChanged()}
+
+            }
+
+            override fun getFramePacket(dataSize: Int, pts: Double, data: ByteArray?) {
+                val packetBean = PacketBean()
+                packetBean.data = data
+                packetBean.pts = pts
+                packetBean.dataSize = dataSize
+                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).queue.enQueue(packetBean)
+            }
+
+        })
     }
 
 

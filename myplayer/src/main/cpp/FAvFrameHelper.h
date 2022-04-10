@@ -22,13 +22,18 @@ public:
 
     void init();
     void decodeAVPackate();
-    void seekTo(int64_t sec);
+    void seekTo(int64_t sec,bool isCurrentGop);
     void starDecode();
     void releas();
+    int getAvCodecContent(AVCodecParameters *avCodecParameters,AVCodecContext **avCodecContext);
+    void decodeFrame(double res);
 
 public:
     KzgPlayerStatus *playerStatus;
     bool isExit = false;
+    bool isPause = true;
+    int64_t seekTime = 0;
+    AVBitStreamFilterContext* mimType = NULL;
 
 private:
     JavaCallHelper *helper;
@@ -40,6 +45,8 @@ private:
     AVFormatContext *avFormatContext;
     int avStreamIndex = -1;
     AVRational time_base;
+    AVCodecContext *avCodecContext = NULL;
+    int64_t duration = 0;
 
 
 };

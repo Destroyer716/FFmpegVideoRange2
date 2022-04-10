@@ -824,3 +824,12 @@ Java_com_example_myplayer_KzgPlayer_n_1start_1get_1frame(JNIEnv *env, jobject th
         pthread_create(&thread_start_get_frame,NULL,startGetFrame,fAvFrameHelper);
     }
 }
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1frame_1seek(JNIEnv *env, jobject thiz, jint sec,jboolean isCurrentGop) {
+    if (fAvFrameHelper != NULL){
+        fAvFrameHelper->seekTo(sec,isCurrentGop);
+    }
+}

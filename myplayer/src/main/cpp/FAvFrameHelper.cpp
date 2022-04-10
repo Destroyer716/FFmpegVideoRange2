@@ -71,6 +71,7 @@ void FAvFrameHelper::decodeAVPackate() {
             ret = 0;
             avStreamIndex = i;
             time_base = avFormatContext->streams[i]->time_base;
+            duration = avFormatContext->duration;
             break;
         }
     }
@@ -82,7 +83,20 @@ void FAvFrameHelper::decodeAVPackate() {
         return;
     }
 
-    helper->onGetFrameInitSuccess(THREAD_CHILD);
+    if (getAvCodecContent(avFormatContext->streams[avStreamIndex]->codecpar,&avCodecContext) != 0){
+        LOGE("获取解码器信息失败");
+        isExit = true;
+        pthread_mutex_unlock(&init_mutex);
+        return;
+    }
+
+    helper->onGetFrameInitSuccess(avCodecContext->codec->name,
+            avCodecContext->width,
+            avCodecContext->height,
+            avCodecContext->extradata_size,
+            avCodecContext->extradata_size,
+            avCodecContext->extradata,
+            avCodecContext->extradata);
     pthread_mutex_unlock(&init_mutex);
 }
 
@@ -134,12 +148,15 @@ int getAvPacketRefType2(AVPacket *pAvPkt){
 }
 
 
+
+
+
 void FAvFrameHelper::starDecode() {
     LOGE("开始解码抽帧");
     int ret;
     int count = 0;
     while (playerStatus != NULL && !playerStatus->exit){
-        if (count >= 90){
+        if (isPause){
             av_usleep(1000*10);
             continue;
         }
@@ -150,8 +167,9 @@ void FAvFrameHelper::starDecode() {
             return;
         }
 
+        //找到视频avPacket
         if (avPacket->stream_index == avStreamIndex){
-            //找到视频avPacket
+            LOGE("seekTo sec2 %lld:", seekTime);
             getAvPacketRefType2(avPacket);
         }
 
@@ -194,5 +212,134 @@ void FAvFrameHelper::releas() {
         playerStatus = NULL;
     }
 
+    if(mimType != NULL){
+        av_bitstream_filter_close(mimType);
+    }
+
     pthread_mutex_unlock(&init_mutex);
+}
+
+int FAvFrameHelper::getAvCodecContent(AVCodecParameters *avCodecParameters,
+                                       AVCodecContext **avCodecContext) {int ret;
+    AVCodec * avCodec = avcodec_find_decoder(avCodecParameters->codec_id);
+    //AVCodec * avCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    if (!avCodec){
+        isExit = true;
+        pthread_mutex_unlock(&init_mutex);
+        LOGE("find decoder fail %s:", url);
+        helper->onError(1003,"find decoder fail",THREAD_CHILD);
+        return -1;
+    }
+
+
+    *avCodecContext = avcodec_alloc_context3(avCodec);
+    if (!*avCodecContext){
+        isExit = true;
+        pthread_mutex_unlock(&init_mutex);
+        LOGE("alloc codec context fail %s:", url);
+        helper->onError(1004,"alloc codec context fail",THREAD_CHILD);
+        return -1;
+    }
+
+
+    ret = avcodec_parameters_to_context(*avCodecContext,avCodecParameters);
+    if (ret < 0){
+        isExit = true;
+        pthread_mutex_unlock(&init_mutex);
+        LOGE("avcodec_parameters_from_context fail %s:", url);
+        helper->onError(1005,"avcodec_parameters_from_context fail",THREAD_CHILD);
+        return -1;
+    }
+    (*avCodecContext)->thread_type = FF_THREAD_FRAME;
+    (*avCodecContext)->thread_count = 8;
+
+    ret = avcodec_open2(*avCodecContext,avCodec,0);
+    if (ret != 0){
+        isExit = true;
+        pthread_mutex_unlock(&init_mutex);
+        LOGE("open audio codec fail %s:", url);
+        helper->onError(1006,"open audio codec fail",THREAD_CHILD);
+        return -1;
+    }
+
+    mimType =  av_bitstream_filter_init("h264_mp4toannexb");
+    return 0;
+
+}
+
+void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
+    if(duration <= 0){
+        return;
+    }
+    LOGE("seekTo sec1 %lld:", sec/1000.0 * AV_TIME_BASE);
+
+    if (isCurrentGop){
+        isPause = false;
+    } else{
+        if (sec > 0 && sec < duration){
+            pthread_mutex_lock(&frame_mutex);
+            int64_t res = sec/1000.0 * AV_TIME_BASE;
+            seekTime = res;
+            avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
+            isPause = false;
+            decodeFrame(res);
+            pthread_mutex_unlock(&frame_mutex);
+        }
+    }
+
+}
+
+void FAvFrameHelper::decodeFrame(double res) {
+    int ret;
+    int count = 0;
+    if (playerStatus != NULL && !playerStatus->exit){
+
+        AVPacket *avPacket = av_packet_alloc();
+        ret = av_read_frame(avFormatContext,avPacket);
+        if (ret != 0){
+            LOGE("获取视频avPacket 失败");
+            return;
+        }
+
+        //找到视频avPacket
+        if (avPacket->stream_index == avStreamIndex){
+            bool  isFind = false;
+            LOGE("seekTo sec2 %ld:  , %ld", res , avPacket->pts);
+            while (!isFind){
+                if (res >= (avPacket->pts - 0.03) && res <= (avPacket->pts + 0.03)){
+                    uint8_t *data;
+                    av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                    uint8_t *tdata = NULL;
+                    tdata = avPacket->data;
+                    avPacket->data = data;
+
+                    if(tdata != NULL)
+                    {
+                        av_free(tdata);
+                    }
+                    helper->onGetFramePacket(avPacket->size,res,avPacket->data);
+                    isFind = true;
+                } else if (getAvPacketRefType2(avPacket) > 0){
+                    uint8_t *data;
+                    av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                    uint8_t *tdata = NULL;
+                    tdata = avPacket->data;
+                    avPacket->data = data;
+
+                    if(tdata != NULL)
+                    {
+                        av_free(tdata);
+                    }
+                    helper->onGetFramePacket(avPacket->size,res,avPacket->data);
+                    isFind = true;
+                } else{
+                    av_packet_free(&avPacket);
+                    av_free(avPacket);
+                    avPacket = NULL;
+                }
+            }
+
+        }
+
+    }
 }
