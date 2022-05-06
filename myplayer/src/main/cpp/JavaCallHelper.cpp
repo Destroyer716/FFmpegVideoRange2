@@ -28,7 +28,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_getVideoInfo = env->GetMethodID(jclass1,"onGetVideoInfo","(IJII)V");
     jmid_enablePlay = env->GetMethodID(jclass1,"onEnableStartPlay","(Z)V");
     jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","(Ljava/lang/String;II[B[B)V");
-    jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(I[BD)V");
+    jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(ID[B)V");
 }
 
 JavaCallHelper::~JavaCallHelper() {

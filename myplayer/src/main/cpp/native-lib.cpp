@@ -812,7 +812,7 @@ Java_com_example_myplayer_KzgPlayer_n_1init_1frame(JNIEnv *env, jobject thiz, js
 
 void *startGetFrame(void *args){
     FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
-    fAvFrameHelper1->starDecode();
+    fAvFrameHelper1->decodeFrame(0);
     return 0;
 }
 

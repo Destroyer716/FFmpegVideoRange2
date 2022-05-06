@@ -243,7 +243,6 @@ class ZoomFrameLayout : FrameLayout,
 
     fun updateTimeByScroll(time: Long) {
         updateTime(time)
-        Log.e("kzg","***************updateTimeByScroll:${timeLineValue.time}")
         timeChangeListener?.updateTimeByScroll(timeLineValue.time)
     }
 

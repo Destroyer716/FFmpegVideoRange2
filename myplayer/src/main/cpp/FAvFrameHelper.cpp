@@ -169,7 +169,7 @@ void FAvFrameHelper::starDecode() {
 
         //找到视频avPacket
         if (avPacket->stream_index == avStreamIndex){
-            LOGE("seekTo sec2 %lld:", seekTime);
+            LOGE("seekTo sec3 %lld:", seekTime);
             getAvPacketRefType2(avPacket);
         }
 
@@ -182,6 +182,7 @@ void FAvFrameHelper::starDecode() {
 void FAvFrameHelper::releas() {
     LOGE("开始释放FAvFrameHelper");
     playerStatus->exit = true;
+    isPause = false;
     pthread_join(decodeAvPacketThread,NULL);
 
     pthread_mutex_lock(&init_mutex);
@@ -190,7 +191,7 @@ void FAvFrameHelper::releas() {
         if (sleep_count > 1000){
             isExit = true;
         }
-        LOGE("wait ffmpeg  exit %d", sleep_count);
+        //LOGE("wait ffmpeg  exit %d", sleep_count);
         sleep_count ++;
         av_usleep(1000*10);//10毫秒
     }
@@ -271,7 +272,6 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
     if(duration <= 0){
         return;
     }
-    LOGE("seekTo sec1 %lld:", sec/1000.0 * AV_TIME_BASE);
 
     if (isCurrentGop){
         isPause = false;
@@ -279,10 +279,11 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
         if (sec > 0 && sec < duration){
             pthread_mutex_lock(&frame_mutex);
             int64_t res = sec/1000.0 * AV_TIME_BASE;
+            LOGE("seekTo sec1  %lld， %lld:",sec, res);
             seekTime = res;
             avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
             isPause = false;
-            decodeFrame(res);
+            //decodeFrame(res);
             pthread_mutex_unlock(&frame_mutex);
         }
     }
@@ -292,54 +293,80 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
 void FAvFrameHelper::decodeFrame(double res) {
     int ret;
     int count = 0;
-    if (playerStatus != NULL && !playerStatus->exit){
+    bool  isFind = false;
+    LOGE("开始解码抽帧");
+    while (playerStatus != NULL && !playerStatus->exit){
+        if (isPause){
+            av_usleep(1000*10);
+            continue;
+        }
+
+        int64_t res = seekTime;
+        if (isFind){
+            av_usleep(1000*10);
+            continue;
+        }
 
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
+            isExit = true;
             LOGE("获取视频avPacket 失败");
             return;
         }
 
-        //找到视频avPacket
-        if (avPacket->stream_index == avStreamIndex){
-            bool  isFind = false;
-            LOGE("seekTo sec2 %ld:  , %ld", res , avPacket->pts);
-            while (!isFind){
-                if (res >= (avPacket->pts - 0.03) && res <= (avPacket->pts + 0.03)){
-                    uint8_t *data;
-                    av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-                    uint8_t *tdata = NULL;
-                    tdata = avPacket->data;
-                    avPacket->data = data;
+        if (avPacket->stream_index != avStreamIndex){
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+        } else if (avPacket->stream_index == avStreamIndex){
+            //找到视频avPacket
 
-                    if(tdata != NULL)
-                    {
-                        av_free(tdata);
-                    }
-                    helper->onGetFramePacket(avPacket->size,res,avPacket->data);
-                    isFind = true;
-                } else if (getAvPacketRefType2(avPacket) > 0){
-                    uint8_t *data;
-                    av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-                    uint8_t *tdata = NULL;
-                    tdata = avPacket->data;
-                    avPacket->data = data;
+            LOGE("seekTo sec2 %lld:  , %f", res , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
 
-                    if(tdata != NULL)
-                    {
-                        av_free(tdata);
-                    }
-                    helper->onGetFramePacket(avPacket->size,res,avPacket->data);
-                    isFind = true;
-                } else{
-                    av_packet_free(&avPacket);
-                    av_free(avPacket);
-                    avPacket = NULL;
+            if (res >= ((avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) - 30000) && res <= ((avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) + 30000)){
+                LOGE("找到一帧 %lld:  , %lld", res , avPacket->pts);
+                uint8_t *data;
+                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                uint8_t *tdata = NULL;
+                tdata = avPacket->data;
+                avPacket->data = data;
+
+                if(tdata != NULL)
+                {
+                    av_free(tdata);
                 }
+                helper->onGetFramePacket(avPacket->size,res,avPacket->data);
+                isFind = true;
+            } else if (getAvPacketRefType2(avPacket) > 0){
+                LOGE("此帧需要去解码 %lld:  , %lld", res , avPacket->pts);
+                uint8_t *data;
+                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                uint8_t *tdata = NULL;
+                tdata = avPacket->data;
+                avPacket->data = data;
+
+                if(tdata != NULL)
+                {
+                    av_free(tdata);
+                }
+                //这里闪退
+                helper->onGetFramePacket(avPacket->size,res,avPacket->data);
+                isFind = false;
+            } else{
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+                isFind = false;
             }
 
-        }
 
+        } else{
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+        }
     }
+    isExit = true;
+    LOGE("抽帧结束");
 }

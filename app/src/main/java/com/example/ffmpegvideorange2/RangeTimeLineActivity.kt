@@ -284,7 +284,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onStarGetFrame() {
-                runOnUiThread { rvFrame.adapter?.notifyDataSetChanged()}
+                runOnUiThread {
+                    rvFrame.adapter?.notifyDataSetChanged()
+                }
 
             }
 

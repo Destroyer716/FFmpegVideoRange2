@@ -101,7 +101,7 @@ public class KzgPlayer {
 
 
     public void showFrame(double timestamp,int seekType){
-        //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
+        Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
@@ -155,6 +155,7 @@ public class KzgPlayer {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.e("kzg","***********************kzgPlayer stop");
                 n_stop();
                 release();
             }
@@ -235,6 +236,7 @@ public class KzgPlayer {
     }
 
     public void seekFrame(double sec,boolean isCurrentGop){
+        Log.e("kzg","***********************seekFrame:"+sec);
         n_frame_seek((int) (sec*1000),isCurrentGop);
     }
 
@@ -370,7 +372,7 @@ public class KzgPlayer {
     }
 
 
-    public void getFramePacket(int dataSize,int pts,byte[] data){
+    public void getFramePacket(int dataSize,double pts,byte[] data){
         if (getFrameListener != null){
             getFrameListener.getFramePacket(dataSize,pts,data);
         }

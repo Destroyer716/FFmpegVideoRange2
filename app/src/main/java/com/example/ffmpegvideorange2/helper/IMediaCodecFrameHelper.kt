@@ -60,6 +60,7 @@ class IMediaCodecFrameHelper(
     }
 
     override fun seek() {
+        Log.e("kzg","****************开始seek")
         targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
         run task@{
             targetViewMap.forEach {
@@ -70,12 +71,15 @@ class IMediaCodecFrameHelper(
         targetViewMap.forEach {
             if (!it.value.isAddFrame) {
                 if (IFrameSearch.IframeUs.size <= 1 || lastIDRIndex == IFrameSearch.IframeUs.size - 1){
-                    kzgPlayer?.seekFrame((it.value.timeUs/1000_000).toDouble(),true)
+                    Log.e("kzg","**************seekTo:${(it.value.timeUs/1000_000.0).toDouble()}  , true")
+                    kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),true)
                 }else{
                     if (it.value.timeUs >= IFrameSearch.IframeUs[lastIDRIndex] && it.value.timeUs < IFrameSearch.IframeUs[lastIDRIndex + 1]){
-                        kzgPlayer?.seekFrame((it.value.timeUs/1000_000).toDouble(),true)
+                        Log.e("kzg","**************seekTo:${(it.value.timeUs/1000_000.0).toDouble()}  , true")
+                        kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),true)
                     }else{
-                        kzgPlayer?.seekFrame((it.value.timeUs/1000_000).toDouble(),false)
+                        Log.e("kzg","**************seekTo:${(it.value.timeUs/1000_000.0).toDouble()}  , false")
+                        kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),false)
                     }
 
                 }

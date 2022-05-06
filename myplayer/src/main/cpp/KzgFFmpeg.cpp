@@ -530,6 +530,7 @@ void KzgFFmpeg::start() {
             }else if (avPacket->stream_index == kzgVideo->streamIndex){
                 //开始解码视频
                 count ++;
+                //LOGE("avpacket pts %lld , %f",avPacket->pts,(avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE));
                 if ( kzgVideo->avCodecContext->skip_frame != AVDISCARD_DEFAULT && (avPacket->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) > (kzgVideo->seekTime - 1000000)){
                     kzgVideo->avCodecContext->skip_frame = AVDISCARD_DEFAULT;
                 } else if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview ){
