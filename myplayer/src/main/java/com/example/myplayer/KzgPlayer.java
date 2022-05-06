@@ -815,7 +815,7 @@ public class KzgPlayer {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private void compressToJpeg(String fileName, Image image) {
+    public static void compressToJpeg(String fileName, Image image) {
         FileOutputStream outStream;
         try {
             outStream = new FileOutputStream(fileName);
@@ -828,10 +828,10 @@ public class KzgPlayer {
     }
 
 
-    private static final int COLOR_FormatI420 = 1;
-    private static final int COLOR_FormatNV21 = 2;
+    public static final int COLOR_FormatI420 = 1;
+    public static final int COLOR_FormatNV21 = 2;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private static byte[] getDataFromImage(Image image, int colorFormat) {
+    public static byte[] getDataFromImage(Image image, int colorFormat) {
         if (colorFormat != COLOR_FormatI420 && colorFormat != COLOR_FormatNV21) {
             throw new IllegalArgumentException("only support COLOR_FormatI420 " + "and COLOR_FormatNV21");
         }

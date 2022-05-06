@@ -295,7 +295,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.data = data
                 packetBean.pts = pts
                 packetBean.dataSize = dataSize
-                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).queue.enQueue(packetBean)
+                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
             }
 
         })
