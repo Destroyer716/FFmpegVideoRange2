@@ -1,6 +1,5 @@
 package com.example.ffmpegvideorange2.helper
 
-import android.R.attr.bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
@@ -12,6 +11,7 @@ import android.os.Environment
 import android.util.Log
 import android.widget.ImageView
 import com.example.ffmpegvideorange2.TimeQueue
+import com.example.ffmpegvideorange2.Utils
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.PacketQueue
 import com.example.myplayer.mediacodec.KzglVideoSupportUtil
@@ -22,6 +22,8 @@ import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.*
+import kotlin.collections.HashMap
 
 
 class IMediaCodecFrameHelper(
@@ -37,7 +39,7 @@ class IMediaCodecFrameHelper(
     val timeQueue:TimeQueue = TimeQueue()
 
     private var lastIDRIndex: Int = 0
-    var targetViewMap:MutableMap<ImageView, TargetBean> = mutableMapOf()
+    var targetViewMap:Hashtable<ImageView, TargetBean> = Hashtable()
     private var childThread:Thread? = null
     private var sendTargetTimeTask:Runnable? = null
     private var sendTargetTimeThread:Thread? = null
@@ -50,7 +52,7 @@ class IMediaCodecFrameHelper(
         childThread!!.start()
 
         //从队列取需要显示的帧的时间点
-        sendTargetTimeTask = Runnable {
+        /*sendTargetTimeTask = Runnable {
             var isNeedAddFrame = false
             while (!isStop){
                 if (timeQueue.queueSize == 0){
@@ -80,18 +82,16 @@ class IMediaCodecFrameHelper(
             }
         }
         sendTargetTimeThread = Thread(sendTargetTimeTask)
-        sendTargetTimeThread!!.start()
+        sendTargetTimeThread!!.start()*/
 
     }
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
-
-        Log.e("kzg","**************seekTime0:${timeMs} , $view")
-        targetViewMap[view] = targetViewMap[view]?:TargetBean()
-        targetViewMap[view]!!.timeUs = timeMs
-        targetViewMap[view]!!.isAddFrame = false
-        //将需要抽帧的时间信息放入队列
-        timeQueue.enQueue(targetViewMap[view])
+        targetViewMap[view] = TargetBean()
+        Log.e("kzg","**************seekTime0:${timeMs} , $view , ${targetViewMap.size}")
+        targetViewMap[view]?.timeUs = timeMs
+        targetViewMap[view]?.isAddFrame = false
+        kzgPlayer?.pauseGetPacket(false)
 
     }
 
@@ -110,7 +110,7 @@ class IMediaCodecFrameHelper(
     }
 
     override fun seek() {
-        Log.e("kzg","****************开始seek")
+        /*Log.e("kzg","****************开始seek")
         targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
         run task@{
             targetViewMap.forEach {
@@ -120,7 +120,7 @@ class IMediaCodecFrameHelper(
 
         targetViewMap.forEach {
             sendFrame(it)
-        }
+        }*/
     }
 
     private fun sendFrame(it:Map.Entry<ImageView, TargetBean>){
@@ -147,21 +147,46 @@ class IMediaCodecFrameHelper(
     }
 
     override fun run() {
+        var times = 0
+        var isPause = false
+        var size = 0
         while (!isStop){
             if (packetQueue.queueSize  == 0){
                 Thread.sleep(10)
                 continue
             }
 
+            /*if (times > 30){
+                Thread.sleep(10)
+                continue
+            }*/
+
             var hasFind = false
-            val deQueue = packetQueue.deQueue()
+            //按照时间从小到大排序
+            //targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
+
+            /*if (targetViewMap.size != size){
+                size = targetViewMap.size
+                Log.e("kzg","**************targetViewMap.size:${targetViewMap.size}")
+            }*/
+
             run task@{
-                targetViewMap.forEach {
-                    Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${deQueue.pts}")
-                    if (it.value.timeUs.toDouble() == deQueue.pts){
-                        mediacodecDecode(deQueue.data,deQueue.dataSize,deQueue.pts.toInt(),it.key)
+                Utils.sortHashMap(targetViewMap).forEach {
+                    if ((it.value.timeUs.toDouble() >= packetQueue.first.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
+                        if (packetQueue.queueSize < 20){
+                            kzgPlayer?.pauseGetPacket(false)
+                        }
+                        packetQueue.deQueue().apply {
+                            Log.e("kzg","**************packetQueue.size:${packetQueue.queueSize}")
+                            Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
+                            mediacodecDecode(this.data,this.dataSize,this.pts.toInt(),it)
+                            times ++
+                            return@task
+                        }
+
                     }
                 }
+
             }
 
         }
@@ -202,55 +227,75 @@ class IMediaCodecFrameHelper(
     }
 
 
-    private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Int,target:ImageView) {
-        Log.e("kzg","************************mediacodec 开始解码帧：$pts")
+    private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Int,mapEntry:Map.Entry<ImageView, TargetBean>) {
+        Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}")
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10000)
                 if (inputBufferIndex >= 0) {
-                    val byteBuffer = mediaCodec!!.inputBuffers[inputBufferIndex]
-                    byteBuffer.clear()
-                    byteBuffer.put(bytes)
-                    mediaCodec!!.queueInputBuffer(inputBufferIndex, 0, size, pts.toLong(), 0)
+                    val inputBuffer: ByteBuffer? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        mediaCodec!!.getInputBuffer(inputBufferIndex)
+                    } else {
+                        mediaCodec!!.inputBuffers[inputBufferIndex]
+                    }
+                    if (inputBuffer != null) {
+                        inputBuffer.clear()
+                        inputBuffer.put(bytes)
+                        mediaCodec!!.queueInputBuffer(inputBufferIndex, 0, size, pts.toLong(), 0)
+                    }
+                }else{
+                    Log.e("kzg","**************mediacodec dequeueInputBuffer 失败")
                 }
-                val index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
-                if (index >= 0) {
+
+                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
+                while (index >= 0) {
                     var buffer:ByteBuffer? = null
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        Log.e("kzg","**********************解码出一帧")
+                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}")
                         buffer = mediaCodec!!.getOutputBuffer(index)
                         val image = mediaCodec!!.getOutputImage(index)
-                        val fileName =   "${Environment.getExternalStorageDirectory()}/jpe/" + String.format("frame_%05d.jpg", pts)
-                        KzgPlayer.compressToJpeg(fileName,image)
-                       /* val rect = image.cropRect
-                        val yuvImage = YuvImage(
-                            KzgPlayer.getDataFromImage(image, KzgPlayer.COLOR_FormatNV21),
-                            ImageFormat.NV21,
-                            rect.width(),
-                            rect.height(),
-                            null
-                        )
-                        val stream = ByteArrayOutputStream()
-                        yuvImage.compressToJpeg(Rect(0, 0, 60, 60), 50, stream)
-                        val bitmap =
-                            BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size())
-                        bitmap?.let {
-                            Log.e("kzg","**********************展示一帧")
-                            target.setImageBitmap(it)
+                        if (mapEntry.value.timeUs <= videoDecodeInfo!!.presentationTimeUs-30000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+30000){
+                            /*val fileName =   "${Environment.getExternalStorageDirectory()}/jpe/" + String.format("frame_%05d.jpg", it.value.timeUs)
+                            KzgPlayer.compressToJpeg(fileName,image)*/
+                            val rect = image.cropRect
+                            val yuvImage = YuvImage(
+                                KzgPlayer.getDataFromImage(image, KzgPlayer.COLOR_FormatNV21),
+                                ImageFormat.NV21,
+                                rect.width(),
+                                rect.height(),
+                                null
+                            )
+                            val stream = ByteArrayOutputStream()
+                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 30, stream)
+                            val bitmap =
+                                BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size())
 
-                        }*/
+                            mapEntry.key.post {
+                                bitmap?.let {
+                                    Log.e("kzg","**********************展示一帧")
+                                    mapEntry.key.setImageBitmap(it)
+
+                                }
+                            }
+
+                            mapEntry.value.isAddFrame = true
+                            pauseTimeQueue = false
+                            Log.e("kzg","*******************mediacodec 解码出目标帧：${mapEntry.value.timeUs}")
+                        }
+
                     }else{
                         buffer = mediaCodec!!.outputBuffers[index]
                     }
-
-                    buffer.position(videoDecodeInfo!!.offset)
-                    buffer.limit(videoDecodeInfo!!.offset + videoDecodeInfo!!.size)
-                    mediaCodec!!.releaseOutputBuffer(index, true)
+                    mediaCodec!!.releaseOutputBuffer(index, false)
+                    buffer?.clear()
+                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
                 }
             } catch (e: Exception) {
+                pauseTimeQueue = false
                 e.printStackTrace()
             }finally {
-                pauseTimeQueue = false
+
+
             }
         }
     }

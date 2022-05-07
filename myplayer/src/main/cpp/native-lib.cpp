@@ -832,4 +832,11 @@ Java_com_example_myplayer_KzgPlayer_n_1frame_1seek(JNIEnv *env, jobject thiz, ji
     if (fAvFrameHelper != NULL){
         fAvFrameHelper->seekTo(sec,isCurrentGop);
     }
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1pause_1get_1packet(JNIEnv *env, jobject thiz,
+                                                          jboolean is_pause) {
+    if (fAvFrameHelper != NULL){
+        fAvFrameHelper->pauseOrStar(is_pause);
+    }
 }

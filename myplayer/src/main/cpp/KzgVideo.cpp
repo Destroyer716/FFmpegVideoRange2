@@ -673,7 +673,7 @@ void KzgVideo::setIsFramePreview(bool isFramePreview) {
 
 void KzgVideo::showFrame(double timestamp) {
 
-    LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
+    //LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
     if (frameQueue != NULL && frameQueue->getQueueSize() > 0){
 
         AVFrame *avFrame = av_frame_alloc();

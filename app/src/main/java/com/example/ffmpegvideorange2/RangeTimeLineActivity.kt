@@ -295,7 +295,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.data = data
                 packetBean.pts = pts
                 packetBean.dataSize = dataSize
+                Log.e("kzg","**************getFramePacket 入队一帧")
                 (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
+                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
+                    kzgPlayer!!.pauseGetPacket(true)
+                }else{
+                    kzgPlayer!!.pauseGetPacket(false)
+                }
             }
 
         })

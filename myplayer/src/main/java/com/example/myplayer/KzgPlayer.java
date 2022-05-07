@@ -101,7 +101,7 @@ public class KzgPlayer {
 
 
     public void showFrame(double timestamp,int seekType){
-        Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
+        //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
@@ -240,6 +240,10 @@ public class KzgPlayer {
         n_frame_seek((int) (sec*1000),isCurrentGop);
     }
 
+    public void pauseGetPacket(boolean isPause){
+        n_pause_get_packet(isPause);
+    }
+
 
 
 /************************播放视频或者逐帧预览*********************************/
@@ -264,6 +268,7 @@ public class KzgPlayer {
     private native void n_init_frame(String source);
     private native void n_start_get_frame();
     private native void n_frame_seek(int sec,boolean isCurrentGOP);
+    private native void n_pause_get_packet(boolean isPause);
 
 
     public void onError(int code,String msg){
@@ -816,6 +821,7 @@ public class KzgPlayer {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static void compressToJpeg(String fileName, Image image) {
+
         FileOutputStream outStream;
         try {
             outStream = new FileOutputStream(fileName);
@@ -824,7 +830,7 @@ public class KzgPlayer {
         }
         Rect rect = image.getCropRect();
         YuvImage yuvImage = new YuvImage(getDataFromImage(image, COLOR_FormatNV21), ImageFormat.NV21, rect.width(), rect.height(), null);
-        yuvImage.compressToJpeg(rect, 100, outStream);
+        yuvImage.compressToJpeg(rect, 20, outStream);
     }
 
 

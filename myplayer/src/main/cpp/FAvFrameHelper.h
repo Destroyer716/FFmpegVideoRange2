@@ -27,6 +27,7 @@ public:
     void releas();
     int getAvCodecContent(AVCodecParameters *avCodecParameters,AVCodecContext **avCodecContext);
     void decodeFrame(double res);
+    void pauseOrStar(bool  isPause);
 
 public:
     KzgPlayerStatus *playerStatus;

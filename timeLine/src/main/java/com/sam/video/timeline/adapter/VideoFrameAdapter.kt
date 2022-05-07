@@ -65,7 +65,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
 
 
 
-        Glide.with(imageView)
+        /*Glide.with(imageView)
             .asBitmap()
             .load(item.videoData.originalFilePath)
             .frame(item.frameClipTime * 1000)
@@ -73,7 +73,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
                 //todo 更好的方案是往前找一个已经有的缓存帧
                 Glide.with(imageView).asBitmap().load(item.videoData.originalFilePath)
             )
-            .into(imageView)
+            .into(imageView)*/
     }
 
     fun setAvframeHelper(helper:IAvFrameHelper){
