@@ -329,17 +329,24 @@ void FAvFrameHelper::decodeFrame(double res) {
             //找到视频avPacket
 
             LOGE("seekTo sec2 %lld:  , %f", res , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
-            uint8_t *data;
-            av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-            uint8_t *tdata = NULL;
-            tdata = avPacket->data;
-            avPacket->data = data;
+            if (getAvPacketRefType2(avPacket) > 0){
+                uint8_t *data;
+                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                uint8_t *tdata = NULL;
+                tdata = avPacket->data;
+                avPacket->data = data;
 
-            if(tdata != NULL)
-            {
-                av_free(tdata);
+                if(tdata != NULL)
+                {
+                    av_free(tdata);
+                }
+                helper->onGetFramePacket(avPacket->size,(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE),avPacket->data);
+            } else{
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
             }
-            helper->onGetFramePacket(avPacket->size,(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE),avPacket->data);
+
 
 
 

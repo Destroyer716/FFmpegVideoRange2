@@ -38,4 +38,13 @@ public class PacketQueue {
         return list.size();
     }
 
+    public void clear(){
+        if (list == null || list.isEmpty()){
+            return;
+        }
+        for (int i=0;i<list.size();i++){
+            list.remove();
+        }
+    }
+
 }

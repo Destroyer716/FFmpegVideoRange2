@@ -564,12 +564,16 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
     override fun onDestroy() {
         super.onDestroy()
+        rvFrame.release()
+        handler.removeCallbacksAndMessages(null)
         if (kzgPlayer != null) {
             kzgPlayer!!.stop()
             kzgPlayer!!.release()
             kzgPlayer!!.setPlayerListener(null)
+            kzgPlayer!!.getFrameListener= null
             kzgPlayer = null
         }
+
 
         if (sv_video_view != null) {
             sv_video_view.removeCallbacks(null)

@@ -61,6 +61,11 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
             index++
         }
         Log.e("kzg","**************imageView.tag:${imageView.tag}")
+
+        avframeHelper?.lastBitMap?.let {
+            imageView.setImageBitmap(it)
+        }
+
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 

@@ -1,5 +1,7 @@
 package com.example.ffmpegvideorange2;
 
+import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.sam.video.timeline.bean.TargetBean;
@@ -41,6 +43,11 @@ public class Utils {
     }
 
 
+    /**
+     * 将存放帧时间信息的map进行排序  升序
+     * @param hashMap
+     * @return
+     */
     public static ArrayList<Map.Entry<ImageView,TargetBean>> sortHashMap(Hashtable hashMap){
         ArrayList<Map.Entry<ImageView,TargetBean>> list = new ArrayList(hashMap.entrySet());
         Collections.sort(list, new Comparator<Map.Entry<ImageView, TargetBean>>() {
@@ -53,6 +60,24 @@ public class Utils {
         });
 
         return list;
+    }
+
+
+    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        int width = options.outWidth;
+        int height = options.outHeight;
+        Log.i("calculateInSampleSize", "calculateInSampleSize: out width and height is " + width + " height " + height);
+        int inSampleWidth = 1;
+        if (height > reqHeight || width > reqWidth) {
+            int halfHeight = height / 2;
+            int halfWidth = width / 2;
+
+            // 采样率设置为2的指数
+            while ((halfHeight / inSampleWidth) >= reqHeight && (halfWidth / inSampleWidth) >= reqWidth) {
+                inSampleWidth *= 2;
+            }
+        }
+        return inSampleWidth;
     }
 
 

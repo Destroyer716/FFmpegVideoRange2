@@ -1,9 +1,6 @@
 package com.example.ffmpegvideorange2.helper
 
-import android.graphics.BitmapFactory
-import android.graphics.ImageFormat
-import android.graphics.Rect
-import android.graphics.YuvImage
+import android.graphics.*
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.os.Build
@@ -45,6 +42,7 @@ class IMediaCodecFrameHelper(
     private var sendTargetTimeThread:Thread? = null
     private var isStop = false
     var pauseTimeQueue = false
+    override var lastBitMap: Bitmap? = null
 
 
     override fun init() {
@@ -96,7 +94,11 @@ class IMediaCodecFrameHelper(
     }
 
     override fun release() {
+        Log.e("kzg","*********************开始销毁IMediaCodecFrameHelper")
         isStop = true
+
+        childThread?.join()
+
         kzgPlayer?.let {
             it.release()
             kzgPlayer = null
@@ -107,6 +109,11 @@ class IMediaCodecFrameHelper(
             it.release()
             mediaCodec = null
         }
+
+        targetViewMap.clear()
+
+        packetQueue.clear()
+        Log.e("kzg","*********************销毁IMediaCodecFrameHelper")
     }
 
     override fun seek() {
@@ -190,6 +197,7 @@ class IMediaCodecFrameHelper(
             }
 
         }
+        Log.e("kzg","*******************结束预览条解码线程")
     }
 
 
@@ -266,10 +274,20 @@ class IMediaCodecFrameHelper(
                                 null
                             )
                             val stream = ByteArrayOutputStream()
-                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 30, stream)
-                            val bitmap =
-                                BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size())
-
+                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 80, stream)
+                            // 检查bitmap的大小
+                            val options = BitmapFactory.Options()
+                            // 设置为true，BitmapFactory会解析图片的原始宽高信息，并不会加载图片
+                            options.inJustDecodeBounds = true
+                            var bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                            //算出合适的缩放比例
+                            options.inSampleSize = Utils.calculateInSampleSize(options,60,60)
+                            Log.e("kzg","*************************inSampleSize:${options.inSampleSize}")
+                            // 设置为false，加载bitmap
+                            options.inJustDecodeBounds = false
+                            bitmap =
+                                BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                            lastBitMap = bitmap
                             mapEntry.key.post {
                                 bitmap?.let {
                                     Log.e("kzg","**********************展示一帧")

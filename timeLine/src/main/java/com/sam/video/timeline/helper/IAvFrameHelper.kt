@@ -1,5 +1,6 @@
 package com.sam.video.timeline.helper
 
+import android.graphics.Bitmap
 import android.widget.ImageView
 
 /**
@@ -9,6 +10,7 @@ interface IAvFrameHelper {
     var filePath:String
     var onGetFrameBitmapCallback:OnGetFrameBitmapCallback?
 
+    var lastBitMap : Bitmap?
     fun init()
     /**
      * 获取指定时间的帧数据，并显示到指定的view中
