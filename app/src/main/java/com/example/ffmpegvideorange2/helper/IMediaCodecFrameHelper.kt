@@ -184,7 +184,6 @@ class IMediaCodecFrameHelper(
                             kzgPlayer?.pauseGetPacket(false)
                         }
                         packetQueue.deQueue().apply {
-                            Log.e("kzg","**************packetQueue.size:${packetQueue.queueSize}")
                             Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
                             mediacodecDecode(this.data,this.dataSize,this.pts.toInt(),it)
                             times ++
@@ -235,8 +234,13 @@ class IMediaCodecFrameHelper(
     }
 
 
+    var startTime = 0L
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Int,mapEntry:Map.Entry<ImageView, TargetBean>) {
         Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}")
+        if (startTime == 0L){
+            startTime = System.currentTimeMillis()
+        }
+
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10000)
@@ -262,10 +266,12 @@ class IMediaCodecFrameHelper(
                         Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}")
                         buffer = mediaCodec!!.getOutputBuffer(index)
                         val image = mediaCodec!!.getOutputImage(index)
-                        if (mapEntry.value.timeUs <= videoDecodeInfo!!.presentationTimeUs-30000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+30000){
-                            /*val fileName =   "${Environment.getExternalStorageDirectory()}/jpe/" + String.format("frame_%05d.jpg", it.value.timeUs)
-                            KzgPlayer.compressToJpeg(fileName,image)*/
-                            val rect = image.cropRect
+                        if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-40_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+40_000)
+                            || videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=60_000  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
+                            && !mapEntry.value.isAddFrame){
+                            val fileName =   "${Environment.getExternalStorageDirectory()}/jpe/" + String.format("frame_%05d.jpg", mapEntry.value.timeUs)
+                            KzgPlayer.compressToJpeg(fileName,image)
+                            /*val rect = image.cropRect
                             val yuvImage = YuvImage(
                                 KzgPlayer.getDataFromImage(image, KzgPlayer.COLOR_FormatNV21),
                                 ImageFormat.NV21,
@@ -274,7 +280,7 @@ class IMediaCodecFrameHelper(
                                 null
                             )
                             val stream = ByteArrayOutputStream()
-                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 80, stream)
+                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 100, stream)
                             // 检查bitmap的大小
                             val options = BitmapFactory.Options()
                             // 设置为true，BitmapFactory会解析图片的原始宽高信息，并不会加载图片
@@ -288,19 +294,18 @@ class IMediaCodecFrameHelper(
                             bitmap =
                                 BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
                             lastBitMap = bitmap
+
                             mapEntry.key.post {
                                 bitmap?.let {
-                                    Log.e("kzg","**********************展示一帧")
                                     mapEntry.key.setImageBitmap(it)
-
                                 }
-                            }
-
+                            }*/
                             mapEntry.value.isAddFrame = true
                             pauseTimeQueue = false
-                            Log.e("kzg","*******************mediacodec 解码出目标帧：${mapEntry.value.timeUs}")
+                            Log.e("kzg","**********************展示一帧 timeUs: ${mapEntry.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
+                            startTime = System.currentTimeMillis()
                         }
-
+                        image.close()
                     }else{
                         buffer = mediaCodec!!.outputBuffers[index]
                     }
