@@ -280,7 +280,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 csd_0: ByteArray?,
                 csd_1: ByteArray?
             ) {
-                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1)
+                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1,sv_video_test.holder.surface)
             }
 
             override fun onStarGetFrame() {

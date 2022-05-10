@@ -113,6 +113,12 @@
             android:layout_marginBottom="70dp" />
     </com.sam.video.timeline.widget.ZoomFrameLayout>
 
+    <SurfaceView
+        android:id="@+id/sv_video_test"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        app:layout_constraintTop_toBottomOf="@+id/zoomFrameLayout" />
+
     <com.wang.avi.AVLoadingIndicatorView
         android:id="@+id/av_loading"
         android:layout_width="wrap_content"
