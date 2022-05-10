@@ -1,14 +1,18 @@
 package com.example.ffmpegvideorange2.helper
 
 import android.graphics.*
+import android.media.Image
 import android.media.MediaCodec
+import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.os.Build
+import android.os.Environment
 import android.util.Log
 import android.view.Surface
 import android.widget.ImageView
 import com.example.ffmpegvideorange2.TimeQueue
 import com.example.ffmpegvideorange2.Utils
+import com.example.ffmpegvideorange2.VideoUtils
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.PacketQueue
 import com.example.myplayer.mediacodec.KzglVideoSupportUtil
@@ -43,6 +47,7 @@ class IMediaCodecFrameHelper(
     private var isStop = false
     var pauseTimeQueue = false
     override var lastBitMap: Bitmap? = null
+    override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
 
 
     override fun init() {
@@ -217,6 +222,7 @@ class IMediaCodecFrameHelper(
         mediaFormat = MediaFormat.createVideoFormat(mime, width, height)
         //设置参数
         mediaFormat!!.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height)
+        mediaFormat!!.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
         mediaFormat!!.setByteBuffer("cds-0", ByteBuffer.wrap(csd_0))
         mediaFormat!!.setByteBuffer("cds-1", ByteBuffer.wrap(csd_1))
         Log.e("kzg", "**************mediaFormat:" + mediaFormat.toString())
@@ -259,7 +265,7 @@ class IMediaCodecFrameHelper(
                     Log.e("kzg","**************mediacodec dequeueInputBuffer 失败")
                 }
 
-                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
+                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 3000)
                 while (index >= 0) {
                     var buffer:ByteBuffer? = null
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -270,11 +276,9 @@ class IMediaCodecFrameHelper(
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
                             || videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
                             && !mapEntry.value.isAddFrame){
-                            /*val fileName =   "${Environment.getExternalStorageDirectory()}/jpe/" + String.format("frame_%05d.jpg", mapEntry.value.timeUs)
-                            KzgPlayer.compressToJpeg(fileName,image)*/
                             val rect = image.cropRect
                             val yuvImage = YuvImage(
-                                VideoToFrames.YUV_420_888toNV21(image),
+                                VideoUtils.YUV_420_888toNV21(image),
                                 ImageFormat.NV21,
                                 rect.width(),
                                 rect.height(),
@@ -299,8 +303,10 @@ class IMediaCodecFrameHelper(
                             mapEntry.key.post {
                                 bitmap?.let {
                                     mapEntry.key.setImageBitmap(it)
+                                    //decodeFrameListener?.onGetOneFrame()
                                 }
                             }
+                            //Utils.saveBitmap("${Environment.getExternalStorageDirectory()}/jpe/",String.format("frame_%05d.jpg", mapEntry.value.timeUs),bitmap)
                             mapEntry.value.isAddFrame = true
                             pauseTimeQueue = false
                             Log.e("kzg","**********************展示一帧 timeUs: ${mapEntry.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
@@ -312,7 +318,7 @@ class IMediaCodecFrameHelper(
                     }
                     mediaCodec!!.releaseOutputBuffer(index, false)
                     buffer?.clear()
-                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
+                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
                 }
             } catch (e: Exception) {
                 pauseTimeQueue = false
@@ -323,4 +329,7 @@ class IMediaCodecFrameHelper(
             }
         }
     }
+
+
+
 }

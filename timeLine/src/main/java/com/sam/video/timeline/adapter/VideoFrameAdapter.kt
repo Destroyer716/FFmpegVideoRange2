@@ -83,6 +83,12 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
 
     fun setAvframeHelper(helper:IAvFrameHelper){
         this.avframeHelper = helper
+        avframeHelper?.decodeFrameListener = object :IAvFrameHelper.DecodeFrameListener{
+            override fun onGetOneFrame() {
+                notifyDataSetChanged()
+            }
+        }
+
     }
 
     fun getAvframeHelper():IAvFrameHelper?{

@@ -46,11 +46,8 @@ class MediaCodecAvFrameHelper(
     private var waitSeek = false
 
     private var throwable:Throwable? = null
-    override var lastBitMap: Bitmap?
-        get() = lastBitMap
-        set(value) {
-            lastBitMap = value
-        }
+    override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
+    override var lastBitMap: Bitmap? = null
 
     override fun init(){
         OUTPUT_DIR = Environment.getExternalStorageDirectory().toString() + "/jpe/"

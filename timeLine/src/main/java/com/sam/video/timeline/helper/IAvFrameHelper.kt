@@ -11,6 +11,7 @@ interface IAvFrameHelper {
     var onGetFrameBitmapCallback:OnGetFrameBitmapCallback?
 
     var lastBitMap : Bitmap?
+    var decodeFrameListener:DecodeFrameListener?
     fun init()
     /**
      * 获取指定时间的帧数据，并显示到指定的view中
@@ -24,4 +25,7 @@ interface IAvFrameHelper {
 
     fun pause()
 
+    interface DecodeFrameListener{
+        fun onGetOneFrame()
+    }
 }
