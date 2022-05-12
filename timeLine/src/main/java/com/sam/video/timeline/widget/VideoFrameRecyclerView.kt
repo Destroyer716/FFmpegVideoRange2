@@ -40,6 +40,9 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     val halfDurationSpace = decorationWidth / 2
     private val videoFrameItemDecoration: VideoFrameItemDecoration
 
+
+    var scrollFlag = 0
+
     init {
         adapter = VideoFrameAdapter(listData, frameWidth)
         videoFrameItemDecoration = VideoFrameItemDecoration(context)
@@ -464,5 +467,6 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     fun release(){
         (adapter as VideoFrameAdapter).getAvframeHelper()?.release()
     }
+
 
 }

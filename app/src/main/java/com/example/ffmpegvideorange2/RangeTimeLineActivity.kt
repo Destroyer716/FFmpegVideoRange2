@@ -131,6 +131,17 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             }
 
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dx > 0){
+                    //预览条向前滑动
+                }else if (dx < 0){
+                    //预览条向后滑动
+                }
+                //速度大于10的时候暂停解码抽帧
+
+            }
+
         })
         bindVideoData()
 
