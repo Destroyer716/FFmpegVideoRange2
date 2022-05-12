@@ -1,5 +1,7 @@
 package com.example.myplayer;
 
+import android.util.Log;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -38,13 +40,14 @@ public class PacketQueue {
         return list.size();
     }
 
-    public void clear(){
+    public synchronized void clear(){
+
         if (list == null || list.isEmpty()){
             return;
         }
-        for (int i=0;i<list.size();i++){
-            list.remove();
-        }
+        list.clear();
+        //需要找一个线程安全的queue
+        Log.e("kzg","*/*****************PacketQueue  size:"+list.size());
     }
 
 }

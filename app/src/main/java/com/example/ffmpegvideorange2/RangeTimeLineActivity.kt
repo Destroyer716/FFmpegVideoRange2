@@ -30,6 +30,7 @@ import kotlinx.android.synthetic.main.activity_range_time_line.tagView
 import kotlinx.android.synthetic.main.activity_range_time_line.zoomFrameLayout
 import kotlinx.android.synthetic.main.activity_time_line.*
 import java.util.*
+import kotlin.math.abs
 
 
 class RangeTimeLineActivity : AppCompatActivity(){
@@ -41,6 +42,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
     private var kzgPlayer: KzgPlayer? = null
     //记录上次更新播放时间的时间点
     private var lastTime: Long = 0
+    private var lastDx = 0
 
     private val videos = mutableListOf<VideoClip>()
     val timeLineValue = TimeLineBaseValue()
@@ -121,25 +123,32 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     Log.e("kzg","**************SCROLL_STATE_IDLE")
-                    rvFrame.getAvFrameHelper()?.seek()
+
                     clearSelectVideoIfNeed()
                 }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
-                    rvFrame.getAvFrameHelper()?.pause()
+
                 }else if (newState == RecyclerView.SCROLL_STATE_SETTLING){
-                    rvFrame.getAvFrameHelper()?.pause()
+
                 }
 
             }
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
+                Log.e("kzg","*********************onScrolled$dx")
                 if (dx > 0){
                     //预览条向前滑动
                 }else if (dx < 0){
                     //预览条向后滑动
                 }
                 //速度大于10的时候暂停解码抽帧
-
+                if (abs(dx) > 10 && lastDx <= 10){
+                    lastDx = abs(dx)
+                    rvFrame.getAvFrameHelper()?.pause()
+                }else if (lastDx > 10 && abs(dx) <= 10){
+                    lastDx = abs(dx)
+                    rvFrame.getAvFrameHelper()?.seek()
+                }
             }
 
         })
