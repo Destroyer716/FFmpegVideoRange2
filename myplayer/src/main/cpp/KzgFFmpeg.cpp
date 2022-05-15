@@ -198,7 +198,7 @@ static int h264Mp4ToAnnexb(AVFormatContext *pAVFormatContext, AVPacket *pAvPkt, 
 
         nalHeader = *pData;
         nalType = nalHeader&0x1F;
-        LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,(nalHeader >> 5 )&0x03);
+        //LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,(nalHeader >> 5 )&0x03);
         if(nalType == 5)
         {
             /* 得到SPS与PPS（存在与codec->extradata中） */
@@ -274,7 +274,7 @@ int getAvPacketRefType(AVPacket *pAvPkt){
         nalHeader = *pData;
         nalType = nalHeader&0x1F;
         refType = (nalHeader >> 5 )&0x03;
-        LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,refType);
+        //LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,refType);
         if(nalType == 5){
             //IDR帧
             return 1;
@@ -663,7 +663,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         return;
     }
 
-    LOGE("start  seeking %lld  , duration:%lld",sec,duration);
+    //LOGE("start  seeking %lld  , duration:%lld",sec,duration);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;
@@ -709,7 +709,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         kzgVideo->kzgPlayerStatus->isSeekPause = false;
         pthread_mutex_unlock(&seek_mutex);
         kzgPlayerStatus->seeking = false;
-        LOGE("***********seeking:%d",kzgPlayerStatus->seeking);
+        //LOGE("***********seeking:%d",kzgPlayerStatus->seeking);
     }
 }
 

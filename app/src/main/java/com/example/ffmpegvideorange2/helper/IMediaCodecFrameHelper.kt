@@ -46,6 +46,8 @@ class IMediaCodecFrameHelper(
     private var isStop = false
     //当前最后解码出来的一个帧，用来作为还没有来得及解码的预览帧
     override var lastBitMap: Bitmap? = null
+    override var isSeekBack: Boolean = true
+    override var isScrolling: Boolean = false
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     //是初始化了recyclerView的Item
     private var isInitItem = false
@@ -60,10 +62,19 @@ class IMediaCodecFrameHelper(
     }
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
-        targetViewMap[view] = TargetBean()
-        Log.e("kzg","**************seekTime0:${timeMs} , $view , ${targetViewMap.size}")
-        targetViewMap[view]?.timeUs = timeMs
-        targetViewMap[view]?.isAddFrame = false
+        targetViewMap[view] = targetViewMap[view]?:TargetBean()
+        Log.e("kzg","**************seekTime0:${timeMs} , $view , ${view.tag}")
+        lastBitMap?.let {
+            if (targetViewMap[view]?.isAddFrame == false){
+                view.setImageBitmap(it)
+            }
+        }
+        if (targetViewMap[view]?.timeUs != timeMs){
+            targetViewMap[view]?.timeUs = timeMs
+            targetViewMap[view]?.isAddFrame = false
+        }
+
+
         if (!isInitItem) {
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
@@ -101,51 +112,53 @@ class IMediaCodecFrameHelper(
         Utils.sortHashMap(targetViewMap).apply {
             var i=0
             var j=0
+            var minTimeUs = Long.MAX_VALUE
+            var hasNoAddFrame = false
+            this.forEach {
+                if (!it.value.isAddFrame){
+                    minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                    hasNoAddFrame = true
+                }
+            }
+            //如果没有需要解码的帧，就直接返回
+            if (!hasNoAddFrame){
+                return
+            }
             val func =  {
-                Log.e("kzg","********************isCurrentGop11111111:${this[0].value.timeUs}")
+                Log.e("kzg","********************isCurrentGop11111111:${minTimeUs}")
                 for((index,frame) in IFrameSearch.IframeUs.withIndex()){
                     //当前recyclerView最小的item帧的时间戳所属的gop index
-                    if (index > 0 && this[0].value.timeUs >=IFrameSearch.IframeUs[index - 1] && this[0].value.timeUs < frame){
+                    if (index > 0 && minTimeUs >=IFrameSearch.IframeUs[index - 1] && minTimeUs < frame){
                         i = index
                     }
+
                     //已解码的帧的pts所属的gop
                     if (index > 0 && lastCodecFramePts >=IFrameSearch.IframeUs[index - 1] && lastCodecFramePts < frame ){
                         j = index
                     }
                 }
-                i == j
-
+                if (isSeekBack){
+                    false
+                }else{
+                    //如果将要解码的帧所属的gop与已经解码出来的最后一帧所属的是同一个gop 或者 将要解码的帧的时间小于 avpacket队列的最大帧的时间，就认为是同一个gop
+                    i == j || minTimeUs <= packetQueue.maxPts.toLong()
+                }
             }
+
             val isCurrentGop =func().apply {
                 Log.e("kzg","********************isCurrentGop:$this")
+                /*if (!this){
+                    mediaCodec?.flush()
+                }*/
             }
             //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
-            val pts = (if (isCurrentGop) this[0].value.timeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
+            val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
                 Log.e("kzg","********************pts:$this")
             }
             kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
         }
-        //targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
     }
 
-    private fun sendFrame(it:Map.Entry<ImageView, TargetBean>){
-        if (!it.value.isAddFrame) {
-            if (IFrameSearch.IframeUs.size <= 1 || lastIDRIndex == IFrameSearch.IframeUs.size - 1){
-                Log.e("kzg","*************sendFrame:${(it.value.timeUs/1000_000.0).toDouble()}  , true")
-                kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),true)
-            }else{
-                if (it.value.timeUs >= IFrameSearch.IframeUs[lastIDRIndex] && it.value.timeUs < IFrameSearch.IframeUs[lastIDRIndex + 1]){
-                    Log.e("kzg","*************sendFrame:${(it.value.timeUs/1000_000.0).toDouble()}  , true")
-                    kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),true)
-                }else{
-                    Log.e("kzg","**************sendFrame:${(it.value.timeUs/1000_000.0).toDouble()}  , false")
-                    kzgPlayer?.seekFrame((it.value.timeUs/1000_000.0).toDouble(),false)
-                }
-
-            }
-            Log.e("kzg","**************seekTo:${it.value.timeUs}")
-        }
-    }
 
     override fun pause() {
         Log.e("kzg","**************pause:")
@@ -157,36 +170,25 @@ class IMediaCodecFrameHelper(
         var isPause = false
         var size = 0
         while (!isStop){
-            if (packetQueue.queueSize != size){
-                size = packetQueue.queueSize
-                Log.e("kzg","*******************queueSize:$size")
-            }
-            if (packetQueue.queueSize  == 0){
+            if (packetQueue.queueSize  == 0 || isScrolling){
                 Thread.sleep(10)
                 continue
             }
 
-
-            var hasFind = false
             //按照时间从小到大排序
             //targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
-
-            /*if (targetViewMap.size != size){
-                size = targetViewMap.size
-                Log.e("kzg","**************targetViewMap.size:${targetViewMap.size}")
-            }*/
 
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     packetQueue.first?.let {bean ->
 
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
-                            if (packetQueue.queueSize < 20){
+                            if (packetQueue.queueSize < 10 && !isScrolling){
                                 kzgPlayer?.pauseGetPacket(false)
                             }
                             packetQueue.deQueue().apply {
-                                Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
-                                mediacodecDecode(this.data,this.dataSize,this.pts.toInt(),it)
+                                //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
+                                mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 times ++
                                 return@task
                             }
@@ -239,7 +241,7 @@ class IMediaCodecFrameHelper(
 
 
     var startTime = 0L
-    private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Int,mapEntry:Map.Entry<ImageView, TargetBean>) {
+    private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
         Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}")
         if (startTime == 0L){
             startTime = System.currentTimeMillis()
@@ -257,18 +259,23 @@ class IMediaCodecFrameHelper(
                     if (inputBuffer != null) {
                         inputBuffer.clear()
                         inputBuffer.put(bytes)
-                        mediaCodec!!.queueInputBuffer(inputBufferIndex, 0, size, pts.toLong(), 0)
+                        mediaCodec!!.queueInputBuffer(inputBufferIndex, 0, size, pts, 0)
                     }
                 }else{
                     Log.e("kzg","**************mediacodec dequeueInputBuffer 失败")
                 }
 
-                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 3000)
+                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 5000)
                 while (index >= 0) {
                     var buffer:ByteBuffer? = null
+                    /*if (isScrolling){
+                        mediaCodec!!.releaseOutputBuffer(index, false)
+                        index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
+                        continue
+                    }*/
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
                         Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}")
+                        lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
                         //buffer = mediaCodec!!.getOutputBuffer(index)
                         val image = mediaCodec!!.getOutputImage(index)
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
@@ -302,11 +309,18 @@ class IMediaCodecFrameHelper(
                             mapEntry.key.post {
                                 bitmap?.let {
                                     mapEntry.key.setImageBitmap(it)
-                                    //decodeFrameListener?.onGetOneFrame()
+                                    targetViewMap.forEach { mp ->
+                                        if (!mp.value.isAddFrame){
+                                            mp.key.setImageBitmap(lastBitMap)
+                                        }
+
+                                    }
                                 }
                             }
                             //Utils.saveBitmap("${Environment.getExternalStorageDirectory()}/jpe/",String.format("frame_%05d.jpg", mapEntry.value.timeUs),bitmap)
-                            mapEntry.value.isAddFrame = true
+                            if (!isScrolling){
+                                mapEntry.value.isAddFrame = true
+                            }
                             Log.e("kzg","**********************展示一帧 timeUs: ${mapEntry.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
                             startTime = System.currentTimeMillis()
                         }

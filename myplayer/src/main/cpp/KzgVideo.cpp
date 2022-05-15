@@ -215,7 +215,7 @@ void *videoPlay(void *arg){
 
                         gettimeofday(&tv,NULL);
                         long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
-                        LOGE("seek 一帧frame 耗时：%ld" ,(endTime-kzgVideo->startSeekTime));
+                        //LOGE("seek 一帧frame 耗时：%ld" ,(endTime-kzgVideo->startSeekTime));
                     } else{
                         //前进状态的逐帧预览
                         if (avFrame->linesize[0] > kzgVideo->avCodecContext->width && false){
@@ -295,8 +295,8 @@ void *videoPlay(void *arg){
                             kzgVideo->kzgPlayerStatus->isCrop = false;
                             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
                             if ((avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE)==0 && kzgVideo->seekTime == 0){
-                                LOGE("isCrop :true %ld,%ld,%ld,width:%ld,height:%ld",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height);
-                                LOGE("yuv格式：%d" ,avFrame->format);
+                                //LOGE("isCrop :true %ld,%ld,%ld,width:%ld,height:%ld",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height);
+                                //LOGE("yuv格式：%d" ,avFrame->format);
                                 //显示首帧
                                 int width = avFrame->linesize[0] > kzgVideo->avCodecContext->width? avFrame->linesize[0]:kzgVideo->avCodecContext->width;
                                 kzgVideo->helper->onCallRenderYUV(

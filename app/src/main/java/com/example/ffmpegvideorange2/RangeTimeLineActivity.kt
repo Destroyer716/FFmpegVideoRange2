@@ -122,9 +122,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    Log.e("kzg","**************SCROLL_STATE_IDLE")
-
                     clearSelectVideoIfNeed()
+                    rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.seek()
                 }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
 
                 }else if (newState == RecyclerView.SCROLL_STATE_SETTLING){
@@ -135,20 +135,38 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                Log.e("kzg","*********************onScrolled$dx")
                 if (dx > 0){
                     //预览条向前滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = false
+                    }
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                    }
                 }else if (dx < 0){
                     //预览条向后滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                    }
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                    }
                 }
+                Log.e("kzg","*********************isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack}  , dx:$dx  , lastDx:$lastDx")
                 //速度大于10的时候暂停解码抽帧
-                if (abs(dx) > 10 && lastDx <= 10){
+                if ( abs(dx) > 1 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if (lastDx > 10 && abs(dx) <= 10){
+                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 1){
+                    lastDx = abs(dx)
+                    rvFrame.getAvFrameHelper()?.pause()
+                }/*else if ( abs(dx) == 1 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.seek()
-                }
+                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) == 1){
+                    lastDx = abs(dx)
+                    rvFrame.getAvFrameHelper()?.seek()
+                }*/
             }
 
         })
@@ -317,10 +335,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.dataSize = dataSize
                 Log.e("kzg","**************getFramePacket 入队一帧")
                 (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
-                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
-                    kzgPlayer!!.pauseGetPacket(true)
-                }else{
-                    kzgPlayer!!.pauseGetPacket(false)
+                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 90){
+                    rvFrame.getAvFrameHelper()?.pause()
                 }
             }
 

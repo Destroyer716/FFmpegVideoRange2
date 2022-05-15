@@ -44,10 +44,12 @@ class MediaCodecAvFrameHelper(
     private var stopDecode = false
     private var startDecode = false
     private var waitSeek = false
+    override var isSeekBack: Boolean = false
 
     private var throwable:Throwable? = null
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     override var lastBitMap: Bitmap? = null
+    override var isScrolling: Boolean = false
 
     override fun init(){
         OUTPUT_DIR = Environment.getExternalStorageDirectory().toString() + "/jpe/"

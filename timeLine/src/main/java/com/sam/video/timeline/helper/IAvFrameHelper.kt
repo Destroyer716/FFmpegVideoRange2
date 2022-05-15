@@ -12,6 +12,9 @@ interface IAvFrameHelper {
 
     var lastBitMap : Bitmap?
     var decodeFrameListener:DecodeFrameListener?
+    var isSeekBack:Boolean
+    var isScrolling:Boolean
+
     fun init()
     /**
      * 获取指定时间的帧数据，并显示到指定的view中

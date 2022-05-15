@@ -2,6 +2,7 @@ package com.example.myplayer;
 
 import android.util.Log;
 
+import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -48,6 +49,21 @@ public class PacketQueue {
         list.clear();
         //需要找一个线程安全的queue
         Log.e("kzg","*/*****************PacketQueue  size:"+list.size());
+    }
+
+    public double getMaxPts(){
+        if (list == null || list.isEmpty()){
+            return 0;
+        }
+        double max = -1;
+        PacketBean bean;
+        Iterator<PacketBean> iterator = list.iterator();
+        while (iterator.hasNext()){
+            bean = iterator.next();
+            max = bean.getPts() > max ? bean.getPts() : max;
+        }
+        Log.e("kzg","******************queue max pts:"+max);
+        return max;
     }
 
 }
