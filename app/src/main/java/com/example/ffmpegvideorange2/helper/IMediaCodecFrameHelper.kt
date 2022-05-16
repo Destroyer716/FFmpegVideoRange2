@@ -1,10 +1,7 @@
 package com.example.ffmpegvideorange2.helper
 
 import android.graphics.*
-import android.media.Image
-import android.media.MediaCodec
-import android.media.MediaCodecInfo
-import android.media.MediaFormat
+import android.media.*
 import android.os.Build
 import android.os.Environment
 import android.util.Log
@@ -166,15 +163,11 @@ class IMediaCodecFrameHelper(
     }
 
     override fun run() {
-        var times = 0
-        var isPause = false
-        var size = 0
         while (!isStop){
             if (packetQueue.queueSize  == 0 || isScrolling){
                 Thread.sleep(10)
                 continue
             }
-
             //按照时间从小到大排序
             //targetViewMap = targetViewMap.entries.sortedBy { it.value.timeUs }.associateBy ({it.key},{it.value}) as MutableMap<ImageView, TargetBean>
 
@@ -188,11 +181,9 @@ class IMediaCodecFrameHelper(
                             }
                             packetQueue.deQueue().apply {
                                 //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
-                                this.data?.let {data ->
-                                    mediacodecDecode(data,this.dataSize,this.pts.toLong(),it)
+                                if (this.data != null && this.data.isNotEmpty()){
+                                    mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 }
-
-                                times ++
                                 return@task
                             }
 
@@ -219,10 +210,11 @@ class IMediaCodecFrameHelper(
                                csd_1: ByteArray?,
                     surface: Surface
     ){
-        Log.e("kzg","*******************初始化获取预览帧的解码器：$codecName ,  $width  ,  $height")
+
         val mime = KzglVideoSupportUtil.findVideoCodecName(codecName)
         //创建MediaFormat
         mediaFormat = MediaFormat.createVideoFormat(mime, width, height)
+        Log.e("kzg","*******************初始化获取预览帧的解码器：$codecName ,  $width  ,  $height , $mime")
         //设置参数
         mediaFormat!!.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height)
         mediaFormat!!.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
@@ -237,6 +229,7 @@ class IMediaCodecFrameHelper(
             mediaCodec!!.start()
             kzgPlayer?.startGetFrame()
             kzgPlayer?.getFrameListener?.onStarGetFrame()
+            Log.e("kzg", "**************mediacodec 开始解码抽帧" )
         } catch (e: IOException) {
             e.printStackTrace()
         }
