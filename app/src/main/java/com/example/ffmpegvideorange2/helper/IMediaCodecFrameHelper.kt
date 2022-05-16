@@ -108,7 +108,6 @@ class IMediaCodecFrameHelper(
 
     override fun seek() {
         Log.e("kzg","****************开始seek")
-        packetQueue.clear()
         Utils.sortHashMap(targetViewMap).apply {
             var i=0
             var j=0
@@ -147,9 +146,10 @@ class IMediaCodecFrameHelper(
 
             val isCurrentGop =func().apply {
                 Log.e("kzg","********************isCurrentGop:$this")
-                /*if (!this){
+                if (!this){
+                    packetQueue.clear()
                     mediaCodec?.flush()
-                }*/
+                }
             }
             //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
             val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
@@ -188,7 +188,10 @@ class IMediaCodecFrameHelper(
                             }
                             packetQueue.deQueue().apply {
                                 //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
-                                mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
+                                this.data?.let {data ->
+                                    mediacodecDecode(data,this.dataSize,this.pts.toLong(),it)
+                                }
+
                                 times ++
                                 return@task
                             }
@@ -268,11 +271,11 @@ class IMediaCodecFrameHelper(
                 var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 5000)
                 while (index >= 0) {
                     var buffer:ByteBuffer? = null
-                    /*if (isScrolling){
+                    if (isScrolling){
                         mediaCodec!!.releaseOutputBuffer(index, false)
                         index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
                         continue
-                    }*/
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}")
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs

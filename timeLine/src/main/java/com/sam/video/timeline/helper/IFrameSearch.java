@@ -13,6 +13,7 @@ public class IFrameSearch implements Runnable {
     private long duration;
     public static ArrayList<Long> IframeUs = new ArrayList();
     private Thread thread;
+    private boolean isStop = false;
 
     public IFrameSearch(String path) {
         IframeUs.clear();
@@ -56,7 +57,7 @@ public class IFrameSearch implements Runnable {
         IframeUs.add(0L);
         mediaExtractor.seekTo(step, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
         long time = mediaExtractor.getSampleTime();
-        while(time<duration) { //获取关键帧时间戳列表
+        while(time<duration && !isStop) { //获取关键帧时间戳列表
             long time_temp = mediaExtractor.getSampleTime();
             if (time_temp>IframeUs.get(IframeUs.size()-1)) {
                 IframeUs.add(time_temp);
@@ -74,10 +75,18 @@ public class IFrameSearch implements Runnable {
     public void run() {
         for (Long aLong : get_key_frames_time()) {
             Log.e("kzg","get_key_frames_time:"+aLong);
+            if (isStop){
+                break;
+            }
         }
         if (mediaExtractor != null){
             mediaExtractor.release();
             mediaExtractor = null;
         }
+    }
+
+    public void release(){
+        isStop = true;
+        IframeUs.clear();
     }
 }

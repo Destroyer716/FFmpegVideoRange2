@@ -47,6 +47,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
     private val videos = mutableListOf<VideoClip>()
     val timeLineValue = TimeLineBaseValue()
     private var lastScrollTime = 0L
+    private var keyFramesTime:IFrameSearch? = null
 
     private val handler = Handler { msg ->
         when (msg.what) {
@@ -123,8 +124,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     clearSelectVideoIfNeed()
-                    rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.seek()
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == true){
+                        rvFrame.getAvFrameHelper()?.isScrolling = false
+                        rvFrame.getAvFrameHelper()?.seek()
+                    }
+
                 }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
 
                 }else if (newState == RecyclerView.SCROLL_STATE_SETTLING){
@@ -140,33 +144,49 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
                     }
-                    if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                    //当滑动的像素大于20的时候暂停解码抽帧
+                    if(dx > 20){
+                        if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
+                            rvFrame.getAvFrameHelper()?.isScrolling = true
+                        }
+                    }else{
+                        if (rvFrame.getAvFrameHelper()?.isScrolling == true) {
+                            rvFrame.getAvFrameHelper()?.isScrolling = false
+                        }
                     }
+
                 }else if (dx < 0){
                     //预览条向后滑动
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                         rvFrame.getAvFrameHelper()?.isSeekBack = true
                     }
-                    if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                    //当滑动的像素小于-20的时候暂停解码抽帧
+                    if(dx < -20){
+                        if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
+                            rvFrame.getAvFrameHelper()?.isScrolling = true
+                        }
+                    }else{
+                        if (rvFrame.getAvFrameHelper()?.isScrolling == true) {
+                            rvFrame.getAvFrameHelper()?.isScrolling = false
+                        }
                     }
+
                 }
                 Log.e("kzg","*********************isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack}  , dx:$dx  , lastDx:$lastDx")
-                //速度大于10的时候暂停解码抽帧
-                if ( abs(dx) > 1 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                //速度大于20的时候暂停解码抽帧
+                if ( abs(dx) > 20 && lastDx <= 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 1){
+                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 20 && lastDx <= 20){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
-                }/*else if ( abs(dx) == 1 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
+                }else if ( abs(dx) <= 20 && lastDx > 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.seek()
-                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) == 1){
+                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) <= 20 && lastDx > 20 ){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.seek()
-                }*/
+                }
             }
 
         })
@@ -181,7 +201,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         )
         updateVideos()
 
-        val keyFramesTime = IFrameSearch(inputPath)
+        keyFramesTime = IFrameSearch(inputPath)
     }
 
     private fun initAction(){
@@ -335,7 +355,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.dataSize = dataSize
                 Log.e("kzg","**************getFramePacket 入队一帧")
                 (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
-                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 90){
+                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
                     rvFrame.getAvFrameHelper()?.pause()
                 }
             }
@@ -609,7 +629,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
             kzgPlayer!!.getFrameListener= null
             kzgPlayer = null
         }
-
+        keyFramesTime?.release()
 
         if (sv_video_view != null) {
             sv_video_view.removeCallbacks(null)
