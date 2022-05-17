@@ -164,7 +164,8 @@ void FAvFrameHelper::starDecode() {
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
             LOGE("获取视频avPacket 失败");
-            return;
+            av_usleep(1000*100);
+            continue;
         }
 
         //找到视频avPacket
@@ -175,7 +176,7 @@ void FAvFrameHelper::starDecode() {
 
         count ++;
     }
-
+    LOGE("退出 抽帧解码线程");
     isExit = true;
 }
 
@@ -316,9 +317,9 @@ void FAvFrameHelper::decodeFrame(double res) {
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
-            isExit = true;
             LOGE("获取视频avPacket 失败");
-            return;
+            av_usleep(1000*10);
+            continue;
         }
 
         if (avPacket->stream_index != avStreamIndex){

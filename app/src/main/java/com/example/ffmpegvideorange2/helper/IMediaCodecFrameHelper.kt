@@ -179,14 +179,14 @@ class IMediaCodecFrameHelper(
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     packetQueue.first?.let {bean ->
-                        //Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
+                        Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
                             if (packetQueue.queueSize < 10 && !isScrolling){
                                 kzgPlayer?.pauseGetPacket(false)
                             }
                             packetQueue.deQueue().apply {
                                 //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
-                                if (this.data != null && this.data.isNotEmpty()){
+                                if (this !=null && this.data != null && this.data.isNotEmpty()){
                                     mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 }
                                 return@task

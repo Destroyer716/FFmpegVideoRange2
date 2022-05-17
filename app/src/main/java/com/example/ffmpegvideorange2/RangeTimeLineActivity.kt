@@ -166,7 +166,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             rvFrame.getAvFrameHelper()?.isScrolling = true
                         }
                     }else{
-                        if (rvFrame.getAvFrameHelper()?.isScrolling == true) {
+                        if (rvFrame.getAvFrameHelper()?.isScrolling == true && dx == 0) {
                             rvFrame.getAvFrameHelper()?.isScrolling = false
                         }
                     }
@@ -177,13 +177,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if ( abs(dx) > 20 && lastDx <= 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 20 && lastDx <= 20){
+                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 0 /*&& lastDx <= 20*/){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
                 }else if ( abs(dx) <= 20 && lastDx > 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.seek()
-                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) <= 20 && lastDx > 20 ){
+                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) == 0/* && lastDx > 20*/ ){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.seek()
                 }
