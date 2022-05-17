@@ -695,7 +695,7 @@ void KzgFFmpeg::seek(int64_t sec) {
             }
             kzgVideo->queue->clearAvPacket();
             kzgVideo->lock = 0;
-            LOGE("seeking %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
+            //LOGE("seeking %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
             pthread_mutex_lock(&kzgVideo->codecMutex);
             avcodec_flush_buffers(kzgVideo->avCodecContext);
             pthread_mutex_unlock(&kzgVideo->codecMutex);

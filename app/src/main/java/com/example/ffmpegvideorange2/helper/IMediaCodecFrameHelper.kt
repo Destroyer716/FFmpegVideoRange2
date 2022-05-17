@@ -122,7 +122,10 @@ class IMediaCodecFrameHelper(
             }
             val func =  {
                 Log.e("kzg","********************isCurrentGop11111111:${minTimeUs}")
-                for((index,frame) in IFrameSearch.IframeUs.withIndex()){
+                val ite = IFrameSearch.IframeUs.iterator()
+                var index = 0
+                while (ite.hasNext()){
+                    val frame = ite.next()
                     //当前recyclerView最小的item帧的时间戳所属的gop index
                     if (index > 0 && minTimeUs >=IFrameSearch.IframeUs[index - 1] && minTimeUs < frame){
                         i = index
@@ -132,7 +135,9 @@ class IMediaCodecFrameHelper(
                     if (index > 0 && lastCodecFramePts >=IFrameSearch.IframeUs[index - 1] && lastCodecFramePts < frame ){
                         j = index
                     }
+                    index ++
                 }
+
                 if (isSeekBack){
                     false
                 }else{
@@ -174,7 +179,7 @@ class IMediaCodecFrameHelper(
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     packetQueue.first?.let {bean ->
-
+                        //Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
                             if (packetQueue.queueSize < 10 && !isScrolling){
                                 kzgPlayer?.pauseGetPacket(false)
