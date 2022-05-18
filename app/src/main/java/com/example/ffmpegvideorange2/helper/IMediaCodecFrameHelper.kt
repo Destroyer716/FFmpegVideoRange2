@@ -50,6 +50,9 @@ class IMediaCodecFrameHelper(
     private var isInitItem = false
     private var lastCodecFramePts = 0L
     private var mapEntry:Map.Entry<ImageView,TargetBean>? = null
+    private var startTime = 0L
+    private var firstTimesFrame = 0;
+    private var timeOut = 10L
 
 
     override fun init() {
@@ -106,6 +109,7 @@ class IMediaCodecFrameHelper(
 
     override fun seek() {
         Log.e("kzg","****************开始seek")
+        startTime = System.currentTimeMillis()
         Utils.sortHashMap(targetViewMap).apply {
             var i=0
             var j=0
@@ -244,17 +248,18 @@ class IMediaCodecFrameHelper(
     }
 
 
-    var startTime = 0L
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
-        Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}")
-        if (startTime == 0L){
-            startTime = System.currentTimeMillis()
-        }
-
+        Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - startTime}")
+        startTime = System.currentTimeMillis()
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10)
                 if (inputBufferIndex >= 0) {
+                    //前几帧反正解码不出来，timeout 可以设置的小一些
+                    firstTimesFrame ++
+                    if (firstTimesFrame > 3 && timeOut < 10000){
+                        timeOut = 10000
+                    }
                     val inputBuffer: ByteBuffer? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         mediaCodec!!.getInputBuffer(inputBufferIndex)
                     } else {
@@ -269,18 +274,17 @@ class IMediaCodecFrameHelper(
                     Log.e("kzg","**************mediacodec dequeueInputBuffer 失败")
                 }
 
-                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
+                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, timeOut)
+                var buffer:ByteBuffer? = null
                 while (index >= 0) {
-                    var buffer:ByteBuffer? = null
                     if (isScrolling){
                         mediaCodec!!.releaseOutputBuffer(index, false)
                         index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
                         continue
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}")
+                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
-                        //buffer = mediaCodec!!.getOutputBuffer(index)
                         val image = mediaCodec!!.getOutputImage(index)
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
@@ -334,7 +338,7 @@ class IMediaCodecFrameHelper(
                     }
                     mediaCodec!!.releaseOutputBuffer(index, false)
                     buffer?.clear()
-                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10)
+                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, timeOut)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

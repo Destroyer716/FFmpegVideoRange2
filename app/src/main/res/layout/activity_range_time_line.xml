@@ -74,7 +74,7 @@
         <com.sam.video.timeline.widget.VideoFrameRecyclerView
             android:id="@+id/rvFrame"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="60dp"
             android:layout_gravity="center_vertical"
             android:clipToPadding="false"
             android:orientation="horizontal"
@@ -85,7 +85,7 @@
         <com.sam.video.timeline.widget.SelectAreaView
             android:id="@+id/selectAreaView"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
+            android:layout_height="84dp"
             android:layout_gravity="center_vertical"
             android:visibility="gone"
             tools:visibility="visible" />
@@ -93,7 +93,7 @@
         <View
             android:id="@+id/lineFrame"
             android:layout_width="4dp"
-            android:layout_height="48dp"
+            android:layout_height="60dp"
             android:layout_gravity="center_vertical|center_horizontal"
             android:background="@drawable/video_frame_cursor" />
 
