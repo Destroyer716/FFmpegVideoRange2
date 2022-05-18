@@ -49,6 +49,7 @@ class IMediaCodecFrameHelper(
     //是初始化了recyclerView的Item
     private var isInitItem = false
     private var lastCodecFramePts = 0L
+    private var mapEntry:Map.Entry<ImageView,TargetBean>? = null
 
 
     override fun init() {
@@ -179,7 +180,7 @@ class IMediaCodecFrameHelper(
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     packetQueue.first?.let {bean ->
-                        Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
+                        //Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
                             if (packetQueue.queueSize < 10 && !isScrolling){
                                 kzgPlayer?.pauseGetPacket(false)
@@ -187,6 +188,7 @@ class IMediaCodecFrameHelper(
                             packetQueue.deQueue().apply {
                                 //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
                                 if (this !=null && this.data != null && this.data.isNotEmpty()){
+                                    mapEntry = it
                                     mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 }
                                 return@task
@@ -230,6 +232,7 @@ class IMediaCodecFrameHelper(
 
         try {
             mediaCodec = MediaCodec.createDecoderByType(mime)
+
             mediaCodec!!.configure(mediaFormat, null, null, 0)
             mediaCodec!!.start()
             kzgPlayer?.startGetFrame()
@@ -266,7 +269,7 @@ class IMediaCodecFrameHelper(
                     Log.e("kzg","**************mediacodec dequeueInputBuffer 失败")
                 }
 
-                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 5000)
+                var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
                 while (index >= 0) {
                     var buffer:ByteBuffer? = null
                     if (isScrolling){
@@ -281,7 +284,7 @@ class IMediaCodecFrameHelper(
                         val image = mediaCodec!!.getOutputImage(index)
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
-                            || videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
+                            || (videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000)  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
                             && !mapEntry.value.isAddFrame){
                             val rect = image.cropRect
                             val yuvImage = YuvImage(
@@ -336,7 +339,6 @@ class IMediaCodecFrameHelper(
             } catch (e: Exception) {
                 e.printStackTrace()
             }finally {
-
 
             }
         }

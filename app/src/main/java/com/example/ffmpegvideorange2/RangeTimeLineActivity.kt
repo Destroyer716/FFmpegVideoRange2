@@ -144,7 +144,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
                     }
-                    //当滑动的像素大于20的时候暂停解码抽帧
+                    //当滑动的像素大于30的时候暂停解码抽帧
                     if(dx > 20){
                         if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
                             rvFrame.getAvFrameHelper()?.isScrolling = true
@@ -161,7 +161,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         rvFrame.getAvFrameHelper()?.isSeekBack = true
                     }
                     //当滑动的像素小于-20的时候暂停解码抽帧
-                    if(dx < -20){
+                    if(dx < 0){
                         if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
                             rvFrame.getAvFrameHelper()?.isScrolling = true
                         }
@@ -170,10 +170,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             rvFrame.getAvFrameHelper()?.isScrolling = false
                         }
                     }
-
                 }
                 Log.e("kzg","*********************isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack}  , dx:$dx  , lastDx:$lastDx")
-                //速度大于20的时候暂停解码抽帧
+                //速度大于30的时候暂停解码抽帧
                 if ( abs(dx) > 20 && lastDx <= 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     lastDx = abs(dx)
                     rvFrame.getAvFrameHelper()?.pause()
