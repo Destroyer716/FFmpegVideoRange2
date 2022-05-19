@@ -44,7 +44,7 @@ public class IFrameSearch implements Runnable {
     private ArrayList<Long> get_key_frames_time() {
         long startTime = System.currentTimeMillis();
         long step = 1_000_000; //遍历步长
-       /* mediaExtractor.seekTo(duration/3, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
+        mediaExtractor.seekTo(duration/3, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
         long start = mediaExtractor.getSampleTime();
         mediaExtractor.advance();
         while(true) { //获取遍历步长
@@ -53,7 +53,7 @@ public class IFrameSearch implements Runnable {
                 break;
             }
             mediaExtractor.advance();
-        }*/
+        }
         IframeUs.add(0L);
         mediaExtractor.seekTo(step, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
         long time = mediaExtractor.getSampleTime();

@@ -131,7 +131,7 @@ int getAvPacketRefType2(AVPacket *pAvPkt){
         nalHeader = *pData;
         nalType = nalHeader&0x1F;
         refType = (nalHeader >> 5 )&0x03;
-        LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,refType);
+        //LOGE("nalHeader:%d  ,nalType:%d, ref:%d",nalHeader,nalType,refType);
         if(nalType == 5){
             //IDR帧
             return 1;
@@ -296,11 +296,8 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
 
 }
 
-void FAvFrameHelper::decodeFrame(double res) {
+void FAvFrameHelper::decodeFrame() {
     int ret;
-    int count = 0;
-    bool  isFind = false;
-    int64_t findTime = 0;
     LOGE("开始解码抽帧");
     while (playerStatus != NULL && !playerStatus->exit){
         if (isPause){
@@ -308,11 +305,6 @@ void FAvFrameHelper::decodeFrame(double res) {
             continue;
         }
 
-        int64_t res = seekTime;
-        /*if (isFind){
-            av_usleep(1000*10);
-            continue;
-        }*/
 
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
@@ -329,7 +321,7 @@ void FAvFrameHelper::decodeFrame(double res) {
         } else if (avPacket->stream_index == avStreamIndex){
             //找到视频avPacket
 
-            LOGE("seekTo sec2 %lld:  , %f", res , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
+            //LOGE("seekTo sec2 %f" , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
             if (getAvPacketRefType2(avPacket) > 0){
                 uint8_t *data;
                 av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
@@ -337,63 +329,21 @@ void FAvFrameHelper::decodeFrame(double res) {
                 tdata = avPacket->data;
                 avPacket->data = data;
 
+                /*if (avPacket->flags & AV_PKT_FLAG_KEY){
+                    LOGE("获取到关键帧：%f",(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
+                }*/
+
                 if(tdata != NULL)
                 {
                     av_free(tdata);
                 }
+
                 helper->onGetFramePacket(avPacket->size,(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE),avPacket->data);
             } else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 avPacket = NULL;
             }
-
-
-
-
-
-            /*if (res >= ((avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) - 30000) && res <= ((avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) + 30000)){
-                LOGE("找到一帧 %lld:  , %f", res , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
-                uint8_t *data;
-                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-                uint8_t *tdata = NULL;
-                tdata = avPacket->data;
-                avPacket->data = data;
-
-                if(tdata != NULL)
-                {
-                    av_free(tdata);
-                }
-                helper->onGetFramePacket(avPacket->size,res,avPacket->data);
-
-                //如果上一帧就是目标帧，并且这一帧的时间大于上一帧的时间，为的是防止有B帧需要参考后面的帧才能正常解码
-                if (isFind && (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) > findTime){
-                    //isPause = true;
-                    isFind = false;
-                } else{
-                    isFind = true;
-                }
-                findTime = avPacket->pts *av_q2d( time_base)* AV_TIME_BASE;
-            } else *//*if (getAvPacketRefType2(avPacket) > 0)*//*{
-                LOGE("此帧需要去解码 %lld:  , %f", res , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
-                uint8_t *data;
-                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-                uint8_t *tdata = NULL;
-                tdata = avPacket->data;
-                avPacket->data = data;
-
-                if(tdata != NULL)
-                {
-                    av_free(tdata);
-                }
-                helper->onGetFramePacket(avPacket->size,res,avPacket->data);
-                //如果上一帧就是目标帧，并且这一帧的时间大于上一帧的时间，为的是防止有B帧需要参考后面的帧才能正常解码
-                if (isFind && (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE) > findTime){
-                    //isPause = true;
-                }
-                isFind = false;
-            } */
-
 
         } else{
             av_packet_free(&avPacket);

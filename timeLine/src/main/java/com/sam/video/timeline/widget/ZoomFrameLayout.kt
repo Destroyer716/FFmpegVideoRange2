@@ -200,6 +200,7 @@ class ZoomFrameLayout : FrameLayout,
             velocityX: Float,
             velocityY: Float
         ): Boolean {
+            Log.e("kzg","**************onFling:$velocityX")
             if (hasEventWithScale(e1, e2)) {
                 return true
             }
@@ -208,6 +209,7 @@ class ZoomFrameLayout : FrameLayout,
                 cancel()
                 val max = timeLineValue.pxInSecond * timeLineValue.duration / 1000
                 if (max > 0f && timeValueHolder.value in 0f..max) {
+
                     setStartVelocity(-velocityX)
                     setMinValue(0f)
                     setMaxValue(max)

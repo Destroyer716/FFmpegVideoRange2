@@ -35,7 +35,7 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     var videoData: List<VideoClip>? = null
     /** 帧数据 */
     val listData = mutableListOf<VideoFrameData>()
-    private val frameWidth by lazy(LazyThreadSafetyMode.NONE) { context.dp2px(60f).toInt() }
+    private val frameWidth by lazy(LazyThreadSafetyMode.NONE) { context.dp2px(48f).toInt() }
     private val decorationWidth by lazy(LazyThreadSafetyMode.NONE) { context.dp2px(2f).toInt() }
     val halfDurationSpace = decorationWidth / 2
     private val videoFrameItemDecoration: VideoFrameItemDecoration

@@ -193,6 +193,7 @@ class IMediaCodecFrameHelper(
                                 //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
                                 if (this !=null && this.data != null && this.data.isNotEmpty()){
                                     mapEntry = it
+                                    Log.e("kzg","**************mediacodecDecode")
                                     mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 }
                                 return@task
@@ -250,7 +251,7 @@ class IMediaCodecFrameHelper(
 
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
         Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - startTime}")
-        startTime = System.currentTimeMillis()
+        //startTime = System.currentTimeMillis()
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10)
@@ -284,6 +285,7 @@ class IMediaCodecFrameHelper(
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
+                        startTime = System.currentTimeMillis()
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
                         val image = mediaCodec!!.getOutputImage(index)
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际

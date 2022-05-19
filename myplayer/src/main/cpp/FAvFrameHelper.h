@@ -26,7 +26,7 @@ public:
     void starDecode();
     void releas();
     int getAvCodecContent(AVCodecParameters *avCodecParameters,AVCodecContext **avCodecContext);
-    void decodeFrame(double res);
+    void decodeFrame();
     void pauseOrStar(bool  isPause);
 
 public:

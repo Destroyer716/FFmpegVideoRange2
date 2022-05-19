@@ -123,16 +123,18 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_IDLE")
                     clearSelectVideoIfNeed()
+                    lastDx = 0
                     if (rvFrame.getAvFrameHelper()?.isScrolling == true){
                         rvFrame.getAvFrameHelper()?.isScrolling = false
                         rvFrame.getAvFrameHelper()?.seek()
                     }
 
                 }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
-
+                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_DRAGGING")
                 }else if (newState == RecyclerView.SCROLL_STATE_SETTLING){
-
+                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_SETTLING")
                 }
 
             }
@@ -145,7 +147,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
                     }
                     //当滑动的像素大于30的时候暂停解码抽帧
-                    if(dx > 20){
+                    if(dx > 10){
                         if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
                             rvFrame.getAvFrameHelper()?.isScrolling = true
                         }
@@ -171,19 +173,21 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         }
                     }
                 }
+                val ndx = abs(dx)
                 Log.e("kzg","*********************isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack}  , dx:$dx  , lastDx:$lastDx")
                 //速度大于30的时候暂停解码抽帧
-                if ( abs(dx) > 20 && lastDx <= 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                    lastDx = abs(dx)
+                if ( ndx > 10 && lastDx <= 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                    lastDx = ndx
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) > 0 /*&& lastDx <= 20*/){
-                    lastDx = abs(dx)
+                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx > 0 /*&& lastDx <= 20*/){
+                    lastDx = ndx
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if ( abs(dx) <= 20 && lastDx > 20 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
-                    lastDx = abs(dx)
+                }else if ( ndx <= 10 && lastDx > 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
+                    Log.e("kzg","**************seek")
+                    lastDx = ndx
                     rvFrame.getAvFrameHelper()?.seek()
-                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && abs(dx) == 0/* && lastDx > 20*/ ){
-                    lastDx = abs(dx)
+                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx == 0/* && lastDx > 20*/ ){
+                    lastDx = ndx
                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
@@ -352,7 +356,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.data = data
                 packetBean.pts = pts
                 packetBean.dataSize = dataSize
-                Log.e("kzg","**************getFramePacket 入队一帧")
+                //Log.e("kzg","**************getFramePacket 入队一帧")
                 (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
                 if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
                     rvFrame.getAvFrameHelper()?.pause()
