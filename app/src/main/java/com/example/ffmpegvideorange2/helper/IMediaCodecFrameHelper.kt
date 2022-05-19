@@ -7,7 +7,8 @@ import android.os.Environment
 import android.util.Log
 import android.view.Surface
 import android.widget.ImageView
-import com.example.ffmpegvideorange2.TimeQueue
+import com.example.ffmpegvideorange2.ImageViewBitmapBean
+import com.example.ffmpegvideorange2.ShowFrameQueue
 import com.example.ffmpegvideorange2.Utils
 import com.example.ffmpegvideorange2.VideoUtils
 import com.example.myplayer.KzgPlayer
@@ -18,6 +19,7 @@ import com.sam.video.timeline.bean.TargetBean
 import com.sam.video.timeline.helper.IAvFrameHelper
 import com.sam.video.timeline.helper.IFrameSearch
 import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
+import com.sam.video.util.notNull
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -35,10 +37,13 @@ class IMediaCodecFrameHelper(
     private var videoDecodeInfo: MediaCodec.BufferInfo? = null
     //存放从ffmpeg传过来的AVPacket数据
     val packetQueue:PacketQueue = PacketQueue()
+    //存放imageview 和要转为bitmap的Image
+    val imageQueue:ShowFrameQueue = ShowFrameQueue()
 
     private var lastIDRIndex: Int = 0
     var targetViewMap:Hashtable<ImageView, TargetBean> = Hashtable()
     private var childThread:Thread? = null
+    private var imageToBitmaptThread:Thread? = null
     //是否停止解码线程
     private var isStop = false
     //当前最后解码出来的一个帧，用来作为还没有来得及解码的预览帧
@@ -53,13 +58,18 @@ class IMediaCodecFrameHelper(
     private var startTime = 0L
     private var firstTimesFrame = 0;
     private var timeOut = 10L
+    //是否是用队列的方式去异步转bitmap
+    private var isUseQueue = true
 
 
     override fun init() {
         childThread = Thread(this)
         childThread!!.start()
 
-
+        if (isUseQueue){
+            imageToBitmaptThread = Thread(imageToBitmapRunnable)
+            imageToBitmaptThread!!.start()
+        }
     }
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
@@ -89,6 +99,7 @@ class IMediaCodecFrameHelper(
         isStop = true
 
         childThread?.join()
+        imageToBitmaptThread?.join()
 
         kzgPlayer?.let {
             it.release()
@@ -104,6 +115,7 @@ class IMediaCodecFrameHelper(
         targetViewMap.clear()
 
         packetQueue.clear()
+        imageQueue.clear()
         Log.e("kzg","*********************销毁IMediaCodecFrameHelper")
     }
 
@@ -251,9 +263,9 @@ class IMediaCodecFrameHelper(
 
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
         Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - startTime}")
-        //startTime = System.currentTimeMillis()
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
+                var codecStartTime = System.currentTimeMillis()
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10)
                 if (inputBufferIndex >= 0) {
                     //前几帧反正解码不出来，timeout 可以设置的小一些
@@ -284,15 +296,15 @@ class IMediaCodecFrameHelper(
                         continue
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
-                        startTime = System.currentTimeMillis()
+                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - codecStartTime}")
+                        codecStartTime = System.currentTimeMillis()
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
-                        val image = mediaCodec!!.getOutputImage(index)
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
                             || (videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000)  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
                             && !mapEntry.value.isAddFrame){
-                            val rect = image.cropRect
+                            val image = mediaCodec!!.getOutputImage(index)
+                            val rect = image!!.cropRect
                             val yuvImage = YuvImage(
                                 VideoUtils.YUV_420_888toNV21(image),
                                 ImageFormat.NV21,
@@ -300,41 +312,50 @@ class IMediaCodecFrameHelper(
                                 rect.height(),
                                 null
                             )
-                            val stream = ByteArrayOutputStream()
-                            yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 100, stream)
-                            // 检查bitmap的大小
-                            val options = BitmapFactory.Options()
-                            // 设置为true，BitmapFactory会解析图片的原始宽高信息，并不会加载图片
-                            options.inJustDecodeBounds = true
-                            var bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
-                            //算出合适的缩放比例
-                            options.inSampleSize = Utils.calculateInSampleSize(options,60,60)
-                            Log.e("kzg","*************************inSampleSize:${options.inSampleSize}")
-                            // 设置为false，加载bitmap
-                            options.inJustDecodeBounds = false
-                            bitmap =
-                                BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
-                            lastBitMap = bitmap
 
-                            mapEntry.key.post {
-                                bitmap?.let {
-                                    mapEntry.key.setImageBitmap(it)
-                                    targetViewMap.forEach { mp ->
-                                        if (!mp.value.isAddFrame){
-                                            mp.key.setImageBitmap(lastBitMap)
+                            if (isUseQueue){
+                                //使用队列异步转bitmap
+                                imageQueue.enQueue(ImageViewBitmapBean(mapEntry,yuvImage,rect,0))
+                                if (!isScrolling){
+                                    this.mapEntry!!.value.isAddFrame = true
+                                }
+                                Log.e("kzg","**********************yuvImage  耗时：${System.currentTimeMillis() - startTime}")
+                            }else{
+                                val stream = ByteArrayOutputStream()
+                                yuvImage.compressToJpeg(Rect(0, 0, rect.width(), rect.height()), 100, stream)
+                                // 检查bitmap的大小
+                                val options = BitmapFactory.Options()
+                                // 设置为true，BitmapFactory会解析图片的原始宽高信息，并不会加载图片
+                                options.inJustDecodeBounds = true
+                                var bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                                //算出合适的缩放比例
+                                options.inSampleSize = Utils.calculateInSampleSize(options,100,100)
+                                // 设置为false，加载bitmap
+                                options.inJustDecodeBounds = false
+                                bitmap =
+                                    BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                                lastBitMap = bitmap
+
+                                this.mapEntry!!.key!!.post {
+                                    bitmap?.let {
+                                        this.mapEntry!!.key!!.setImageBitmap(it)
+                                        targetViewMap.forEach { mp ->
+                                            if (!mp.value.isAddFrame){
+                                                mp.key.setImageBitmap(lastBitMap)
+                                            }
+
                                         }
-
                                     }
                                 }
+                                //Utils.saveBitmap("${Environment.getExternalStorageDirectory()}/jpe/",String.format("frame_%05d.jpg", mapEntry.value.timeUs),bitmap)
+                                if (!isScrolling){
+                                    this.mapEntry!!.value.isAddFrame = true
+                                }
+                                //Log.e("kzg","**********************展示一帧 timeUs: ${this.mapEntry!!.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
                             }
-                            //Utils.saveBitmap("${Environment.getExternalStorageDirectory()}/jpe/",String.format("frame_%05d.jpg", mapEntry.value.timeUs),bitmap)
-                            if (!isScrolling){
-                                mapEntry.value.isAddFrame = true
-                            }
-                            Log.e("kzg","**********************展示一帧 timeUs: ${mapEntry.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - startTime}")
-                            startTime = System.currentTimeMillis()
+                            image?.close()
                         }
-                        image.close()
+
                     }else{
                         buffer = mediaCodec!!.outputBuffers[index]
                     }
@@ -351,5 +372,58 @@ class IMediaCodecFrameHelper(
     }
 
 
+    private val imageToBitmapRunnable = Runnable {
+        while (!isStop){
+            if (imageQueue.queueSize == 0){
+                Thread.sleep(5)
+                continue
+            }
+
+            imageQueue.deQueue().apply {
+                notNull(this.image,this.mapEntry!!.key,this.rect){
+                   /* val rect = this.image!!.cropRect
+                    val yuvImage = YuvImage(
+                        VideoUtils.YUV_420_888toNV21(image),
+                        ImageFormat.NV21,
+                        rect.width(),
+                        rect.height(),
+                        null
+                    )*/
+                    val stream = ByteArrayOutputStream()
+                    this.image!!.compressToJpeg(Rect(0, 0, this.rect!!.width(), this.rect!!.height()), 100, stream)
+                    // 检查bitmap的大小
+                    val options = BitmapFactory.Options()
+                    // 设置为true，BitmapFactory会解析图片的原始宽高信息，并不会加载图片
+                    options.inJustDecodeBounds = true
+                    var bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                    //算出合适的缩放比例
+                    options.inSampleSize = Utils.calculateInSampleSize(options,60,60)
+                    // 设置为false，加载bitmap
+                    options.inJustDecodeBounds = false
+                    bitmap =
+                        BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+                    lastBitMap = bitmap
+
+                    this.mapEntry!!.key!!.post {
+                        bitmap?.let {
+                            this.mapEntry!!.key!!.setImageBitmap(it)
+                            targetViewMap.forEach { mp ->
+                                if (!mp.value.isAddFrame){
+                                    mp.key.setImageBitmap(lastBitMap)
+                                }
+
+                            }
+                        }
+                    }
+                    //Utils.saveBitmap("${Environment.getExternalStorageDirectory()}/jpe/",String.format("frame_%05d.jpg", mapEntry.value.timeUs),bitmap)
+                    if (!isScrolling){
+                        this.mapEntry!!.value.isAddFrame = true
+                    }
+                    //Log.e("kzg","**********************展示一帧 timeUs: ${this.mapEntry!!.value.timeUs} ,pts:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - this.time}")
+                }
+            }
+
+        }
+    }
 
 }

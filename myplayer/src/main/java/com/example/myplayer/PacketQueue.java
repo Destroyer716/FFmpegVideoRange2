@@ -47,8 +47,6 @@ public class PacketQueue {
             return;
         }
         list.clear();
-        //需要找一个线程安全的queue
-        Log.e("kzg","*/*****************PacketQueue  size:"+list.size());
     }
 
     public double getMaxPts(){
