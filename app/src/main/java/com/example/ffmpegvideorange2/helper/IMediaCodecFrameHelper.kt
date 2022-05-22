@@ -187,7 +187,7 @@ class IMediaCodecFrameHelper(
     override fun run() {
         while (!isStop){
             if (packetQueue.queueSize  == 0 || isScrolling){
-                Thread.sleep(10)
+                Thread.sleep(1)
                 continue
             }
             //按照时间从小到大排序
@@ -196,16 +196,14 @@ class IMediaCodecFrameHelper(
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     packetQueue.first?.let {bean ->
-                        //Log.e("kzg","**************isAddFrame:${it.value.isAddFrame}")
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
                             if (packetQueue.queueSize < 10 && !isScrolling){
                                 kzgPlayer?.pauseGetPacket(false)
                             }
                             packetQueue.deQueue().apply {
-                                //Log.e("kzg","***************timeUs:${it.value.timeUs.toDouble()}  , pts:${this.pts}  ,isAddFrame:${it.value.isAddFrame}")
                                 if (this !=null && this.data != null && this.data.isNotEmpty()){
                                     mapEntry = it
-                                    Log.e("kzg","**************mediacodecDecode")
+                                    startTime =System.currentTimeMillis()
                                     mediacodecDecode(this.data,this.dataSize,this.pts.toLong(),it)
                                 }
                                 return@task
@@ -260,12 +258,12 @@ class IMediaCodecFrameHelper(
         }
     }
 
-
+    var codecStartTime = 0L
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
-        Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - startTime}")
+        Log.e("kzg","**************循环到开始解码耗时：${System.currentTimeMillis() - codecStartTime}")
+        //Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - codecStartTime}")
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
-                var codecStartTime = System.currentTimeMillis()
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10)
                 if (inputBufferIndex >= 0) {
                     //前几帧反正解码不出来，timeout 可以设置的小一些
@@ -288,7 +286,6 @@ class IMediaCodecFrameHelper(
                 }
 
                 var index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, timeOut)
-                var buffer:ByteBuffer? = null
                 while (index >= 0) {
                     if (isScrolling){
                         mediaCodec!!.releaseOutputBuffer(index, false)
@@ -296,9 +293,10 @@ class IMediaCodecFrameHelper(
                         continue
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - codecStartTime}")
+                        Log.e("kzg","**********************mediacodec 解码出一帧:${videoDecodeInfo!!.presentationTimeUs}  ,耗时：${System.currentTimeMillis() - codecStartTime}  ,flag:${videoDecodeInfo!!.flags}")
                         codecStartTime = System.currentTimeMillis()
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM
                         // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
                             || (videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000)  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
@@ -355,19 +353,17 @@ class IMediaCodecFrameHelper(
                             }
                             image?.close()
                         }
-
-                    }else{
-                        buffer = mediaCodec!!.outputBuffers[index]
                     }
                     mediaCodec!!.releaseOutputBuffer(index, false)
-                    buffer?.clear()
-                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, timeOut)
+                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 5000)
+                    if (index < 0){
+                        codecStartTime = System.currentTimeMillis()
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-            }finally {
-
             }
+
         }
     }
 
@@ -375,7 +371,7 @@ class IMediaCodecFrameHelper(
     private val imageToBitmapRunnable = Runnable {
         while (!isStop){
             if (imageQueue.queueSize == 0){
-                Thread.sleep(5)
+                Thread.sleep(1)
                 continue
             }
 
