@@ -119,65 +119,6 @@ class IMediaCodecFrameHelper(
         Log.e("kzg","*********************销毁IMediaCodecFrameHelper")
     }
 
-    override fun seek() {
-        Log.e("kzg","****************开始seek")
-        startTime = System.currentTimeMillis()
-        Utils.sortHashMap(targetViewMap).apply {
-            var i=0
-            var j=0
-            var minTimeUs = Long.MAX_VALUE
-            var hasNoAddFrame = false
-            this.forEach {
-                if (!it.value.isAddFrame){
-                    minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
-                    hasNoAddFrame = true
-                }
-            }
-            //如果没有需要解码的帧，就直接返回
-            if (!hasNoAddFrame){
-                return
-            }
-            val func =  {
-                Log.e("kzg","********************isCurrentGop11111111:${minTimeUs}")
-                val ite = IFrameSearch.IframeUs.iterator()
-                var index = 0
-                while (ite.hasNext()){
-                    val frame = ite.next()
-                    //当前recyclerView最小的item帧的时间戳所属的gop index
-                    if (index > 0 && minTimeUs >=IFrameSearch.IframeUs[index - 1] && minTimeUs < frame){
-                        i = index
-                    }
-
-                    //已解码的帧的pts所属的gop
-                    if (index > 0 && lastCodecFramePts >=IFrameSearch.IframeUs[index - 1] && lastCodecFramePts < frame ){
-                        j = index
-                    }
-                    index ++
-                }
-
-                if (isSeekBack){
-                    false
-                }else{
-                    //如果将要解码的帧所属的gop与已经解码出来的最后一帧所属的是同一个gop 或者 将要解码的帧的时间小于 avpacket队列的最大帧的时间，就认为是同一个gop
-                    i == j || minTimeUs <= packetQueue.maxPts.toLong()
-                }
-            }
-
-            val isCurrentGop =func().apply {
-                Log.e("kzg","********************isCurrentGop:$this")
-                if (!this){
-                    packetQueue.clear()
-                    mediaCodec?.flush()
-                }
-            }
-            //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
-            val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
-                Log.e("kzg","********************pts:$this")
-            }
-            kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
-        }
-    }
-
 
     override fun pause() {
         Log.e("kzg","**************pause:")
@@ -258,10 +199,78 @@ class IMediaCodecFrameHelper(
         }
     }
 
+
+    override fun seek() {
+        Log.e("kzg","****************开始seek")
+        startTime = System.currentTimeMillis()
+        Utils.sortHashMap(targetViewMap).apply {
+            var i=0
+            var j=0
+            var minTimeUs = Long.MAX_VALUE
+            var hasNoAddFrame = false
+            this.forEach {
+                //这里做两个判断，一个是这个imageview 并没有被填充需要的帧，还有就是当前需要的帧与需要显示的最大的那个帧的时间相差不能超过12秒
+                //这是为了进一步精确，因为可能会存在当前imageview标记的时间不是当前需要的最小的时间
+                if (!it.value.isAddFrame ){
+                    if (!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs <= 12_000_000)){
+                        minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                        hasNoAddFrame = true
+                    }else if(!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs < 12_000_000)){
+                        it.value.isAddFrame = true
+                    }else if (isSeekBack){
+                        //回退的时候不需要判断最小帧与最大帧
+                        minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                        hasNoAddFrame = true
+                    }
+                }
+            }
+            //如果没有需要解码的帧，就直接返回
+            if (!hasNoAddFrame){
+                return
+            }
+            val func =  {
+                val ite = IFrameSearch.IframeUs.iterator()
+                var index = 0
+                while (ite.hasNext()){
+                    val frame = ite.next()
+                    //当前recyclerView最小的item帧的时间戳所属的gop index
+                    if (index > 0 && minTimeUs >=IFrameSearch.IframeUs[index - 1] && minTimeUs < frame){
+                        i = index
+                    }
+
+                    //已解码的帧的pts所属的gop
+                    if (index > 0 && lastCodecFramePts >=IFrameSearch.IframeUs[index - 1] && lastCodecFramePts < frame ){
+                        j = index
+                    }
+                    index ++
+                }
+                //如果是回退，那么是肯定需要ffmpeg去seek的
+                if (isSeekBack){
+                    false
+                }else{
+                    //如果将要解码的帧所属的gop与已经解码出来的最后一帧所属的是同一个gop 或者 将要解码的帧的时间小于 avpacket队列的最大帧的时间，就认为是同一个gop
+                    i == j || minTimeUs <= packetQueue.maxPts.toLong()
+                }
+            }
+
+            val isCurrentGop =func().apply {
+                Log.e("kzg","********************isCurrentGop:$this")
+                if (!this){
+                    packetQueue.clear()
+                    mediaCodec?.flush()
+                }
+            }
+            //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
+            val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
+                Log.e("kzg","********************需要seek的I帧:$this  ， 实际需要展示的时间最小帧：${minTimeUs}")
+            }
+            kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
+        }
+    }
+
     var codecStartTime = 0L
     private fun mediacodecDecode(bytes: ByteArray?, size: Int, pts: Long,mapEntry:Map.Entry<ImageView, TargetBean>) {
-        Log.e("kzg","**************循环到开始解码耗时：${System.currentTimeMillis() - codecStartTime}")
-        //Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - codecStartTime}")
+        Log.e("kzg","************************mediacodec 开始解码帧：$pts  ,timeUs:${mapEntry.value.timeUs}   ,耗时：${System.currentTimeMillis() - codecStartTime}")
         if (bytes != null && mediaCodec != null && videoDecodeInfo != null) {
             try {
                 val inputBufferIndex = mediaCodec!!.dequeueInputBuffer(10)
@@ -355,7 +364,7 @@ class IMediaCodecFrameHelper(
                         }
                     }
                     mediaCodec!!.releaseOutputBuffer(index, false)
-                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 5000)
+                    index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
                     if (index < 0){
                         codecStartTime = System.currentTimeMillis()
                     }

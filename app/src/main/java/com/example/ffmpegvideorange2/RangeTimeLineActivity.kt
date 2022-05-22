@@ -8,8 +8,10 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
+import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
+import com.example.ffmpegvideorange2.scrollVelocity.VelocityTrackListener
+import com.example.ffmpegvideorange2.scrollVelocity.ViewVelocityHandler
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.KzgPlayer.PlayerListener
 import com.example.myplayer.PacketBean
@@ -20,6 +22,7 @@ import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.timeline.listener.SelectAreaMagnetOnChangeListener
 import com.sam.video.timeline.listener.VideoPlayerOperate
 import com.sam.video.timeline.widget.TimeLineBaseValue
+import com.sam.video.timeline.widget.ZoomFrameLayout
 import com.sam.video.util.VideoUtils
 import com.sam.video.util.getScreenWidth
 import kotlinx.android.synthetic.main.activity_range_time_line.*
@@ -30,7 +33,6 @@ import kotlinx.android.synthetic.main.activity_range_time_line.tagView
 import kotlinx.android.synthetic.main.activity_range_time_line.zoomFrameLayout
 import kotlinx.android.synthetic.main.activity_time_line.*
 import java.util.*
-import kotlin.math.abs
 
 
 class RangeTimeLineActivity : AppCompatActivity(){
@@ -119,17 +121,65 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
         })
 
-        rvFrame.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        val handler = RecyclerVelocityHandler(this)
+        handler.setVelocityTrackerListener(object :VelocityTrackListener{
+            override fun onVelocityChanged(velocity: Int) {
+                Log.e("kzg","*************************VelocityTrackerListener onVelocityChanged:$velocity")
+                //如果是向后滑动，只有当速度停下来才开始解码
+                if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
+                    rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.seek()
+                }
+
+                //如果是向后滑动，就停止解码
+                if (velocity < 0){
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == false){
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+                }
+
+                if (velocity > 0){
+                    //预览条向前滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = false
+                    }
+                }else if(velocity < 0){
+                    //预览条向后滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                    }
+                }
+            }
+
+            override fun onScrollFast() {
+                Log.e("kzg","*************************VelocityTrackerListener onScrollFast")
+                if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                    //快速向前滚动，暂停解码
+                    rvFrame.getAvFrameHelper()?.isScrolling = true
+                    rvFrame.getAvFrameHelper()?.pause()
+                }
+            }
+
+            override fun onScrollSlow() {
+                Log.e("kzg","*************************VelocityTrackerListener onScrollSlow")
+                clearSelectVideoIfNeed()
+                //向前滚动速度慢下来，开始解码
+                if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                    rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.seek()
+                }
+            }
+        })
+        rvFrame.addOnScrollListener(handler)
+/*        rvFrame.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_IDLE")
-                    clearSelectVideoIfNeed()
+
                     lastDx = 0
-                    if (rvFrame.getAvFrameHelper()?.isScrolling == true){
-                        rvFrame.getAvFrameHelper()?.isScrolling = false
-                        rvFrame.getAvFrameHelper()?.seek()
-                    }
+
 
                 }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
                     Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_DRAGGING")
@@ -179,20 +229,20 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if ( ndx > 10 && lastDx <= 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     lastDx = ndx
                     rvFrame.getAvFrameHelper()?.pause()
-                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx > 0 /*&& lastDx <= 20*/){
+                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx > 0 *//*&& lastDx <= 20*//*){
                     lastDx = ndx
                     rvFrame.getAvFrameHelper()?.pause()
                 }else if ( ndx <= 10 && lastDx > 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
                     Log.e("kzg","**************seek")
                     lastDx = ndx
                     rvFrame.getAvFrameHelper()?.seek()
-                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx == 0/* && lastDx > 20*/ ){
+                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx == 0*//* && lastDx > 20*//* ){
                     lastDx = ndx
                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
 
-        })
+        })*/
         bindVideoData()
 
         val duration = VideoUtils.getVideoDuration(this, inputPath)
@@ -254,6 +304,48 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
         }
+
+        zoomFrameLayout.onScrollVelocityChangeListener = object :ZoomFrameLayout.OnScrollVelocityChangeListener{
+            override fun onVelocityChange(v: Float) {
+                if (v > 0F){
+                    //预览条向前滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = false
+                    }
+
+                    Log.e("kzg","**********************onVelocityChange:$v  ,isScrolling:${rvFrame.getAvFrameHelper()?.isScrolling}")
+                    //如果向前滑动，并且速度大于60 并且isScrolling=false,就暂停解码
+                    if (v > 50F && rvFrame.getAvFrameHelper()?.isScrolling == false){
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+
+                    //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
+                    if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                        rvFrame.getAvFrameHelper()?.isScrolling = false
+                        rvFrame.getAvFrameHelper()?.seek()
+                    }
+
+                }else if (v < 0F){
+                    //预览条向后滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                    }
+                    //如果是向后滑动，并且isScrolling=false,速度大于50 就暂停解码
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == false && v < -50){
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+                }
+                //如果是向后滑动，并且速度为0，并且isScrolling=true,就开始解码
+                if (v == 0F && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                    rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.seek()
+                }
+            }
+
+        }
+
     }
 
 

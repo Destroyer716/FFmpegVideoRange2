@@ -24,7 +24,7 @@ class ZoomFrameLayout : FrameLayout,
     DynamicAnimation.OnAnimationUpdateListener,
     ValueAnimator.AnimatorUpdateListener {
 
-
+    var onScrollVelocityChangeListener:OnScrollVelocityChangeListener? = null
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
@@ -41,8 +41,9 @@ class ZoomFrameLayout : FrameLayout,
     ) {
         timeLineValue.time = timeLineValue.px2time(vlaue)
         dispatchUpdateTime()
-        Log.e("kzg","***************onAnimationUpdate:${timeLineValue.time}")
+        Log.e("kzg","***************onAnimationUpdate:${velocity}")
         timeChangeListener?.updateTimeByScroll(timeLineValue.time)
+        onScrollVelocityChangeListener?.onVelocityChange(velocity)
     }
 
 
@@ -237,6 +238,7 @@ class ZoomFrameLayout : FrameLayout,
         ScaleGestureDetector(context, scaleGestureListener)
     }
 
+
     fun updateTime(time: Long) {
 //        Log.d("Sam" , "ZoomFrameLayout updateTime $time ")
         timeLineValue.time = time
@@ -327,5 +329,9 @@ class ZoomFrameLayout : FrameLayout,
          */
         abstract fun onScaleTouchEnd()
 
+    }
+
+    interface OnScrollVelocityChangeListener{
+        fun onVelocityChange(v:Float)
     }
 }
