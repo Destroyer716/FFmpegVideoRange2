@@ -90,8 +90,39 @@ class IMediaCodecFrameHelper(
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
         }
+    }
 
+    fun initMediaCodec(codecName: String?,
+                       width: Int,
+                       height: Int,
+                       csd_0: ByteArray?,
+                       csd_1: ByteArray?,
+                       surface: Surface
+    ){
 
+        val mime = KzglVideoSupportUtil.findVideoCodecName(codecName)
+        //创建MediaFormat
+        mediaFormat = MediaFormat.createVideoFormat(mime, width, height)
+        Log.e("kzg","*******************初始化获取预览帧的解码器：$codecName ,  $width  ,  $height , $mime")
+        //设置参数
+        mediaFormat!!.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height)
+        mediaFormat!!.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
+        mediaFormat!!.setByteBuffer("cds-0", ByteBuffer.wrap(csd_0))
+        mediaFormat!!.setByteBuffer("cds-1", ByteBuffer.wrap(csd_1))
+        Log.e("kzg", "**************mediaFormat:" + mediaFormat.toString())
+        videoDecodeInfo = MediaCodec.BufferInfo()
+
+        try {
+            mediaCodec = MediaCodec.createDecoderByType(mime)
+
+            mediaCodec!!.configure(mediaFormat, null, null, 0)
+            mediaCodec!!.start()
+            kzgPlayer?.startGetFrame()
+            kzgPlayer?.getFrameListener?.onStarGetFrame()
+            Log.e("kzg", "**************mediacodec 开始解码抽帧" )
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 
     override fun release() {
@@ -166,38 +197,7 @@ class IMediaCodecFrameHelper(
         this.kzgPlayer = player
     }
 
-    fun initMediaCodec(codecName: String?,
-                               width: Int,
-                               height: Int,
-                               csd_0: ByteArray?,
-                               csd_1: ByteArray?,
-                    surface: Surface
-    ){
 
-        val mime = KzglVideoSupportUtil.findVideoCodecName(codecName)
-        //创建MediaFormat
-        mediaFormat = MediaFormat.createVideoFormat(mime, width, height)
-        Log.e("kzg","*******************初始化获取预览帧的解码器：$codecName ,  $width  ,  $height , $mime")
-        //设置参数
-        mediaFormat!!.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height)
-        mediaFormat!!.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
-        mediaFormat!!.setByteBuffer("cds-0", ByteBuffer.wrap(csd_0))
-        mediaFormat!!.setByteBuffer("cds-1", ByteBuffer.wrap(csd_1))
-        Log.e("kzg", "**************mediaFormat:" + mediaFormat.toString())
-        videoDecodeInfo = MediaCodec.BufferInfo()
-
-        try {
-            mediaCodec = MediaCodec.createDecoderByType(mime)
-
-            mediaCodec!!.configure(mediaFormat, null, null, 0)
-            mediaCodec!!.start()
-            kzgPlayer?.startGetFrame()
-            kzgPlayer?.getFrameListener?.onStarGetFrame()
-            Log.e("kzg", "**************mediacodec 开始解码抽帧" )
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
 
 
     override fun seek() {
@@ -365,9 +365,7 @@ class IMediaCodecFrameHelper(
                     }
                     mediaCodec!!.releaseOutputBuffer(index, false)
                     index = mediaCodec!!.dequeueOutputBuffer(videoDecodeInfo, 10000)
-                    if (index < 0){
-                        codecStartTime = System.currentTimeMillis()
-                    }
+
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

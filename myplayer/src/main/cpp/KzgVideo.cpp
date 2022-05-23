@@ -321,7 +321,7 @@ void *videoPlay(void *arg){
                             gettimeofday(&tv,NULL);
                             long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
                             kzgVideo->helper->onEnablePlay(true,THREAD_CHILD);
-                            //LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
+                            LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
                         }
 
 
