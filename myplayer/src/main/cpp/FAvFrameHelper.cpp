@@ -9,6 +9,7 @@ FAvFrameHelper::FAvFrameHelper(JavaCallHelper *_helper, const char *_url,
     helper = _helper;
     url = _url;
     playerStatus = _kzgPlayerStatus;
+    this->queue = new SafeQueue(_kzgPlayerStatus);
     pthread_mutex_init(&init_mutex,NULL);
     pthread_mutex_init(&frame_mutex,NULL);
 
@@ -289,14 +290,14 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
             seekTime = res;
             avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
             isPause = false;
-            //decodeFrame(res);
+            //decodeAvPacket(res);
             pthread_mutex_unlock(&frame_mutex);
         }
     }
 
 }
 
-void FAvFrameHelper::decodeFrame() {
+void FAvFrameHelper::decodeAvPacket() {
     int ret;
     LOGE("开始解码抽帧");
     while (playerStatus != NULL && !playerStatus->exit){
@@ -358,4 +359,60 @@ void FAvFrameHelper::decodeFrame() {
 void FAvFrameHelper::pauseOrStar(bool isPause) {
     LOGE("FAvFrameHelper  pauseOrStar %d",isPause);
     this->isPause = isPause;
+}
+
+void FAvFrameHelper::decodeFrame() {
+    int ret;
+    LOGE("开始解码抽帧");
+    while (playerStatus != NULL && !playerStatus->exit){
+        if (isPause || queue->getQueueSize() > 30){
+            av_usleep(1000*10);
+            continue;
+        }
+
+
+        AVPacket *avPacket = av_packet_alloc();
+        ret = av_read_frame(avFormatContext,avPacket);
+        if (ret != 0){
+            LOGE("获取视频avPacket 失败");
+            av_usleep(1000*10);
+            continue;
+        }
+
+        if (avPacket->stream_index != avStreamIndex){
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+        } else if (avPacket->stream_index == avStreamIndex){
+            //找到视频avPacket
+            if (getAvPacketRefType2(avPacket) > 0){
+                uint8_t *data;
+                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
+                uint8_t *tdata = NULL;
+                tdata = avPacket->data;
+                avPacket->data = data;
+
+                if(tdata != NULL)
+                {
+                    av_free(tdata);
+                }
+                queue->putAvPacket(avPacket);
+            } else{
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+            }
+
+        } else{
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+        }
+    }
+    isExit = true;
+    LOGE("抽帧结束");
+}
+
+void FAvFrameHelper::decodeFrameFromQueue() {
+
 }

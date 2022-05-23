@@ -270,6 +270,10 @@ public class KzgPlayer {
     private native void n_frame_seek(int sec,boolean isCurrentGOP);
     private native void n_pause_get_packet(boolean isPause);
 
+/************************按时间抽帧 使用ffmpeg去解码******************************************/
+    private native void n_init_frame_by_ffmepg(String source);
+    private native void n_start_by_ffmpeg();
+
 
     public void onError(int code,String msg){
         stop();

@@ -8,6 +8,7 @@
 #include "JavaCallHelper.h"
 #include "KzgPlayerStatus.h"
 #include "pthread.h"
+#include "SafeQueue.h"
 
 extern "C"{
 #include "include/libavutil/time.h"
@@ -26,8 +27,10 @@ public:
     void starDecode();
     void releas();
     int getAvCodecContent(AVCodecParameters *avCodecParameters,AVCodecContext **avCodecContext);
-    void decodeFrame();
+    void decodeAvPacket();
     void pauseOrStar(bool  isPause);
+    void decodeFrame();
+    void decodeFrameFromQueue();
 
 public:
     KzgPlayerStatus *playerStatus;
@@ -48,6 +51,7 @@ private:
     AVRational time_base;
     AVCodecContext *avCodecContext = NULL;
     int64_t duration = 0;
+    SafeQueue *queue = NULL;
 
 
 };

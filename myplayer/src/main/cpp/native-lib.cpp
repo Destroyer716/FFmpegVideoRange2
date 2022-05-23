@@ -810,9 +810,9 @@ Java_com_example_myplayer_KzgPlayer_n_1init_1frame(JNIEnv *env, jobject thiz, js
 }
 
 
-void *startGetFrame(void *args){
+void *startGetAvPacket(void *args){
     FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
-    fAvFrameHelper1->decodeFrame();
+    fAvFrameHelper1->decodeAvPacket();
     return 0;
 }
 
@@ -821,7 +821,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1start_1get_1frame(JNIEnv *env, jobject thiz) {
     if (fAvFrameHelper != NULL){
-        pthread_create(&thread_start_get_frame,NULL,startGetFrame,fAvFrameHelper);
+        pthread_create(&thread_start_get_frame, NULL, startGetAvPacket, fAvFrameHelper);
     }
 }
 
@@ -832,11 +832,48 @@ Java_com_example_myplayer_KzgPlayer_n_1frame_1seek(JNIEnv *env, jobject thiz, ji
     if (fAvFrameHelper != NULL){
         fAvFrameHelper->seekTo(sec,isCurrentGop);
     }
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1pause_1get_1packet(JNIEnv *env, jobject thiz,
                                                           jboolean is_pause) {
     if (fAvFrameHelper != NULL){
         fAvFrameHelper->pauseOrStar(is_pause);
+    }
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1init_1frame_1by_1ffmepg(JNIEnv *env, jobject thiz,
+                                                               jstring source) {
+    if (helper == NULL){
+        helper = new JavaCallHelper(javaVm,env,thiz);
+    }
+    if (kzgPlayerStatus == NULL){
+        kzgPlayerStatus = new KzgPlayerStatus();
+    }
+    if (fAvFrameHelper == NULL){
+        const char* url = env->GetStringUTFChars(source,0);
+        fAvFrameHelper = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+    }
+
+    fAvFrameHelper->init();
+}
+
+
+void *startGetFrame(void *args){
+    FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
+    fAvFrameHelper1->decodeFrame();
+    return 0;
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1start_1by_1ffmpeg(JNIEnv *env, jobject thiz) {
+    if (fAvFrameHelper != NULL){
+        pthread_create(&thread_start_get_frame, NULL, startGetFrame, fAvFrameHelper);
     }
 }
