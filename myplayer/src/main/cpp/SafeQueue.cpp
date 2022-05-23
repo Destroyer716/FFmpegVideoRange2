@@ -94,3 +94,16 @@ void SafeQueue::clearByBeforeTime(int64_t time,AVRational time_base) {
     pthread_mutex_unlock(&mutexPacket);
 }
 
+double SafeQueue::getMaxPts() {
+    pthread_mutex_lock(&mutexPacket);
+    double pts = 0;
+    while (!queuePacket.empty()){
+        AVPacket * avPacket = queuePacket.front();
+        if (avPacket->pts > pts){
+            pts = avPacket->pts;
+        }
+    }
+    pthread_mutex_unlock(&mutexPacket);
+    return pts;
+}
+

@@ -29,6 +29,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_enablePlay = env->GetMethodID(jclass1,"onEnableStartPlay","(Z)V");
     jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","(Ljava/lang/String;II[B[B)V");
     jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(ID[B)V");
+    jmid_onCallYUVToBitmap = env->GetMethodID(jclass1,"onCallYUVToBitmap","(II[B[B[BID)V");
 }
 
 JavaCallHelper::~JavaCallHelper() {
@@ -372,5 +373,46 @@ void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data) {
     jniEnv->CallVoidMethod(jobj,jmid_onGetFramePacket,dataSize,pts,avpacket);
     jniEnv->DeleteLocalRef(avpacket);
     javaVm->DetachCurrentThread();
+}
+
+void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv,
+                                       int practicalWidth,double pts, int thread) {
+    if (thread == THREAD_CHILD){
+        JNIEnv *jniEnv;
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+            return;
+        }
+
+        jbyteArray y = jniEnv->NewByteArray(width * height);
+        jniEnv->SetByteArrayRegion(y, 0,width * height, reinterpret_cast<const jbyte *>(fy));
+
+        jbyteArray u = jniEnv->NewByteArray(width * height / 4);
+        jniEnv->SetByteArrayRegion(u, 0,width * height / 4, reinterpret_cast<const jbyte *>(fu));
+
+        jbyteArray v = jniEnv->NewByteArray(width * height / 4);
+        jniEnv->SetByteArrayRegion(v, 0,width * height / 4, reinterpret_cast<const jbyte *>(fv));
+
+        jniEnv->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v,practicalWidth,pts);
+
+        jniEnv->DeleteLocalRef(y);
+        jniEnv->DeleteLocalRef(u);
+        jniEnv->DeleteLocalRef(v);
+
+        javaVm->DetachCurrentThread();
+    } else{
+        jbyteArray y = env->NewByteArray(width * height);
+        env->SetByteArrayRegion(y, 0,width * height, reinterpret_cast<const jbyte *>(fy));
+
+        jbyteArray u = env->NewByteArray(width * height / 4);
+        env->SetByteArrayRegion(u, 0,width * height / 4, reinterpret_cast<const jbyte *>(fu));
+
+        jbyteArray v = env->NewByteArray(width * height / 4);
+        env->SetByteArrayRegion(v, 0,width * height / 4, reinterpret_cast<const jbyte *>(fv));
+        env->CallVoidMethod(jobj,jmid_renderyuv,width,height,y,u,v,practicalWidth,pts);
+
+        env->DeleteLocalRef(y);
+        env->DeleteLocalRef(u);
+        env->DeleteLocalRef(v);
+    }
 }
 

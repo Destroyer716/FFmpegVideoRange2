@@ -455,6 +455,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
             }
 
+            override fun onGetFrameYUV(width: Int, height: Int, y: ByteArray?, u: ByteArray?, v: ByteArray?,
+                practicalWidth: Int, timeUs:Double) {
+                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper)
+            }
+
         })
     }
 

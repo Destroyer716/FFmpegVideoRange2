@@ -402,7 +402,6 @@ void FAvFrameHelper::decodeFrame() {
                 av_free(avPacket);
                 avPacket = NULL;
             }
-
         } else{
             av_packet_free(&avPacket);
             av_free(avPacket);
@@ -413,6 +412,70 @@ void FAvFrameHelper::decodeFrame() {
     LOGE("抽帧结束");
 }
 
-void FAvFrameHelper::decodeFrameFromQueue() {
+void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
+    FAvFrameHelper *fAvFrameHelper = static_cast<FAvFrameHelper *>(arg);
+    while (playerStatus != NULL && !playerStatus->exit){
+        if (isPause){
+            av_usleep(1000 * 10);
+            continue;
+        }
 
+        AVPacket *avPacket = av_packet_alloc();
+        if (queue->getAvPacket(avPacket) != 0){
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            continue;
+        }
+        pthread_mutex_lock(&codecMutex);
+        if (avcodec_send_packet(avCodecContext,avPacket) != 0){
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            pthread_mutex_unlock(&codecMutex);
+        }
+
+        AVFrame * avFrame = av_frame_alloc();
+        if (avcodec_receive_frame(avCodecContext,avFrame) != 0){
+            av_frame_free(&avFrame);
+            av_free(avFrame);
+            avFrame = NULL;
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            pthread_mutex_unlock(&codecMutex);
+        }
+
+        if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
+            avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
+            int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
+            helper->onCallYUVToBitmap(
+                    width,
+                    avCodecContext->height,
+                    avFrame->data[0],
+                    avFrame->data[1],
+                    avFrame->data[2],
+                    avCodecContext->width,
+                    (avFrame->pts *av_q2d(time_base) * AV_TIME_BASE),
+                    THREAD_CHILD);
+
+        } else{
+            LOGE("avFrameHelper avframe 不是 yuv420p");
+        }
+
+        av_frame_free(&avFrame);
+        av_free(avFrame);
+        avFrame = NULL;
+        av_packet_free(&avPacket);
+        av_free(avPacket);
+        avPacket = NULL;
+        pthread_mutex_unlock(&codecMutex);
+    }
+
+
+
+}
+
+double FAvFrameHelper::getAvpacketQueueMaxPts() {
+    return queue->getMaxPts()*av_q2d(time_base) * AV_TIME_BASE;
 }

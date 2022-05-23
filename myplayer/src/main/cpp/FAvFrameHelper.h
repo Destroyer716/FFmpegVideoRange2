@@ -30,7 +30,8 @@ public:
     void decodeAvPacket();
     void pauseOrStar(bool  isPause);
     void decodeFrame();
-    void decodeFrameFromQueue();
+    void decodeFrameFromQueue(void *arg);
+    double getAvpacketQueueMaxPts();
 
 public:
     KzgPlayerStatus *playerStatus;
@@ -52,6 +53,7 @@ private:
     AVCodecContext *avCodecContext = NULL;
     int64_t duration = 0;
     SafeQueue *queue = NULL;
+    pthread_mutex_t codecMutex;
 
 
 };

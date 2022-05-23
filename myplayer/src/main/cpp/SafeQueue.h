@@ -27,6 +27,7 @@ public:
     void clearAvPacket();
     void noticeQueue();
     void clearByBeforeTime(int64_t time,AVRational time_base);
+    double getMaxPts();
 
 public:
     std::queue<AVPacket *> queuePacket;

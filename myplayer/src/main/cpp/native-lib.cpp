@@ -36,6 +36,7 @@ bool nexit = true;
 pthread_t thread_start;
 FAvFrameHelper *fAvFrameHelper;
 pthread_t thread_start_get_frame;
+pthread_t thread_start_decode_frame;
 
 
 
@@ -874,6 +875,16 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1start_1by_1ffmpeg(JNIEnv *env, jobject thiz) {
     if (fAvFrameHelper != NULL){
-        pthread_create(&thread_start_get_frame, NULL, startGetFrame, fAvFrameHelper);
+        pthread_create(&thread_start_get_frame, NULL, startGetAvPacket, fAvFrameHelper);
+        pthread_create(&thread_start_decode_frame, NULL, startGetFrame, fAvFrameHelper);
     }
+}
+
+extern "C"
+JNIEXPORT jdouble JNICALL
+Java_com_example_myplayer_KzgPlayer_n_1get_1avpacket_1queue_1max_1pts(JNIEnv *env, jobject thiz) {
+    if (fAvFrameHelper != NULL){
+        return fAvFrameHelper->getAvpacketQueueMaxPts();
+    }
+    return 0;
 }

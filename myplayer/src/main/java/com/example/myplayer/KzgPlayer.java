@@ -244,6 +244,10 @@ public class KzgPlayer {
         n_pause_get_packet(isPause);
     }
 
+    public double getAvPacketQueueMaxPts(){
+        return  n_get_avpacket_queue_max_pts();
+    }
+
 
 
 /************************播放视频或者逐帧预览*********************************/
@@ -273,6 +277,7 @@ public class KzgPlayer {
 /************************按时间抽帧 使用ffmpeg去解码******************************************/
     private native void n_init_frame_by_ffmepg(String source);
     private native void n_start_by_ffmpeg();
+    private native double n_get_avpacket_queue_max_pts();
 
 
     public void onError(int code,String msg){
@@ -387,6 +392,12 @@ public class KzgPlayer {
         }
     }
 
+    public void onCallYUVToBitmap(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs){
+        if (getFrameListener != null){
+            getFrameListener.onGetFrameYUV(width,height,y,u,v,practicalWidth,timeUs);
+        }
+    }
+
 
 
 
@@ -423,6 +434,8 @@ public class KzgPlayer {
         void onInited(String codecName,int width,int height,byte[] csd_0,byte[] csd_1);
         void onStarGetFrame();
         void getFramePacket(int dataSize,double pts,byte[] data);
+        //使用ffmpeg解码得到YUV数据
+        void onGetFrameYUV(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs);
     }
 
 
