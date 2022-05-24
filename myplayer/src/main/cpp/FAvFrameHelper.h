@@ -13,6 +13,7 @@
 extern "C"{
 #include "include/libavutil/time.h"
 #include "include/libavformat/avformat.h"
+#include "include/libavutil/imgutils.h"
 };
 
 class FAvFrameHelper {

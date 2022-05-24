@@ -228,11 +228,13 @@ public class KzgPlayer {
 
 
     public void initGetFrame(String source){
-        n_init_frame(source);
+        //n_init_frame(source);
+        n_init_frame_by_ffmepg(source);
     }
 
     public void startGetFrame(){
-        n_start_get_frame();
+        //n_start_get_frame();
+        n_start_by_ffmpeg();
     }
 
     public void seekFrame(double sec,boolean isCurrentGop){
@@ -241,6 +243,7 @@ public class KzgPlayer {
     }
 
     public void pauseGetPacket(boolean isPause){
+        Log.e("kzg","**************pauseGetPacket:"+isPause);
         n_pause_get_packet(isPause);
     }
 
@@ -398,6 +401,12 @@ public class KzgPlayer {
         }
     }
 
+    public void onCallYUVToBitmap2(int width, int height, byte[] yuv,int practicalWidth,double timeUs){
+        if (getFrameListener != null){
+            getFrameListener.onGetFrameYUV2(width,height,yuv,practicalWidth,timeUs);
+        }
+    }
+
 
 
 
@@ -436,6 +445,7 @@ public class KzgPlayer {
         void getFramePacket(int dataSize,double pts,byte[] data);
         //使用ffmpeg解码得到YUV数据
         void onGetFrameYUV(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs);
+        void onGetFrameYUV2(int width, int height, byte[] yuv,int practicalWidth,double timeUs);
     }
 
 

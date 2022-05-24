@@ -8,6 +8,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import com.example.ffmpegvideorange2.helper.IFFmpegCodecFrameHelper
 import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
 import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
 import com.example.ffmpegvideorange2.scrollVelocity.VelocityTrackListener
@@ -420,11 +421,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
         })
 
 
-        val avFrameHelper = IMediaCodecFrameHelper("",null)
+        val avFrameHelper = IFFmpegCodecFrameHelper("",null)
         avFrameHelper.setKzgPlayer(kzgPlayer!!)
         rvFrame.setAvFrameHelper(avFrameHelper)
 
-        kzgPlayer!!.initGetFrame(inputPath);
+        kzgPlayer!!.initGetFrame(inputPath)
         kzgPlayer!!.setGetFrameListener(object :KzgPlayer.GetFrameListener{
             override fun onInited(
                 codecName: String?,
@@ -433,14 +434,19 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 csd_0: ByteArray?,
                 csd_1: ByteArray?
             ) {
-                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1,sv_video_test.holder.surface)
+                if (rvFrame.getAvFrameHelper() is IMediaCodecFrameHelper){
+                    (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1,sv_video_test.holder.surface)
+                }else if(rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
+                    Log.e("kzg","**************onInited")
+                    kzgPlayer!!.startGetFrame()
+                    kzgPlayer?.getFrameListener?.onStarGetFrame()
+                }
             }
 
             override fun onStarGetFrame() {
                 runOnUiThread {
                     rvFrame.adapter?.notifyDataSetChanged()
                 }
-
             }
 
             override fun getFramePacket(dataSize: Int, pts: Double, data: ByteArray?) {
@@ -449,15 +455,53 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 packetBean.pts = pts
                 packetBean.dataSize = dataSize
                 //Log.e("kzg","**************getFramePacket 入队一帧")
-                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
-                if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
-                    rvFrame.getAvFrameHelper()?.pause()
+                if (rvFrame.getAvFrameHelper() is IMediaCodecFrameHelper){
+                    (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
+                    if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
                 }
+
             }
 
             override fun onGetFrameYUV(width: Int, height: Int, y: ByteArray?, u: ByteArray?, v: ByteArray?,
                 practicalWidth: Int, timeUs:Double) {
-                (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper)
+                Log.e("kzg","**************onGetFrameYUV")
+                if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
+                        val bean = YUVDataBean()
+                    bean.timeUs = timeUs.toLong()
+                    bean.width = width
+                    bean.height = height
+                    bean.y = y
+                    bean.u = u
+                    bean.v = v
+                    (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
+                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 10){
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+                }
+
+            }
+
+            override fun onGetFrameYUV2(
+                width: Int,
+                height: Int,
+                yuv: ByteArray?,
+                practicalWidth: Int,
+                timeUs: Double
+            ) {
+                Log.e("kzg","**************onGetFrameYUV")
+                if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
+                    val bean = YUVDataBean()
+                    bean.timeUs = timeUs.toLong()
+                    bean.width = width
+                    bean.height = height
+                    bean.yuv = yuv
+                    (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
+                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 10){
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+                }
             }
 
         })

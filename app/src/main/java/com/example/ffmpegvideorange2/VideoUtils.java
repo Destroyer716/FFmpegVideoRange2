@@ -414,4 +414,79 @@ public class VideoUtils {
         void onGetBitmap(Bitmap bitmap);
     }
 
+
+    /**
+     * 将nv21转bitmap
+     * @param data
+     * @param width
+     * @param height
+     * @return
+     */
+    public static Bitmap rawByteArray2RGBABitmap2(byte[] data, int width, int height) {
+        int frameSize = width * height;
+        int[] rgba = new int[frameSize];
+        for (int i = 0; i < height; i++)
+            for (int j = 0; j < width; j++) {
+                int y = (0xff & ((int) data[i * width + j]));
+                int u = (0xff & ((int) data[frameSize + (i >> 1) * width + (j & ~1) + 0]));
+                int v = (0xff & ((int) data[frameSize + (i >> 1) * width + (j & ~1) + 1]));
+                y = y < 16 ? 16 : y;
+                int r = Math.round(1.164f * (y - 16) + 1.596f * (v - 128));
+                int g = Math.round(1.164f * (y - 16) - 0.813f * (v - 128) - 0.391f * (u - 128));
+                int b = Math.round(1.164f * (y - 16) + 2.018f * (u - 128));
+                r = r < 0 ? 0 : (r > 255 ? 255 : r);
+                g = g < 0 ? 0 : (g > 255 ? 255 : g);
+                b = b < 0 ? 0 : (b > 255 ? 255 : b);
+                rgba[i * width + j] = 0xff000000 + (b << 16) + (g << 8) + r;
+            }
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bmp.setPixels(rgba, 0 , width, 0, 0, width, height);
+        return bmp;
+    }
+
+
+    /**
+     * I420转nv21
+     */
+    public static byte[] I420Tonv21(byte[] data, int width, int height) {
+        byte[] ret = new byte[data.length];
+        int total = width * height;
+
+        ByteBuffer bufferY = ByteBuffer.wrap(ret, 0, total);
+        ByteBuffer bufferVU = ByteBuffer.wrap(ret, total, total / 2);
+
+        bufferY.put(data, 0, total);
+        for (int i = 0; i < total / 4; i += 1) {
+            bufferVU.put(data[i + total + total / 4]);
+            bufferVU.put(data[total + i]);
+        }
+
+        return ret;
+    }
+
+    public static byte[] YUVToNv21(byte[] y,byte[] u,byte[] v){
+        //4、交叉存储VU数据
+        int lengthY = y.length;
+        int lengthU = u.length;
+        int lengthV = v.length;
+
+        int newLength = lengthY + lengthU + lengthV;
+        byte[] arrayNV21 = new byte[newLength];
+
+        //先将所有的Y数据存储进去
+        System.arraycopy(y, 0, arrayNV21, 0, lengthY);
+
+        //然后交替存储VU数据(注意U，V数据的长度应该是相等的，记住顺序是VU VU)
+        for (int i = 0; i < lengthV; i++) {
+            int index = lengthY + i * 2;
+            arrayNV21[index] = v[i];
+        }
+
+        for (int i = 0; i < lengthU; i++) {
+            int index = lengthY + i * 2 + 1;
+            arrayNV21[index] = u[i];
+        }
+        return  arrayNV21;
+    }
+
 }

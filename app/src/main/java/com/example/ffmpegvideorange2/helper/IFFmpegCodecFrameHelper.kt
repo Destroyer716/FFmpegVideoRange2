@@ -29,7 +29,7 @@ class IFFmpegCodecFrameHelper(
 ) : IAvFrameHelper,Runnable {
 
     private var kzgPlayer:KzgPlayer? = null
-    private var yuvQueue: YuvQueue = YuvQueue()
+    var yuvQueue: YuvQueue = YuvQueue()
 
     var targetViewMap:Hashtable<ImageView, TargetBean> = Hashtable()
     private var childThread:Thread? = null
@@ -104,9 +104,23 @@ class IFFmpegCodecFrameHelper(
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
                             yuvQueue.deQueue().apply {
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
-                                            || (this.timeUs-it.value.timeUs>=30_000)  ||(it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
+                                    || (this.timeUs-it.value.timeUs>=30_000)  ||(it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
                                     && !it.value.isAddFrame){
-
+                                        Log.e("kzg","**************timeUs:$timeUs")
+                                    if (isScrolling){
+                                        return@task
+                                    }
+                                    notNull(yuv){
+                                        //val byte = y!! + u!! + v!!
+                                        //val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.I420Tonv21(byte,width,height),width,height)
+                                        val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height)
+                                        bitmap?.let { bp ->
+                                            it.value.isAddFrame = true
+                                            it.key.post {
+                                                it.key.setImageBitmap(bp)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

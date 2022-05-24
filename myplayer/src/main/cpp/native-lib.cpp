@@ -127,6 +127,7 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
     if (fAvFrameHelper != NULL){
         fAvFrameHelper->releas();
         pthread_join(thread_start_get_frame,NULL);
+        pthread_join(thread_start_decode_frame,NULL);
 
         delete fAvFrameHelper;
         fAvFrameHelper = NULL;
@@ -863,10 +864,15 @@ Java_com_example_myplayer_KzgPlayer_n_1init_1frame_1by_1ffmepg(JNIEnv *env, jobj
     fAvFrameHelper->init();
 }
 
+void *startPutAvPacket(void *args){
+    FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
+    fAvFrameHelper1->decodeFrame();
+    return 0;
+}
 
 void *startGetFrame(void *args){
     FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
-    fAvFrameHelper1->decodeFrame();
+    fAvFrameHelper1->decodeFrameFromQueue(fAvFrameHelper1);
     return 0;
 }
 
@@ -875,7 +881,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1start_1by_1ffmpeg(JNIEnv *env, jobject thiz) {
     if (fAvFrameHelper != NULL){
-        pthread_create(&thread_start_get_frame, NULL, startGetAvPacket, fAvFrameHelper);
+        pthread_create(&thread_start_get_frame, NULL, startPutAvPacket, fAvFrameHelper);
         pthread_create(&thread_start_decode_frame, NULL, startGetFrame, fAvFrameHelper);
     }
 }

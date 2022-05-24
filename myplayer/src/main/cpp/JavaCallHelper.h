@@ -6,6 +6,7 @@
 #define MYFFMPEGPLAYERTEST1_JAVACALLHELPER_H
 
 #include <jni.h>
+#include "log.h"
 
 #define THREAD_MAIN  1
 #define THREAD_CHILD  2
@@ -65,6 +66,7 @@ public:
     void onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1);
     void onGetFramePacket(int dataSize,double pts,uint8_t *data);
     void onCallYUVToBitmap(int width,int height,uint8_t *fy, uint8_t *fu, uint8_t *fv,int practicalWidth,double pts,int thread = THREAD_MAIN);
+    void onCallYUVToBitmap2(int width,int height,uint8_t *fyuv,int practicalWidth,double pts,int thread = THREAD_MAIN);
 
 public:
     JavaVM *javaVm;
@@ -91,6 +93,7 @@ public:
     jmethodID jmid_onGetFrameInitSuccess;
     jmethodID jmid_onGetFramePacket;
     jmethodID jmid_onCallYUVToBitmap;
+    jmethodID jmid_onCallYUVToBitmap2;
 
 };
 

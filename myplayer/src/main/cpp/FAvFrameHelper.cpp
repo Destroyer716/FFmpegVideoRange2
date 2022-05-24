@@ -13,11 +13,14 @@ FAvFrameHelper::FAvFrameHelper(JavaCallHelper *_helper, const char *_url,
     pthread_mutex_init(&init_mutex,NULL);
     pthread_mutex_init(&frame_mutex,NULL);
 
+    pthread_mutex_init(&codecMutex,NULL);
+
 }
 
 FAvFrameHelper::~FAvFrameHelper() {
     pthread_mutex_destroy(&init_mutex);
     pthread_mutex_destroy(&frame_mutex);
+    pthread_mutex_destroy(&codecMutex);
 }
 
 void* t_decode_avpacke(void *args){
@@ -30,7 +33,6 @@ void FAvFrameHelper::init() {
     if (playerStatus != NULL && !playerStatus->exit){
         pthread_create(&decodeAvPacketThread,NULL,t_decode_avpacke,this);
     }
-
 }
 int avformat_ff_callback(void *ctx){
     FAvFrameHelper *fFmpeg = (FAvFrameHelper *) ctx;
@@ -73,6 +75,7 @@ void FAvFrameHelper::decodeAVPackate() {
             avStreamIndex = i;
             time_base = avFormatContext->streams[i]->time_base;
             duration = avFormatContext->duration;
+            LOGE("获取视频流成功");
             break;
         }
     }
@@ -306,7 +309,6 @@ void FAvFrameHelper::decodeAvPacket() {
             continue;
         }
 
-
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
@@ -363,7 +365,7 @@ void FAvFrameHelper::pauseOrStar(bool isPause) {
 
 void FAvFrameHelper::decodeFrame() {
     int ret;
-    LOGE("开始解码抽帧");
+    LOGE("decodeFrame 开始解码抽帧: %d",isPause);
     while (playerStatus != NULL && !playerStatus->exit){
         if (isPause || queue->getQueueSize() > 30){
             av_usleep(1000*10);
@@ -383,8 +385,10 @@ void FAvFrameHelper::decodeFrame() {
             av_packet_free(&avPacket);
             av_free(avPacket);
             avPacket = NULL;
+            continue;
         } else if (avPacket->stream_index == avStreamIndex){
             //找到视频avPacket
+            LOGE("找到视频avPacket");
             if (getAvPacketRefType2(avPacket) > 0){
                 uint8_t *data;
                 av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
@@ -396,6 +400,7 @@ void FAvFrameHelper::decodeFrame() {
                 {
                     av_free(tdata);
                 }
+                LOGE("queue 增加AVpacket");
                 queue->putAvPacket(avPacket);
             } else{
                 av_packet_free(&avPacket);
@@ -415,6 +420,8 @@ void FAvFrameHelper::decodeFrame() {
 void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
     FAvFrameHelper *fAvFrameHelper = static_cast<FAvFrameHelper *>(arg);
     while (playerStatus != NULL && !playerStatus->exit){
+
+        LOGE("avFrameHelper: %d",isPause);
         if (isPause){
             av_usleep(1000 * 10);
             continue;
@@ -425,6 +432,7 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
             av_packet_free(&avPacket);
             av_free(avPacket);
             avPacket = NULL;
+            LOGE("avFrameHelper avframe errer 0");
             continue;
         }
         pthread_mutex_lock(&codecMutex);
@@ -433,6 +441,8 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
             av_free(avPacket);
             avPacket = NULL;
             pthread_mutex_unlock(&codecMutex);
+            LOGE("avFrameHelper avframe errer 1");
+            continue;
         }
 
         AVFrame * avFrame = av_frame_alloc();
@@ -444,11 +454,14 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
             av_free(avPacket);
             avPacket = NULL;
             pthread_mutex_unlock(&codecMutex);
+            LOGE("avFrameHelper avframe errer 2");
+            continue;
         }
 
         if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
             int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
+            LOGE("avFrameHelper avframe yuv420p");
             helper->onCallYUVToBitmap(
                     width,
                     avCodecContext->height,
@@ -458,21 +471,21 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
                     avCodecContext->width,
                     (avFrame->pts *av_q2d(time_base) * AV_TIME_BASE),
                     THREAD_CHILD);
-
         } else{
             LOGE("avFrameHelper avframe 不是 yuv420p");
+            av_frame_free(&avFrame);
+            av_free(avFrame);
+            avFrame = NULL;
         }
 
-        av_frame_free(&avFrame);
-        av_free(avFrame);
-        avFrame = NULL;
+
         av_packet_free(&avPacket);
         av_free(avPacket);
         avPacket = NULL;
         pthread_mutex_unlock(&codecMutex);
     }
 
-
+    LOGE("avFrameHelper 解码frame结束");
 
 }
 
