@@ -93,7 +93,10 @@ class IFFmpegCodecFrameHelper(
     override fun run() {
         while (!isStop){
             if (yuvQueue.queueSize  == 0 || isScrolling){
-                Thread.sleep(1)
+                Thread.sleep(10)
+                if (!isScrolling){
+                    kzgPlayer?.pauseGetPacket(false)
+                }
                 continue
             }
 
@@ -104,15 +107,14 @@ class IFFmpegCodecFrameHelper(
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
                             yuvQueue.deQueue().apply {
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
-                                    || (this.timeUs-it.value.timeUs>=30_000)  ||(it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
+                                    || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
                                     && !it.value.isAddFrame){
-                                        Log.e("kzg","**************timeUs:$timeUs")
+                                        Log.e("kzg","**************timeUs:$timeUs  ,view timeUs:${it.value.timeUs}")
                                     if (isScrolling){
                                         return@task
                                     }
-                                    notNull(yuv){
-                                        //val byte = y!! + u!! + v!!
-                                        //val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.I420Tonv21(byte,width,height),width,height)
+                                    kzgPlayer?.pauseGetPacket(false)
+                                    notNull(y,u,v){
                                         val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height)
                                         bitmap?.let { bp ->
                                             it.value.isAddFrame = true
@@ -188,7 +190,7 @@ class IFFmpegCodecFrameHelper(
                     false
                 }else{
                     //如果将要解码的帧所属的gop与已经解码出来的最后一帧所属的是同一个gop 或者 将要解码的帧的时间小于 avpacket队列的最大帧的时间，就认为是同一个gop
-                    i == j || minTimeUs <= kzgPlayer?.getAvPacketQueueMaxPts()?.toLong()?:0
+                    i == j /*|| minTimeUs <= kzgPlayer?.getAvPacketQueueMaxPts()?.toLong()?:0*/
                 }
             }
 
@@ -198,10 +200,12 @@ class IFFmpegCodecFrameHelper(
                     yuvQueue.clear()
                 }
             }
+            i = if (i <= 0) IFrameSearch.IframeUs.size else i
             //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
             val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
                 Log.e("kzg","********************需要seek的I帧:$this  ， 实际需要展示的时间最小帧：${minTimeUs}")
             }
+            Log.e("kzg","****************seek结束")
             kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
         }
     }

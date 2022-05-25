@@ -468,7 +468,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 practicalWidth: Int, timeUs:Double) {
                 Log.e("kzg","**************onGetFrameYUV")
                 if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
-                        val bean = YUVDataBean()
+                    val bean = YUVDataBean()
                     bean.timeUs = timeUs.toLong()
                     bean.width = width
                     bean.height = height

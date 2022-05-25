@@ -257,7 +257,7 @@ int FAvFrameHelper::getAvCodecContent(AVCodecParameters *avCodecParameters,
         return -1;
     }
     (*avCodecContext)->thread_type = FF_THREAD_FRAME;
-    (*avCodecContext)->thread_count = 8;
+    (*avCodecContext)->thread_count = 4;
 
     ret = avcodec_open2(*avCodecContext,avCodec,0);
     if (ret != 0){
@@ -287,11 +287,16 @@ void FAvFrameHelper::seekTo(int64_t sec,bool isCurrentGop) {
         isPause = false;
     } else{
         if (sec >= 0 && sec < duration){
+            isPause = true;
             pthread_mutex_lock(&frame_mutex);
+            queue->clearAvPacket();
             int64_t res = sec/1000.0 * AV_TIME_BASE;
             LOGE("seekTo sec1  %lld， %lld:",sec, res);
             seekTime = res;
             avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
+            pthread_mutex_lock(&codecMutex);
+            avcodec_flush_buffers(avCodecContext);
+            pthread_mutex_unlock(&codecMutex);
             isPause = false;
             //decodeAvPacket(res);
             pthread_mutex_unlock(&frame_mutex);
@@ -390,16 +395,6 @@ void FAvFrameHelper::decodeFrame() {
             //找到视频avPacket
             LOGE("找到视频avPacket");
             if (getAvPacketRefType2(avPacket) > 0){
-                uint8_t *data;
-                av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
-                uint8_t *tdata = NULL;
-                tdata = avPacket->data;
-                avPacket->data = data;
-
-                if(tdata != NULL)
-                {
-                    av_free(tdata);
-                }
                 LOGE("queue 增加AVpacket");
                 queue->putAvPacket(avPacket);
             } else{
@@ -419,9 +414,10 @@ void FAvFrameHelper::decodeFrame() {
 
 void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
     FAvFrameHelper *fAvFrameHelper = static_cast<FAvFrameHelper *>(arg);
+
+    LOGE("avFrameHelper: %d",isPause);
     while (playerStatus != NULL && !playerStatus->exit){
 
-        LOGE("avFrameHelper: %d",isPause);
         if (isPause){
             av_usleep(1000 * 10);
             continue;
@@ -461,7 +457,7 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
         if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
             int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
-            LOGE("avFrameHelper avframe yuv420p");
+            LOGE("avFrameHelper avframe yuv420p %d  ,%d",width,avCodecContext->width);
             helper->onCallYUVToBitmap(
                     width,
                     avCodecContext->height,
@@ -471,6 +467,10 @@ void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
                     avCodecContext->width,
                     (avFrame->pts *av_q2d(time_base) * AV_TIME_BASE),
                     THREAD_CHILD);
+
+            av_frame_free(&avFrame);
+            av_free(avFrame);
+            avFrame = NULL;
         } else{
             LOGE("avFrameHelper avframe 不是 yuv420p");
             av_frame_free(&avFrame);

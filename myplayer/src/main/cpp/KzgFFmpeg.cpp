@@ -782,7 +782,7 @@ int KzgFFmpeg::getAVCodecContext(AVCodecParameters *avCodecParameters,
         return -1;
     }
     (*avCodecContext)->thread_type = FF_THREAD_FRAME;
-    (*avCodecContext)->thread_count = 8;
+    (*avCodecContext)->thread_count = 4;
 
     ret = avcodec_open2(*avCodecContext,avCodec,0);
     if (ret != 0){
@@ -800,7 +800,6 @@ void KzgFFmpeg::setIsFramePreview(bool isFramePreview) {
         if (!isFramePreview && kzgVideo->showFrameTimestamp > 0){
             kzgAudio->queue->clearByBeforeTime(kzgVideo->showFrameTimestamp,kzgAudio->time_base);
         }
-
 
         if (!isFramePreview){
             kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = false;

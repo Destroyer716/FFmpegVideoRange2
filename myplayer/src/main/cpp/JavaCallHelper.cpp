@@ -386,7 +386,7 @@ void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8
 
         jbyteArray y = jniEnv->NewByteArray(width * height);
         jniEnv->SetByteArrayRegion(y, 0, width * height, reinterpret_cast<const jbyte *>(fy));
-        LOGE("jniEnv width:%d, height:%d",width,height);
+        LOGE("jniEnv width:%d, height:%d , y size:%d  , u size:%d",width,height,sizeof(fy),sizeof(fu));
         jbyteArray u = jniEnv->NewByteArray(width * height / 4);
         jniEnv->SetByteArrayRegion(u, 0, width * height / 4, reinterpret_cast<const jbyte *>(fu));
 

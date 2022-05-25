@@ -306,7 +306,7 @@ class IMediaCodecFrameHelper(
                         codecStartTime = System.currentTimeMillis()
                         lastCodecFramePts = videoDecodeInfo!!.presentationTimeUs
                         MediaCodec.BUFFER_FLAG_END_OF_STREAM
-                        // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的40_000 和 60_000，需要根据实际帧率来算每帧间隔实际
+                        // TODO 这里需要优化，将具体需要放宽的时间范围，根据帧率来计算，比如这里的20_000 和 60_000，需要根据实际帧率来算每帧间隔实际
                         if (((mapEntry.value.timeUs >= videoDecodeInfo!!.presentationTimeUs-20_000 && mapEntry.value.timeUs<=videoDecodeInfo!!.presentationTimeUs+20_000)
                             || (videoDecodeInfo!!.presentationTimeUs-mapEntry.value.timeUs>=30_000)  ||(mapEntry.value.timeUs < 30_000 && videoDecodeInfo!!.presentationTimeUs > mapEntry.value.timeUs))
                             && !mapEntry.value.isAddFrame){
@@ -384,14 +384,6 @@ class IMediaCodecFrameHelper(
 
             imageQueue.deQueue().apply {
                 notNull(this.image,this.mapEntry!!.key,this.rect){
-                   /* val rect = this.image!!.cropRect
-                    val yuvImage = YuvImage(
-                        VideoUtils.YUV_420_888toNV21(image),
-                        ImageFormat.NV21,
-                        rect.width(),
-                        rect.height(),
-                        null
-                    )*/
                     val stream = ByteArrayOutputStream()
                     this.image!!.compressToJpeg(Rect(0, 0, this.rect!!.width(), this.rect!!.height()), 100, stream)
                     // 检查bitmap的大小
