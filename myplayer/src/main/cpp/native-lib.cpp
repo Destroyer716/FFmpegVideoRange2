@@ -129,6 +129,7 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
         pthread_join(thread_start_get_frame,NULL);
         pthread_join(thread_start_decode_frame,NULL);
 
+
         delete fAvFrameHelper;
         fAvFrameHelper = NULL;
 
@@ -872,7 +873,7 @@ void *startPutAvPacket(void *args){
 
 void *startGetFrame(void *args){
     FAvFrameHelper *fAvFrameHelper1 = (FAvFrameHelper *)args;
-    fAvFrameHelper1->decodeFrameFromQueue(fAvFrameHelper1);
+    fAvFrameHelper1->decodeFrameFromQueue();
     return 0;
 }
 

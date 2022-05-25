@@ -31,7 +31,7 @@ public:
     void decodeAvPacket();
     void pauseOrStar(bool  isPause);
     void decodeFrame();
-    void decodeFrameFromQueue(void *arg);
+    void decodeFrameFromQueue();
     double getAvpacketQueueMaxPts();
 
 public:

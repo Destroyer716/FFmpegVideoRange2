@@ -81,7 +81,16 @@ class IFFmpegCodecFrameHelper(
             kzgPlayer = null
         }
         targetViewMap.clear()
-
+        yuvQueue?.let {
+            for (index in 0 until it.queueSize){
+                it.deQueue().apply {
+                    y = null
+                    u = null
+                    v = null
+                }
+            }
+        }
+        yuvQueue.clear()
     }
 
 
@@ -103,6 +112,9 @@ class IFFmpegCodecFrameHelper(
             //遍历ImageView 匹配时间，转换yuv为bitmap
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
+                    if (isScrolling){
+                        return@task
+                    }
                     yuvQueue.first?.let {bean ->
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
                             yuvQueue.deQueue().apply {
@@ -116,6 +128,9 @@ class IFFmpegCodecFrameHelper(
                                     kzgPlayer?.pauseGetPacket(false)
                                     notNull(y,u,v){
                                         val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height)
+                                        if (isScrolling){
+                                            return@task
+                                        }
                                         bitmap?.let { bp ->
                                             it.value.isAddFrame = true
                                             it.key.post {

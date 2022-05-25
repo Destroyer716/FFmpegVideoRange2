@@ -188,6 +188,11 @@ void FAvFrameHelper::releas() {
     LOGE("开始释放FAvFrameHelper");
     playerStatus->exit = true;
     isPause = false;
+
+    if (queue != NULL){
+        queue->noticeQueue();
+    }
+
     pthread_join(decodeAvPacketThread,NULL);
 
     pthread_mutex_lock(&init_mutex);
@@ -201,11 +206,22 @@ void FAvFrameHelper::releas() {
         av_usleep(1000*10);//10毫秒
     }
 
+    if (queue != NULL){
+        delete(queue);
+        queue = NULL;
+    }
+
     if(avFormatContext != NULL){
         LOGE("释放avFormatContext");
         avformat_close_input(&avFormatContext);
         avformat_free_context(avFormatContext);
         avFormatContext = NULL;
+    }
+
+    if (avCodecContext != NULL){
+        avcodec_close(avCodecContext);
+        avcodec_free_context(&avCodecContext);
+        avCodecContext = NULL;
     }
 
     if (helper != NULL){
@@ -223,6 +239,7 @@ void FAvFrameHelper::releas() {
     }
 
     pthread_mutex_unlock(&init_mutex);
+    LOGE("释放FAvFrameHelper结束");
 }
 
 int FAvFrameHelper::getAvCodecContent(AVCodecParameters *avCodecParameters,
@@ -257,7 +274,7 @@ int FAvFrameHelper::getAvCodecContent(AVCodecParameters *avCodecParameters,
         return -1;
     }
     (*avCodecContext)->thread_type = FF_THREAD_FRAME;
-    (*avCodecContext)->thread_count = 4;
+    (*avCodecContext)->thread_count = 8;
 
     ret = avcodec_open2(*avCodecContext,avCodec,0);
     if (ret != 0){
@@ -412,8 +429,7 @@ void FAvFrameHelper::decodeFrame() {
     LOGE("抽帧结束");
 }
 
-void FAvFrameHelper::decodeFrameFromQueue(void *arg) {
-    FAvFrameHelper *fAvFrameHelper = static_cast<FAvFrameHelper *>(arg);
+void FAvFrameHelper::decodeFrameFromQueue() {
 
     LOGE("avFrameHelper: %d",isPause);
     while (playerStatus != NULL && !playerStatus->exit){
