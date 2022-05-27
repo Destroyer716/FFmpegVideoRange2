@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
@@ -420,9 +421,10 @@ public class VideoUtils {
      * @param data
      * @param width
      * @param height
+     * @param practicalWidth  实际宽度，ffmpeg 解码出来的宽度可能会因为16位对齐的问题多出来一些无用数据，绘制的时候这些数据不绘制
      * @return
      */
-    public static Bitmap rawByteArray2RGBABitmap2(byte[] data, int width, int height) {
+    public static Bitmap rawByteArray2RGBABitmap2(byte[] data, int width, int height,int practicalWidth) {
         int frameSize = width * height;
         int[] rgba = new int[frameSize];
         for (int i = 0; i < height; i++)
@@ -439,8 +441,9 @@ public class VideoUtils {
                 b = b < 0 ? 0 : (b > 255 ? 255 : b);
                 rgba[i * width + j] = 0xff000000 + (b << 16) + (g << 8) + r;
             }
+
         Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        bmp.setPixels(rgba, 0 , width, 0, 0, width, height);
+        bmp.setPixels(rgba, 0 , width, 0, 0, practicalWidth, height);
         return bmp;
     }
 
@@ -488,5 +491,55 @@ public class VideoUtils {
         }
         return  arrayNV21;
     }
+
+
+    /**
+     * 第二种：按采样大小压缩
+     *
+     * @param src       源图片
+     * @param maxWidth  最大宽度
+     * @param maxHeight 最大高度
+     * @param recycle   是否回收
+     * @return 按采样率压缩后的图片
+     */
+    public static Bitmap compressBySampleSize(final Bitmap src, final int maxWidth, final int maxHeight, final boolean recycle) {
+        if (src == null || src.getWidth() == 0 || src.getHeight() == 0) {
+            return null;
+        }
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        src.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] bytes = baos.toByteArray();
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+        options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight);
+        options.inJustDecodeBounds = false;
+        if (recycle && !src.isRecycled()) {
+            src.recycle();
+        }
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+        return bitmap;
+    }
+
+    /**
+     * 计算获取缩放比例inSampleSize
+     */
+    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+        if (height > reqHeight || width > reqWidth) {
+            final int heightRatio = Math.round((float) height / (float) reqHeight);
+            final int widthRatio = Math.round((float) width / (float) reqWidth);
+            inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
+        }
+        final float totalPixels = width * height;
+        final float totalReqPixelsCap = reqWidth * reqHeight * 2;
+        while (totalPixels / (inSampleSize * inSampleSize) > totalReqPixelsCap) {
+            inSampleSize++;
+        }
+        return inSampleSize;
+    }
+
 
 }

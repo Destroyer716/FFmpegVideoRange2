@@ -397,6 +397,7 @@ class IMediaCodecFrameHelper(
                     options.inJustDecodeBounds = false
                     bitmap =
                         BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size(),options)
+
                     lastBitMap = bitmap
 
                     this.mapEntry!!.key!!.post {

@@ -127,14 +127,21 @@ class IFFmpegCodecFrameHelper(
                                     }
                                     kzgPlayer?.pauseGetPacket(false)
                                     notNull(y,u,v){
-                                        val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height)
+                                        val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height,practicalWidth)
+                                        val newBitmap = VideoUtils.compressBySampleSize(bitmap,120,120,true)
                                         if (isScrolling){
                                             return@task
                                         }
-                                        bitmap?.let { bp ->
+                                        newBitmap?.let { bp ->
+                                            lastBitMap = bp
                                             it.value.isAddFrame = true
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
+                                                targetViewMap.forEach { mp ->
+                                                    if (!mp.value.isAddFrame){
+                                                        mp.key.setImageBitmap(lastBitMap)
+                                                    }
+                                                }
                                             }
                                         }
                                     }

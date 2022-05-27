@@ -125,7 +125,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
         val handler = RecyclerVelocityHandler(this)
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
-                Log.e("kzg","*************************VelocityTrackerListener onVelocityChanged:$velocity")
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
@@ -154,7 +153,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onScrollFast() {
-                Log.e("kzg","*************************VelocityTrackerListener onScrollFast")
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     //快速向前滚动，暂停解码
                     rvFrame.getAvFrameHelper()?.isScrolling = true
@@ -163,7 +161,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onScrollSlow() {
-                Log.e("kzg","*************************VelocityTrackerListener onScrollSlow")
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
@@ -173,77 +170,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
         })
         rvFrame.addOnScrollListener(handler)
-/*        rvFrame.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_IDLE")
-
-                    lastDx = 0
-
-
-                }else if (newState == RecyclerView.SCROLL_STATE_DRAGGING){
-                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_DRAGGING")
-                }else if (newState == RecyclerView.SCROLL_STATE_SETTLING){
-                    Log.e("kzg","**************onScrollStateChanged SCROLL_STATE_SETTLING")
-                }
-
-            }
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (dx > 0){
-                    //预览条向前滑动
-                    if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = false
-                    }
-                    //当滑动的像素大于30的时候暂停解码抽帧
-                    if(dx > 10){
-                        if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
-                            rvFrame.getAvFrameHelper()?.isScrolling = true
-                        }
-                    }else{
-                        if (rvFrame.getAvFrameHelper()?.isScrolling == true) {
-                            rvFrame.getAvFrameHelper()?.isScrolling = false
-                        }
-                    }
-
-                }else if (dx < 0){
-                    //预览条向后滑动
-                    if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = true
-                    }
-                    //当滑动的像素小于-20的时候暂停解码抽帧
-                    if(dx < 0){
-                        if (rvFrame.getAvFrameHelper()?.isScrolling == false) {
-                            rvFrame.getAvFrameHelper()?.isScrolling = true
-                        }
-                    }else{
-                        if (rvFrame.getAvFrameHelper()?.isScrolling == true && dx == 0) {
-                            rvFrame.getAvFrameHelper()?.isScrolling = false
-                        }
-                    }
-                }
-                val ndx = abs(dx)
-                Log.e("kzg","*********************isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack}  , dx:$dx  , lastDx:$lastDx")
-                //速度大于30的时候暂停解码抽帧
-                if ( ndx > 10 && lastDx <= 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                    lastDx = ndx
-                    rvFrame.getAvFrameHelper()?.pause()
-                }else if(rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx > 0 *//*&& lastDx <= 20*//*){
-                    lastDx = ndx
-                    rvFrame.getAvFrameHelper()?.pause()
-                }else if ( ndx <= 10 && lastDx > 10 && rvFrame.getAvFrameHelper()?.isSeekBack == false ){
-                    Log.e("kzg","**************seek")
-                    lastDx = ndx
-                    rvFrame.getAvFrameHelper()?.seek()
-                }else if (rvFrame.getAvFrameHelper()?.isSeekBack == true && ndx == 0*//* && lastDx > 20*//* ){
-                    lastDx = ndx
-                    rvFrame.getAvFrameHelper()?.seek()
-                }
-            }
-
-        })*/
         bindVideoData()
 
         val duration = VideoUtils.getVideoDuration(this, inputPath)
@@ -471,12 +397,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     val bean = YUVDataBean()
                     bean.timeUs = timeUs.toLong()
                     bean.width = width
+                    bean.practicalWidth = practicalWidth
                     bean.height = height
                     bean.y = y
                     bean.u = u
                     bean.v = v
                     (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
-                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 10){
+                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
                         rvFrame.getAvFrameHelper()?.pause()
                     }
                 }
@@ -498,7 +425,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     bean.height = height
                     bean.yuv = yuv
                     (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
-                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 10){
+                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
                         rvFrame.getAvFrameHelper()?.pause()
                     }
                 }

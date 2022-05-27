@@ -6,12 +6,13 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class IFrameSearch implements Runnable {
 
     private MediaExtractor mediaExtractor;
     private long duration;
-    public static ArrayList<Long> IframeUs = new ArrayList();
+    public static CopyOnWriteArrayList<Long> IframeUs = new CopyOnWriteArrayList();
     private Thread thread;
     private boolean isStop = false;
 
@@ -41,7 +42,7 @@ public class IFrameSearch implements Runnable {
         }
     }
 
-    private ArrayList<Long> get_key_frames_time() {
+    private CopyOnWriteArrayList<Long> get_key_frames_time() {
         long startTime = System.currentTimeMillis();
         long step = 1_000_000; //遍历步长
         mediaExtractor.seekTo(duration/3, MediaExtractor.SEEK_TO_CLOSEST_SYNC);

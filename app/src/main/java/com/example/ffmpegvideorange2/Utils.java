@@ -79,7 +79,6 @@ public class Utils {
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         int width = options.outWidth;
         int height = options.outHeight;
-        Log.i("calculateInSampleSize", "calculateInSampleSize: out width and height is " + width + " height " + height);
         int inSampleWidth = 1;
         if (height > reqHeight || width > reqWidth) {
             int halfHeight = height / 2;
