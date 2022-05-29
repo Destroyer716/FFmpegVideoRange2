@@ -56,7 +56,6 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         }
 
         imageView.tag = item.frameClipTime * 1000
-        Log.e("kzg","**************VideoFrameAdapter ${imageView.tag}")
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 

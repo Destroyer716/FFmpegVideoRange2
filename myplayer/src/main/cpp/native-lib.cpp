@@ -150,9 +150,9 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1seek(JNIEnv *env, jobject thiz, jint sec) {
+Java_com_example_myplayer_KzgPlayer_n_1seek(JNIEnv *env, jobject thiz, jint sec,jint forAdvance) {
     if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSeekType(0);
+        kzgFFmpeg->setSeekType(0,forAdvance);
         kzgFFmpeg->seek(sec);
     }
 }
@@ -228,7 +228,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1showframe(JNIEnv *env, jobject thiz, jdouble timestamp) {
     if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSeekType(1);
+        kzgFFmpeg->setSeekType(1,0);
         kzgFFmpeg->showFrame(timestamp);
     }
 }

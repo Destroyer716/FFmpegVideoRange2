@@ -95,7 +95,7 @@ class IFFmpegCodecFrameHelper(
 
 
     override fun pause() {
-        Log.e("kzg","**************pause:")
+        //Log.e("kzg","**************pause:")
         kzgPlayer?.pauseGetPacket(true)
     }
 
@@ -121,7 +121,7 @@ class IFFmpegCodecFrameHelper(
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
                                     || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
                                     && !it.value.isAddFrame){
-                                        Log.e("kzg","**************timeUs:$timeUs  ,view timeUs:${it.value.timeUs}")
+                                        //Log.e("kzg","**************timeUs:$timeUs  ,view timeUs:${it.value.timeUs}")
                                     if (isScrolling){
                                         return@task
                                     }

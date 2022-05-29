@@ -100,12 +100,12 @@ public class KzgPlayer {
     }
 
 
-    public void showFrame(double timestamp,int seekType){
+    public void showFrame(double timestamp,int seekType,boolean isForAdvance){
         //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
-            n_seek((int) (timestamp*1000));
+            n_seek((int) (timestamp*1000),isForAdvance?1:0);
         }else {
             //前进时的逐帧显示
             n_showframe(timestamp);
@@ -166,7 +166,7 @@ public class KzgPlayer {
     }
 
     public void seek(int sec){
-        n_seek(sec);
+        n_seek(sec,0);
     }
 
     public void playNext(String url){
@@ -243,7 +243,7 @@ public class KzgPlayer {
     }
 
     public void pauseGetPacket(boolean isPause){
-        Log.e("kzg","**************pauseGetPacket:"+isPause);
+        //Log.e("kzg","**************pauseGetPacket:"+isPause);
         n_pause_get_packet(isPause);
     }
 
@@ -259,7 +259,7 @@ public class KzgPlayer {
     private native void n_pause();
     private native void n_resume();
     private native void n_stop();
-    private native void n_seek(int sec);
+    private native void n_seek(int sec,int forAdvance);
     private native int n_duration();
     private native void n_volume(int volume);
     private native void n_pitch(float pitch);

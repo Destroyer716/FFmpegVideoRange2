@@ -42,7 +42,7 @@ public:
     void setIsFramePreview(bool isFramePreview);
     void showFrame(double timestamp);
     void showFrameFromSeek(double timestamp);
-    void setSeekType(int type);
+    void setSeekType(int type,int forAdvance);
 
 public:
     pthread_t decodeThread;

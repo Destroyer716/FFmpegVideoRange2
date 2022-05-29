@@ -98,7 +98,7 @@ void *videoPlay(void *arg){
             } else{
                 queueSize = kzgVideo->frameQueue->getQueueSize();
             }
-            if (queueSize >= 90){
+            if (queueSize >= kzgVideo->cacheFrameNum){
                 av_usleep(1000*10);
                 continue;
             }
@@ -200,7 +200,7 @@ void *videoPlay(void *arg){
 
                     if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
                         //后退专题的逐帧预览
-                        if ((avFrame->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) < kzgVideo->seekTime){
+                        if ((avFrame->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) < kzgVideo->seekTime && !kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
                             av_frame_free(&avFrame);
                             av_free(avFrame);
                             avFrame = NULL;
@@ -212,7 +212,6 @@ void *videoPlay(void *arg){
                         }
                         kzgVideo->kzgPlayerStatus->isSeekPause = true;
                         kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
-
                         gettimeofday(&tv,NULL);
                         long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
                         //LOGE("seek 一帧frame 耗时：%ld" ,(endTime-kzgVideo->startSeekTime));
@@ -315,13 +314,13 @@ void *videoPlay(void *arg){
                                 kzgVideo->frameQueue->putAvFrame(avFrame);
                             }
                         }
-                        kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
 
-                        if (kzgVideo->frameQueue->getQueueSize() == 90){
+                        kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
+                        if (kzgVideo->frameQueue->getQueueSize() == kzgVideo->cacheFrameNum){
                             gettimeofday(&tv,NULL);
                             long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
                             kzgVideo->helper->onEnablePlay(true,THREAD_CHILD);
-                            //LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
+                            //LOGE("软解码60帧耗时：%ld" ,(endTime-startTime));
                         }
 
 
@@ -455,10 +454,10 @@ void *videoPlay(void *arg){
                     avFrameYUV420P->pts = av_frame_get_best_effort_timestamp(avFrame);
                     kzgVideo->frameQueue->putAvFrame(avFrameYUV420P);
                     //LOGE("put frameQueue pts:%lf   queueSize:%d ",(pts * av_q2d(kzgVideo->time_base)),kzgVideo->frameQueue->getQueueSize());
-                    if (kzgVideo->frameQueue->getQueueSize() == 90){
+                    if (kzgVideo->frameQueue->getQueueSize() == kzgVideo->cacheFrameNum){
                         gettimeofday(&tv,NULL);
                         long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
-                        //LOGE("软解码90帧耗时：%ld" ,(endTime-startTime));
+                        //LOGE("软解码60帧耗时：%ld" ,(endTime-startTime));
                     }
                     /*av_free(buffer);
                     sws_freeContext(swsContext);
@@ -742,7 +741,7 @@ void KzgVideo::showFrame(double timestamp) {
         return;
 
     } else{
-        LOGE("kzgVideo frameQueue is empty");
+        //LOGE("kzgVideo frameQueue is empty");
     }
 
 

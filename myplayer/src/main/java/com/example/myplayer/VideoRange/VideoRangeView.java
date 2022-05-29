@@ -161,9 +161,9 @@ public class VideoRangeView extends FrameLayout {
                 }
                 if (player != null){
                     if (changeX > 0){
-                        player.showFrame(millTime / 1000.0,KzgPlayer.seek_advance);
+                        player.showFrame(millTime / 1000.0,KzgPlayer.seek_advance,false);
                     }else if (changeX < 0){
-                        player.showFrame(millTime / 1000.0,KzgPlayer.seek_back);
+                        player.showFrame(millTime / 1000.0,KzgPlayer.seek_back,false);
                     }
                     if (videoRangeViewListener != null){
                         videoRangeViewListener.scrollTimestamp(millTime);

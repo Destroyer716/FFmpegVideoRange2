@@ -14,6 +14,7 @@ import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
 import com.example.ffmpegvideorange2.scrollVelocity.VelocityTrackListener
 import com.example.ffmpegvideorange2.scrollVelocity.ViewVelocityHandler
 import com.example.myplayer.KzgPlayer
+import com.example.myplayer.KzgPlayer.PLAY_MODEL_DEFAULT
 import com.example.myplayer.KzgPlayer.PlayerListener
 import com.example.myplayer.PacketBean
 import com.example.myplayer.TimeInfoBean
@@ -34,6 +35,7 @@ import kotlinx.android.synthetic.main.activity_range_time_line.tagView
 import kotlinx.android.synthetic.main.activity_range_time_line.zoomFrameLayout
 import kotlinx.android.synthetic.main.activity_time_line.*
 import java.util.*
+import kotlin.math.abs
 
 
 class RangeTimeLineActivity : AppCompatActivity(){
@@ -41,10 +43,14 @@ class RangeTimeLineActivity : AppCompatActivity(){
     var inputPath = Environment.getExternalStorageDirectory().toString() + "/video5.mp4"
 
     private val PLAY_ENABLE_CHANGE_HANDLER = 1001
+    private val PLAY_TIME_CHANGE_HANDLER = 1002
 
     private var kzgPlayer: KzgPlayer? = null
     //记录上次更新播放时间的时间点
     private var lastTime: Long = 0
+    private var lastTime2: Long = 0
+    //预览条跟随播放的时间
+    private var playTimeLine:Long = 0
     private var lastDx = 0
 
     private val videos = mutableListOf<VideoClip>()
@@ -52,15 +58,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
     private var lastScrollTime = 0L
     private var keyFramesTime:IFrameSearch? = null
 
-    private val handler = Handler { msg ->
-        when (msg.what) {
-            PLAY_ENABLE_CHANGE_HANDLER -> if (iv_play_stop_video != null && iv_play_stop_video.getVisibility() == View.GONE && msg.obj as Boolean) {
-                iv_play_stop_video.setVisibility(View.VISIBLE)
-                av_loading.hide()
-            }
-        }
-        false
-    }
+    private var handler:Handler? = null
+    //预览条是否停止滚动
+    private var timeLineScrollIsStop = true;
+    //当向前快速滑动的时候，就直接seek到过程中需要的帧，而不是顺序解码
+    private var isDoSeekForPriviewFrame = false
+    //记录上一次是是否是直接seek
+    private var lastIsDoSeek = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +73,40 @@ class RangeTimeLineActivity : AppCompatActivity(){
         av_loading.show()
         initView()
         initAction()
+
+
+        handler = Handler { msg ->
+            when (msg.what) {
+                //播放其初始话结束
+                PLAY_ENABLE_CHANGE_HANDLER -> if (iv_play_stop_video != null && iv_play_stop_video.getVisibility() == View.GONE && msg.obj as Boolean) {
+                    iv_play_stop_video.setVisibility(View.VISIBLE)
+                    av_loading.hide()
+                }
+
+                //处理正常播放时，预览条的跟随滚动
+                PLAY_TIME_CHANGE_HANDLER ->{
+                    kzgPlayer?.let {
+                        if (it.playModel == KzgPlayer.PLAY_MODEL_DEFAULT) {
+                            playTimeLine += msg.obj as Long
+                            zoomFrameLayout.scrollByTime(20)
+
+                            //Log.e("kzg","***********************playTimeLine:$playTimeLine  , lastTime2:$lastTime2")
+                            val message = Message()
+                            message.obj = 20_000L
+                            message.what = PLAY_TIME_CHANGE_HANDLER
+                            if (lastTime2 - playTimeLine > 10000){
+                                //将实际播放时间与预览条滚动进行一个同步
+                                // TODO 这种处理感觉预览条任然不是很流畅，需要找到更好的办法
+                                handler?.sendMessageDelayed(message,20 - ((lastTime2 - playTimeLine)/1000))
+                            }else{
+                                handler?.sendMessageDelayed(message,20)
+                            }
+                        }
+                    }
+                }
+            }
+            false
+        }
     }
 
 
@@ -125,6 +163,17 @@ class RangeTimeLineActivity : AppCompatActivity(){
         val handler = RecyclerVelocityHandler(this)
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
+                //更新是否停止滚动的状态
+                Log.e("kzg","**********************onVelocityChanged:$velocity")
+                //如果正在播放，就停止播放
+                if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
+                    stopPlayVideo()
+                }
+                if (velocity > 400){
+                    isDoSeekForPriviewFrame = true
+                }else if (velocity < 200){
+                    isDoSeekForPriviewFrame = false
+                }
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
@@ -141,6 +190,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                 if (velocity > 0){
                     //预览条向前滑动
+
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
                     }
@@ -149,6 +199,10 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                         rvFrame.getAvFrameHelper()?.isSeekBack = true
                     }
+                }
+
+                if (velocity == 0){
+                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
                 }
             }
 
@@ -181,6 +235,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         )
         updateVideos()
 
+        //获取每个关键帧的时间点
         keyFramesTime = IFrameSearch(inputPath)
     }
 
@@ -194,15 +249,22 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
             if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT) {
                 //停止
-                kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
-                iv_play_stop_video.setImageResource(R.drawable.play_ico)
+                stopPlayVideo()
             } else if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_FRAME_PREVIEW) {
                 //播放
-                if (!kzgPlayer!!.enablePlay) {
+                if (!kzgPlayer!!.enablePlay  || !timeLineScrollIsStop) {
                     return@setOnClickListener
                 }
                 kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_DEFAULT
                 iv_play_stop_video.setImageResource(R.drawable.stop_ico)
+
+                if (zoomFrameLayout != null && kzgPlayer!!.playModel == KzgPlayer.PLAY_MODEL_DEFAULT) {
+                    playTimeLine = lastTime2
+                    val message = Message()
+                    message.obj = 10_000L
+                    message.what = PLAY_TIME_CHANGE_HANDLER
+                    handler?.sendMessage(message)
+                }
             }
         }
 
@@ -222,25 +284,50 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun updateTimeByScroll(time: Long) {
-                if (time > lastScrollTime){
-                    kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance)
-                }else if(time < lastScrollTime) {
-                    kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back)
+                //逐帧预览时，才处理滚动
+                if ( KzgPlayer.PLAY_MODEL_FRAME_PREVIEW == kzgPlayer?.playModel){
+                    if (time > lastScrollTime){
+                        //向前滚动
+                        if (!isDoSeekForPriviewFrame) {
+                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,true)
+                        }else{
+                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,true)
+                        }
+
+
+                    }else if(time < lastScrollTime) {
+                        //向后滚动
+                        kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,false)
+                    }
+                    lastScrollTime = time
+                    lastTime2 = time * 1000
+                    //更新播放时间
+                    updatePlayTime(time * 1000)
                 }
-                lastScrollTime = time
+
             }
 
         }
 
         zoomFrameLayout.onScrollVelocityChangeListener = object :ZoomFrameLayout.OnScrollVelocityChangeListener{
+            //惯性滑动才会触发
             override fun onVelocityChange(v: Float) {
+                //更新是否停止滚动的状态
+                timeLineScrollIsStop = v == 0F
+                //如果正在播放，就停止播放
+                if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
+                    stopPlayVideo()
+                }
+                Log.e("kzg","**********************onVelocityChange:$v  ,isScrolling:${rvFrame.getAvFrameHelper()?.isScrolling}")
                 if (v > 0F){
                     //预览条向前滑动
+                    isDoSeekForPriviewFrame = v >= 200
+
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
                     }
 
-                    Log.e("kzg","**********************onVelocityChange:$v  ,isScrolling:${rvFrame.getAvFrameHelper()?.isScrolling}")
+
                     //如果向前滑动，并且速度大于60 并且isScrolling=false,就暂停解码
                     if (v > 50F && rvFrame.getAvFrameHelper()?.isScrolling == false){
                         rvFrame.getAvFrameHelper()?.isScrolling = true
@@ -269,6 +356,32 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
                     rvFrame.getAvFrameHelper()?.seek()
                 }
+
+                if (v == 0F){
+                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
+                }
+            }
+
+            //ZoomFrameLayout 滚动
+            override fun onScrollZoomFl(x:Int) {
+                stopPlayVideo()
+                if (x <= 0){
+                    //预览条向后滑动
+                    if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                    }
+
+                    if (rvFrame.getAvFrameHelper()?.isScrolling == false && x < 0){
+                        rvFrame.getAvFrameHelper()?.isScrolling = true
+                        rvFrame.getAvFrameHelper()?.pause()
+                    }
+                    //Log.e("kzg","**********************onScrollBack:$x  ,${rvFrame.getAvFrameHelper()?.isScrolling}")
+                    if (x > -3 && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                        rvFrame.getAvFrameHelper()?.isScrolling = false
+                        rvFrame.getAvFrameHelper()?.seek()
+                    }
+                }
+
             }
 
         }
@@ -300,19 +413,14 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onProgress(currentTime: Long, totalTime: Long) {
-                //Log.e("kzg","******************onProgress:"+currentTime + " ,totalTime:"+totalTime);
-                //播放时间大于等于500毫米才更新一次播放时间
-                if (currentTime - lastTime > 500 * 1000) {
-                    lastTime = currentTime
-                    runOnUiThread {
-                        tv_video_range_play_time.text = Utils.MilliToMinuteTime(
-                            currentTime / 1000
-                        )
-                    }
+                //正常播放进度
+                //Log.e("kzg", "******************onProgress:$currentTime ,totalTime:$totalTime")
+                if (kzgPlayer?.playModel == PLAY_MODEL_DEFAULT){
+                    lastTime2 = currentTime
+                    //更新播放时间
+                    updatePlayTime(currentTime)
                 }
-                /*if (videoRangeView != null && kzgPlayer!!.playModel == KzgPlayer.PLAY_MODEL_DEFAULT) {
-                    videoRangeView.setPlayPercent(currentTime.toFloat() / totalTime)
-                }*/
+
             }
 
             override fun onTimeInfo(timeInfoBean: TimeInfoBean) {
@@ -320,11 +428,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onEnablePlayChange(enable: Boolean) {
+                //播放器
                 if (handler != null) {
                     val message = Message()
                     message.what = PLAY_ENABLE_CHANGE_HANDLER
                     message.obj = enable
-                    handler.sendMessage(message)
+                    handler?.sendMessage(message)
                 }
             }
 
@@ -392,7 +501,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onGetFrameYUV(width: Int, height: Int, y: ByteArray?, u: ByteArray?, v: ByteArray?,
                 practicalWidth: Int, timeUs:Double) {
-                Log.e("kzg","**************onGetFrameYUV")
                 if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
                     val bean = YUVDataBean()
                     bean.timeUs = timeUs.toLong()
@@ -410,28 +518,28 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             }
 
-            override fun onGetFrameYUV2(
-                width: Int,
-                height: Int,
-                yuv: ByteArray?,
-                practicalWidth: Int,
-                timeUs: Double
-            ) {
-                Log.e("kzg","**************onGetFrameYUV")
-                if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
-                    val bean = YUVDataBean()
-                    bean.timeUs = timeUs.toLong()
-                    bean.width = width
-                    bean.height = height
-                    bean.yuv = yuv
-                    (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
-                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
-                        rvFrame.getAvFrameHelper()?.pause()
-                    }
-                }
-            }
+            override fun onGetFrameYUV2(width: Int,height: Int,yuv: ByteArray?,practicalWidth: Int,timeUs: Double) {}
 
         })
+    }
+
+
+    //更新播放时间UI
+    private fun updatePlayTime(currentTime:Long) {
+        //播放时间大于等于100毫米才更新一次播放时间
+        if (abs(currentTime - lastTime) > 100 * 1000) {
+            lastTime = currentTime
+            runOnUiThread {
+                tv_video_range_play_time.text = Utils.MilliToMinuteTime(
+                    currentTime / 1000
+                )
+            }
+        }
+    }
+
+    private fun stopPlayVideo(){
+        kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
+        iv_play_stop_video.setImageResource(R.drawable.play_ico)
     }
 
 
@@ -692,7 +800,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
     override fun onDestroy() {
         super.onDestroy()
         rvFrame.release()
-        handler.removeCallbacksAndMessages(null)
+        handler?.removeCallbacksAndMessages(null)
         if (kzgPlayer != null) {
             kzgPlayer!!.stop()
             kzgPlayer!!.release()

@@ -380,7 +380,7 @@ void FAvFrameHelper::decodeAvPacket() {
 }
 
 void FAvFrameHelper::pauseOrStar(bool isPause) {
-    LOGE("FAvFrameHelper  pauseOrStar %d",isPause);
+    //LOGE("FAvFrameHelper  pauseOrStar %d",isPause);
     this->isPause = isPause;
 }
 
@@ -409,9 +409,9 @@ void FAvFrameHelper::decodeFrame() {
             continue;
         } else if (avPacket->stream_index == avStreamIndex){
             //找到视频avPacket
-            LOGE("找到视频avPacket");
+            //LOGE("找到视频avPacket");
             if (getAvPacketRefType2(avPacket) > 0){
-                LOGE("queue 增加AVpacket");
+                //LOGE("queue 增加AVpacket");
                 queue->putAvPacket(avPacket);
             } else{
                 av_packet_free(&avPacket);
@@ -472,7 +472,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
         if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
             int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
-            LOGE("avFrameHelper avframe yuv420p %d  ,%d",width,avCodecContext->width);
+            //LOGE("avFrameHelper avframe yuv420p %d  ,%d",width,avCodecContext->width);
             helper->onCallYUVToBitmap(
                     width,
                     avCodecContext->height,

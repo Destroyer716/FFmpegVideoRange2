@@ -510,7 +510,7 @@ void KzgFFmpeg::start() {
                 } else{
                     queueSize = kzgVideo->frameQueue->getQueueSize();
                 }
-                if (queueSize >= 90){
+                if (queueSize >= kzgVideo->cacheFrameNum){
                     av_usleep(1000*10);
                     continue;
                 }
@@ -663,7 +663,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         return;
     }
 
-    //LOGE("start  seeking %lld  , duration:%lld",sec,duration);
+    LOGE("start  seeking %lld  , duration:%lld",sec,duration);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;
@@ -821,11 +821,18 @@ void KzgFFmpeg::showFrameFromSeek(double timestamp) {
     }
 }
 
-void KzgFFmpeg::setSeekType(int type) {
+void KzgFFmpeg::setSeekType(int type,int forAdvance) {
     if (kzgVideo != NULL){
         if (type == 0){
             //回退
             kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = true;
+            if (forAdvance != 0){
+                kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = true;
+            } else{
+                kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = false;
+            }
+
+
         } else{
             //前进
             kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = false;

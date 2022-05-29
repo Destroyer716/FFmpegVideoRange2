@@ -41,7 +41,7 @@ class ZoomFrameLayout : FrameLayout,
     ) {
         timeLineValue.time = timeLineValue.px2time(vlaue)
         dispatchUpdateTime()
-        Log.e("kzg","***************onAnimationUpdate:${velocity}")
+        Log.e("kzg","***************onAnimationUpdate:${velocity}  ,vlaue:$vlaue")
         timeChangeListener?.updateTimeByScroll(timeLineValue.time)
         onScrollVelocityChangeListener?.onVelocityChange(velocity)
     }
@@ -49,7 +49,9 @@ class ZoomFrameLayout : FrameLayout,
 
     /** 双击动画更新 */
     override fun onAnimationUpdate(animation: ValueAnimator) {
-        scaleChange(animation.animatedValue as Float)
+        if (doubleTapEnable){
+            scaleChange(animation.animatedValue as Float)
+        }
     }
 
     var timeLineValue = TimeLineBaseValue()
@@ -63,13 +65,13 @@ class ZoomFrameLayout : FrameLayout,
     /**
      * 双指缩放是否可用，默认true
      */
-    var doubleFingerEnable = true
+    var doubleFingerEnable = false
     /**
      * 双击缩放是否可用，默认true
      */
-    var doubleTapEnable = true
+    var doubleTapEnable = false
 
-    var scaleEnable = true
+    var scaleEnable = false
 
     /** 额外的事件监听 */
     var timeChangeListener: VideoPlayerOperate? = null
@@ -83,6 +85,18 @@ class ZoomFrameLayout : FrameLayout,
 
     fun scroll(x: Float, y: Float) {
         val offsetTime = (x * 1000 / timeLineValue.pxInSecond).toLong()
+        if (offsetTime != 0L) {
+            flingAnimation.cancel()
+//            Log.d("Sam", "scroll $x $offsetTime ${timeLineValue.time}")
+            timeLineValue.time += offsetTime
+            timeValueHolder.value = timeLineValue.time.toFloat() * timeLineValue.pxInSecond / 1000
+            updateTimeByScroll(timeLineValue.time)
+        }
+    }
+
+    fun scrollByTime(offsetTime: Long) {
+        //val offsetTime = (x * 1000 / timeLineValue.pxInSecond).toLong()
+        //Log.e("kzg","****************scrollByTime:$x  ,offsetTime:${offsetTime}")
         if (offsetTime != 0L) {
             flingAnimation.cancel()
 //            Log.d("Sam", "scroll $x $offsetTime ${timeLineValue.time}")
@@ -118,7 +132,9 @@ class ZoomFrameLayout : FrameLayout,
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaleChange(timeLineValue.scale * detector.scaleFactor * detector.scaleFactor) //加强灵敏度
+            if (doubleTapEnable){
+                scaleChange(timeLineValue.scale * detector.scaleFactor * detector.scaleFactor) //加强灵敏度
+            }
             return true
         }
 
@@ -174,6 +190,7 @@ class ZoomFrameLayout : FrameLayout,
                 return true
             }
             scroll(distanceX, distanceY)
+            onScrollVelocityChangeListener?.onScrollZoomFl(distanceX.toInt())
             return true
         }
 
@@ -332,6 +349,9 @@ class ZoomFrameLayout : FrameLayout,
     }
 
     interface OnScrollVelocityChangeListener{
+        //监听滑动速度，只有在手指离开的时候才会触发
         fun onVelocityChange(v:Float)
+        //监听回退
+        fun onScrollZoomFl(x:Int)
     }
 }
