@@ -226,9 +226,9 @@ Java_com_example_myplayer_KzgPlayer_n_1playmodel(JNIEnv *env, jobject thiz, jint
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1showframe(JNIEnv *env, jobject thiz, jdouble timestamp) {
+Java_com_example_myplayer_KzgPlayer_n_1showframe(JNIEnv *env, jobject thiz, jdouble timestamp,jint forAdvance) {
     if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSeekType(1,0);
+        kzgFFmpeg->setSeekType(1,forAdvance);
         kzgFFmpeg->showFrame(timestamp);
     }
 }

@@ -108,11 +108,9 @@ public class KzgPlayer {
             n_seek((int) (timestamp*1000),isForAdvance?1:0);
         }else {
             //前进时的逐帧显示
-            n_showframe(timestamp);
+            n_showframe(timestamp,isForAdvance?1:0);
         }
 
-        //n_showframeFromSeek(timestamp);
-        //showFrameByYUV(timestamp);
     }
 
     public void start(){
@@ -267,7 +265,7 @@ public class KzgPlayer {
     private native void n_amplifyVol(float vol);
     private native int n_sampleRate();
     private native void n_playmodel(int model);
-    private native void n_showframe(double timestamp);
+    private native void n_showframe(double timestamp,int forAdvance);
     private native void n_showframeFromSeek(double timestamp);
 
 

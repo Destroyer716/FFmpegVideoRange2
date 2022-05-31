@@ -188,7 +188,7 @@ void *videoPlay(void *arg){
 
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
-                //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime);
+                LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld  ,isBackSeekFramePreview:%d   , isBackSeekForAdvance:%d ",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime,kzgVideo->kzgPlayerStatus->isBackSeekFramePreview,kzgVideo->kzgPlayerStatus->isBackSeekForAdvance);
                 //LOGE("codec AV_PIX_FMT_YUV420P");
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
 
@@ -198,7 +198,7 @@ void *videoPlay(void *arg){
                         LOGE("**********linesize[0] : %d     ,linesize[1] : %d    ,linesize[2] : %d    ,width:%d    ,height:%d",avFrame->linesize[0],avFrame->linesize[1],avFrame->linesize[2],avFrame->width,avFrame->height);
                     }*/
 
-                    if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
+                    if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview || (!kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->kzgPlayerStatus->isBackSeekForAdvance)){
                         //后退专题的逐帧预览
                         if ((avFrame->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) < kzgVideo->seekTime && !kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
                             av_frame_free(&avFrame);
@@ -395,6 +395,14 @@ void *videoPlay(void *arg){
                 //LOGE("视频帧时间：%lld    总时间：%lld",currentTime,kzgVideo->duration);
                 if( !kzgVideo->kzgPlayerStatus->isFramePreview){
                     kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
+                }
+                if (!kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
+                    double pts = currentTime/1000000;
+                    //LOGE("视频帧时间：%lf   总时间：%lf ",kzgVideo->showFrameTimestamp ,pts);
+                    if (kzgVideo->showFrameTimestamp >= (pts - 0.06) ||  kzgVideo->showFrameTimestamp <=pts){
+                        kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = false;
+                    }
+
                 }
 
             } else{
@@ -672,7 +680,7 @@ void KzgVideo::setIsFramePreview(bool isFramePreview) {
 
 void KzgVideo::showFrame(double timestamp) {
 
-    //LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
+    LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
     if (frameQueue != NULL && frameQueue->getQueueSize() > 0){
 
         AVFrame *avFrame = av_frame_alloc();
@@ -684,6 +692,7 @@ void KzgVideo::showFrame(double timestamp) {
             pts *= av_q2d(time_base);
             //LOGE("kzgVideo get frameQueue pts:%lf ,   timestamp:%lf",pts,timestamp);
             if (timestamp >= (pts - 0.03) && timestamp <= (pts + 0.03)){
+                kzgPlayerStatus->isBackSeekForAdvance = false;
                 int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
                 this->showFrameTimestamp = timestamp;
                 //传回Java进行渲染
@@ -741,7 +750,7 @@ void KzgVideo::showFrame(double timestamp) {
         return;
 
     } else{
-        //LOGE("kzgVideo frameQueue is empty");
+        LOGE("kzgVideo frameQueue is empty");
     }
 
 

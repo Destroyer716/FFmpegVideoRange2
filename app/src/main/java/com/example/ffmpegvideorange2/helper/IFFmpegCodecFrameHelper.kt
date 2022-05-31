@@ -117,7 +117,7 @@ class IFFmpegCodecFrameHelper(
                     }
                     yuvQueue.first?.let {bean ->
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
-                            yuvQueue.deQueue().apply {
+                            yuvQueue.deQueue()?.apply {
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
                                     || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
                                     && !it.value.isAddFrame){

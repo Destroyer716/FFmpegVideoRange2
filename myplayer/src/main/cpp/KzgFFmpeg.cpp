@@ -678,7 +678,8 @@ void KzgFFmpeg::seek(int64_t sec) {
         }
 
         kzgVideo->kzgPlayerStatus->isShowSeekFrame = false;
-        avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
+        avformat_seek_file(avFormatContext,-1,INT64_MIN,res,res,0);
+        //avformat_seek_file(avFormatContext,-1,INT64_MIN,res,INT64_MAX,0);
         if (kzgAudio != NULL){
 
             kzgAudio->queue->clearAvPacket();
@@ -695,7 +696,7 @@ void KzgFFmpeg::seek(int64_t sec) {
             }
             kzgVideo->queue->clearAvPacket();
             kzgVideo->lock = 0;
-            //LOGE("seeking %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
+            LOGE("seeking %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
             pthread_mutex_lock(&kzgVideo->codecMutex);
             avcodec_flush_buffers(kzgVideo->avCodecContext);
             pthread_mutex_unlock(&kzgVideo->codecMutex);
@@ -809,8 +810,20 @@ void KzgFFmpeg::setIsFramePreview(bool isFramePreview) {
     }
 }
 
+void *t_showframe(void * arg){
+    KzgFFmpeg *kzgFFmpeg = static_cast<KzgFFmpeg *>(arg);
+    while (kzgFFmpeg->kzgVideo->kzgPlayerStatus->isBackSeekForAdvance&& !kzgFFmpeg->kzgVideo->kzgPlayerStatus->exit){
+        av_usleep(1000 * 10);
+        kzgFFmpeg->kzgVideo->showFrame(kzgFFmpeg->kzgVideo->showFrameTimestamp);
+    }
+    return 0;
+}
+
 void KzgFFmpeg::showFrame(double timestamp) {
     if (kzgVideo != NULL){
+        if (kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
+            kzgVideo->showFrameTimestamp = timestamp;
+        }
         kzgVideo->showFrame(timestamp);
     }
 }
@@ -826,18 +839,15 @@ void KzgFFmpeg::setSeekType(int type,int forAdvance) {
         if (type == 0){
             //回退
             kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = true;
-            if (forAdvance != 0){
-                kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = true;
-            } else{
-                kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = false;
-            }
-
-
         } else{
             //前进
             kzgVideo->kzgPlayerStatus->isBackSeekFramePreview = false;
         }
-
+        if (forAdvance != 0){
+            kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = true;
+        } else{
+            kzgVideo->kzgPlayerStatus->isBackSeekForAdvance = false;
+        }
     }
 }
 

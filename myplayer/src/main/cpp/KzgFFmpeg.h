@@ -46,14 +46,15 @@ public:
 
 public:
     pthread_t decodeThread;
+    pthread_t showFrameThread;
     KzgPlayerStatus *kzgPlayerStatus;
+    KzgVideo *kzgVideo = NULL;
 
 private:
     JavaCallHelper *helper = NULL;
     const char *url = NULL;
     AVFormatContext *avFormatContext = NULL;
     KzgAudio *kzgAudio = NULL;
-    KzgVideo *kzgVideo = NULL;
 
     pthread_mutex_t init_mutex;
     pthread_mutex_t seek_mutex;

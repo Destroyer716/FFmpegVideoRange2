@@ -169,9 +169,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     stopPlayVideo()
                 }
-                if (velocity > 400){
+                if (velocity > 2500){
                     isDoSeekForPriviewFrame = true
-                }else if (velocity < 200){
+                }else if (velocity < 2500){
                     isDoSeekForPriviewFrame = false
                 }
                 //如果是向后滑动，只有当速度停下来才开始解码
@@ -202,7 +202,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
 
                 if (velocity == 0){
+                    Log.e("kzg","***********************开始解码显示最后一帧")
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
+                    //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
             }
 
@@ -289,7 +291,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     if (time > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
-                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,true)
+                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false)
                         }else{
                             kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,true)
                         }
@@ -359,6 +361,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                 if (v == 0F){
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
+                    //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
             }
 
@@ -501,21 +504,22 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onGetFrameYUV(width: Int, height: Int, y: ByteArray?, u: ByteArray?, v: ByteArray?,
                 practicalWidth: Int, timeUs:Double) {
-                if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
-                    val bean = YUVDataBean()
-                    bean.timeUs = timeUs.toLong()
-                    bean.width = width
-                    bean.practicalWidth = practicalWidth
-                    bean.height = height
-                    bean.y = y
-                    bean.u = u
-                    bean.v = v
-                    (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
-                    if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
-                        rvFrame.getAvFrameHelper()?.pause()
+                runOnUiThread {
+                    if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
+                        val bean = YUVDataBean()
+                        bean.timeUs = timeUs.toLong()
+                        bean.width = width
+                        bean.practicalWidth = practicalWidth
+                        bean.height = height
+                        bean.y = y
+                        bean.u = u
+                        bean.v = v
+                        (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
+                        if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
+                            rvFrame.getAvFrameHelper()?.pause()
+                        }
                     }
                 }
-
             }
 
             override fun onGetFrameYUV2(width: Int,height: Int,yuv: ByteArray?,practicalWidth: Int,timeUs: Double) {}
