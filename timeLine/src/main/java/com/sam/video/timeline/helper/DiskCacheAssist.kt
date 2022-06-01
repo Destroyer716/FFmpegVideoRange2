@@ -98,8 +98,9 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int = 1, maxSize
     }
 
     //异步读取磁盘缓存
-    fun asyncReadBitmap(key: String, success: (Bitmap) -> Unit = {},
-                        failed: (Exception) -> Unit = {}) {
+    fun asyncReadBitmap(
+        key: String, timeMs: Long, success: (Bitmap, Long) -> Unit = { bt, us ->},
+        failed: (Exception) -> Unit = {}) {
         var disposable: Disposable? = null
         disposable = Single.fromCallable {
             Log.d(TAG, "read key $key thread ${Thread.currentThread().name}: ")
@@ -107,7 +108,7 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int = 1, maxSize
         }.subscribeOn(Schedulers.from(readerExecutor))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    success.invoke(it)
+                    success.invoke(it,timeMs)
                     disposable?.dispose()
                 }, {
                     Log.d(TAG, "async load disk failed $it: ")

@@ -2,17 +2,12 @@ package com.example.ffmpegvideorange2.helper
 
 import android.graphics.*
 import android.media.*
-import android.os.Build
 import android.os.Environment
 import android.text.TextUtils
 import android.util.Log
-import android.view.Surface
 import android.widget.ImageView
 import com.example.ffmpegvideorange2.*
 import com.example.myplayer.KzgPlayer
-import com.example.myplayer.PacketQueue
-import com.example.myplayer.mediacodec.KzglVideoSupportUtil
-import com.example.myplayer.mediacodecframes.VideoToFrames
 import com.sam.video.timeline.bean.TargetBean
 import com.sam.video.timeline.helper.DiskCacheAssist
 import com.sam.video.timeline.helper.IAvFrameHelper
@@ -20,9 +15,6 @@ import com.sam.video.timeline.helper.IFrameSearch
 import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
 import com.sam.video.util.md5
 import com.sam.video.util.notNull
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.nio.ByteBuffer
 import java.util.*
 
 
@@ -71,15 +63,18 @@ class IFFmpegCodecFrameHelper(
         if (targetViewMap[view]?.timeUs != timeMs){
             targetViewMap[view]?.timeUs = timeMs
             targetViewMap[view]?.isAddFrame = false
-            diskCache?.asyncReadBitmap("${filePath}_${timeMs}",{
-                Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
-                it?.let {
-                    targetViewMap[view]?.isAddFrame = true
-                    view.setImageBitmap(it)
+           /* diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+                if (targetViewMap[view]?.timeUs == us){
+                    Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
+                    bp?.let {
+                        targetViewMap[view]?.isAddFrame = true
+                        view.setImageBitmap(it)
+                    }
                 }
+
             },{
                 Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-            })
+            })*/
 
         }
 
@@ -153,6 +148,11 @@ class IFFmpegCodecFrameHelper(
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
+                                           /* diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                                Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
+                                            },{ e ->
+                                                Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
+                                            })*/
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->
@@ -161,11 +161,7 @@ class IFFmpegCodecFrameHelper(
                                                     }
                                                 }
                                             }
-                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
-                                                Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
-                                            },{ e ->
-                                                Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
-                                            })
+
 
                                         }
                                     }
@@ -198,11 +194,12 @@ class IFFmpegCodecFrameHelper(
             this.forEach {
                 //这里做两个判断，一个是这个imageview 并没有被填充需要的帧，还有就是当前需要的帧与需要显示的最大的那个帧的时间相差不能超过12秒
                 //这是为了进一步精确，因为可能会存在当前imageview标记的时间不是当前需要的最小的时间
+                Log.e("kzg","****************开始seek isAddFrame:${it.value.isAddFrame}  timeus:${it.value.timeUs} , size:${this.size}")
                 if (!it.value.isAddFrame ){
                     if (!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs <= 12_000_000)){
                         minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
                         hasNoAddFrame = true
-                    }else if(!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs < 12_000_000)){
+                    }else if(!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs > 12_000_000)){
                         it.value.isAddFrame = true
                     }else if (isSeekBack){
                         //回退的时候不需要判断最小帧与最大帧

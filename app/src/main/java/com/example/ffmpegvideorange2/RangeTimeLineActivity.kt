@@ -8,6 +8,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.ffmpegvideorange2.helper.IFFmpegCodecFrameHelper
 import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
 import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
@@ -18,6 +19,7 @@ import com.example.myplayer.KzgPlayer.PLAY_MODEL_DEFAULT
 import com.example.myplayer.KzgPlayer.PlayerListener
 import com.example.myplayer.PacketBean
 import com.example.myplayer.TimeInfoBean
+import com.sam.video.timeline.adapter.VideoFrameAdapter
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.helper.IFrameSearch
 import com.sam.video.timeline.listener.OnFrameClickListener
@@ -65,6 +67,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
     private var isDoSeekForPriviewFrame = false
     //记录上一次是是否是直接seek
     private var lastIsDoSeek = false
+    //是否发生了快速滚动，只要在一次滚动过程中 isDoSeekForPriviewFrame被赋值过为true 就算
+    private var hasFastScoll = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -171,6 +175,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
                 if (velocity > 2500){
                     isDoSeekForPriviewFrame = true
+                    hasFastScoll = true
                 }else if (velocity < 2500){
                     isDoSeekForPriviewFrame = false
                 }
@@ -201,10 +206,17 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     }
                 }
 
-                if (velocity == 0){
+                if (velocity == 0 && hasFastScoll){
+                    hasFastScoll = false
                     Log.e("kzg","***********************开始解码显示最后一帧")
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
+                }
+
+                if (velocity == 0){
+                    val findFirstVisibleItemPosition =
+                        (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+                    Log.e("kzg","***************************tag2:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
                 }
             }
 
@@ -221,6 +233,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 //向前滚动速度慢下来，开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
+                    val findFirstVisibleItemPosition =
+                        (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+                    Log.e("kzg","***************************tag:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
@@ -323,7 +338,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 Log.e("kzg","**********************onVelocityChange:$v  ,isScrolling:${rvFrame.getAvFrameHelper()?.isScrolling}")
                 if (v > 0F){
                     //预览条向前滑动
-                    isDoSeekForPriviewFrame = v >= 200
+                    if (v >= 200){
+                        isDoSeekForPriviewFrame = true
+                        hasFastScoll = true
+                    }else{
+                        isDoSeekForPriviewFrame = false
+                    }
 
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
                         rvFrame.getAvFrameHelper()?.isSeekBack = false
@@ -359,7 +379,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     rvFrame.getAvFrameHelper()?.seek()
                 }
 
-                if (v == 0F){
+                if (v == 0F && hasFastScoll) {
+                    hasFastScoll = false
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
