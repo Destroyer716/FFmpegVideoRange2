@@ -43,7 +43,9 @@ int SafeQueue::getAvPacket(AVPacket *avPacket) {
             //LOGE("取出一个packet  当前剩余 %d 个",queuePacket.size());
             break;
         } else{
-            pthread_cond_wait(&condPacket,&mutexPacket);
+            if (playerStatus != NULL && !playerStatus->exit){
+                pthread_cond_wait(&condPacket,&mutexPacket);
+            }
         }
     }
     pthread_mutex_unlock(&mutexPacket);

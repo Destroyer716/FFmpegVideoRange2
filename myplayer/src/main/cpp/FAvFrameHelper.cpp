@@ -93,6 +93,7 @@ void FAvFrameHelper::decodeAVPackate() {
         pthread_mutex_unlock(&init_mutex);
         return;
     }
+    avCodecContext->skip_loop_filter = AVDISCARD_NONKEY;
 
     helper->onGetFrameInitSuccess(avCodecContext->codec->name,
             avCodecContext->width,
@@ -166,7 +167,7 @@ void FAvFrameHelper::starDecode() {
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
-            LOGE("获取视频avPacket 失败");
+            //LOGE("获取视频avPacket 失败");
             av_usleep(1000*100);
             continue;
         }

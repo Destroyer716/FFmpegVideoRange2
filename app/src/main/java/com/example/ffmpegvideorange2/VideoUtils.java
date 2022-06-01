@@ -311,6 +311,7 @@ public class VideoUtils {
     }
 
     static public MediaCodec initMediaCodec(MediaFormat mediaFormat) throws IOException {
+
         MediaCodec decoder = null;
         String mime = mediaFormat.getString(MediaFormat.KEY_MIME);
         decoder = MediaCodec.createDecoderByType(mime);
@@ -442,7 +443,7 @@ public class VideoUtils {
                 rgba[i * width + j] = 0xff000000 + (b << 16) + (g << 8) + r;
             }
 
-        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         bmp.setPixels(rgba, 0 , width, 0, 0, practicalWidth, height);
         return bmp;
     }

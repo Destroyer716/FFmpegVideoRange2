@@ -459,7 +459,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         })
 
 
-        val avFrameHelper = IFFmpegCodecFrameHelper("",null)
+        val avFrameHelper = IFFmpegCodecFrameHelper(inputPath,null)
         avFrameHelper.setKzgPlayer(kzgPlayer!!)
         rvFrame.setAvFrameHelper(avFrameHelper)
 

@@ -4,6 +4,7 @@ import android.graphics.*
 import android.media.*
 import android.os.Build
 import android.os.Environment
+import android.text.TextUtils
 import android.util.Log
 import android.view.Surface
 import android.widget.ImageView
@@ -13,9 +14,11 @@ import com.example.myplayer.PacketQueue
 import com.example.myplayer.mediacodec.KzglVideoSupportUtil
 import com.example.myplayer.mediacodecframes.VideoToFrames
 import com.sam.video.timeline.bean.TargetBean
+import com.sam.video.timeline.helper.DiskCacheAssist
 import com.sam.video.timeline.helper.IAvFrameHelper
 import com.sam.video.timeline.helper.IFrameSearch
 import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
+import com.sam.video.util.md5
 import com.sam.video.util.notNull
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -44,9 +47,14 @@ class IFFmpegCodecFrameHelper(
     private var isInitItem = false
     private var lastCodecFramePts = 0L
     private var startTime = 0L
+    private var diskCache:DiskCacheAssist? = null
+    private val mainKey = md5(filePath)
 
 
     override fun init() {
+        diskCache = DiskCacheAssist(TextUtils.concat(
+            Environment.getExternalStorageDirectory().path,
+            "/frameCache/", mainKey).toString(), 1, 1, 121)
         childThread = Thread(this)
         childThread!!.start()
 
@@ -63,6 +71,16 @@ class IFFmpegCodecFrameHelper(
         if (targetViewMap[view]?.timeUs != timeMs){
             targetViewMap[view]?.timeUs = timeMs
             targetViewMap[view]?.isAddFrame = false
+            diskCache?.asyncReadBitmap("${filePath}_${timeMs}",{
+                Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
+                it?.let {
+                    targetViewMap[view]?.isAddFrame = true
+                    view.setImageBitmap(it)
+                }
+            },{
+                Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
+            })
+
         }
 
 
@@ -128,7 +146,7 @@ class IFFmpegCodecFrameHelper(
                                     kzgPlayer?.pauseGetPacket(false)
                                     notNull(y,u,v){
                                         val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height,practicalWidth)
-                                        val newBitmap = VideoUtils.compressBySampleSize(bitmap,120,120,true)
+                                        val newBitmap = VideoUtils.compressBySampleSize(bitmap,60,60,true)
                                         if (isScrolling){
                                             return@task
                                         }
@@ -143,6 +161,12 @@ class IFFmpegCodecFrameHelper(
                                                     }
                                                 }
                                             }
+                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                                Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
+                                            },{ e ->
+                                                Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
+                                            })
+
                                         }
                                     }
                                 }
