@@ -1,6 +1,7 @@
 package com.sam.video.timeline.helper
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.widget.ImageView
 
 /**
@@ -14,6 +15,7 @@ interface IAvFrameHelper {
     var decodeFrameListener:DecodeFrameListener?
     var isSeekBack:Boolean
     var isScrolling:Boolean
+    var isInitItem:Boolean
 
     fun init()
     /**
@@ -21,6 +23,10 @@ interface IAvFrameHelper {
      *
      */
     fun loadAvFrame(view:ImageView,timeMs:Long)
+
+    fun setTargetTime(timeUs:Long)
+
+    fun clearTargetTimeMap()
 
     fun release()
 

@@ -25,6 +25,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
     private var index = 0
     var videoDecoder2: VideoDecoder2? = null
 
+
     override fun convert(helper: BaseViewHolder, item: VideoFrameData) {
         helper.adapterPosition
         val imageView = helper.getView<ImageView>(R.id.iv)
@@ -55,8 +56,14 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
             frameWidth
         }
 
-        imageView.tag = item.frameClipTime * 1000
-        Log.e("kzg","************************position:${helper.adapterPosition}  ,timeUs:${imageView.tag}")
+        if (item.frameClipTime * 1000 != imageView.tag){
+            avframeHelper?.setTargetTime(item.frameClipTime * 1000)
+        }
+
+        if (avframeHelper?.isInitItem == true){
+            imageView.tag = item.frameClipTime * 1000
+        }
+        //Log.e("kzg","************************position:${helper.adapterPosition}  ,timeUs:${imageView.tag}")
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 
@@ -76,7 +83,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         this.avframeHelper = helper
         avframeHelper?.decodeFrameListener = object :IAvFrameHelper.DecodeFrameListener{
             override fun onGetOneFrame() {
-                notifyDataSetChanged()
+
             }
         }
 
