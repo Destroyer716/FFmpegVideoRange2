@@ -213,11 +213,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
 
-                if (velocity == 0){
-                    val findFirstVisibleItemPosition =
-                        (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-                    Log.e("kzg","***************************tag2:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
-                }
+
             }
 
             override fun onScrollFast() {
@@ -235,7 +231,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
                     val findFirstVisibleItemPosition =
                         (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-                    Log.e("kzg","***************************tag:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
+                    //Log.e("kzg","***************************tag:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
