@@ -1,7 +1,6 @@
 package com.example.ffmpegvideorange2
 
 import android.content.pm.ActivityInfo
-import android.graphics.Bitmap
 import android.os.*
 import android.util.Log
 import android.view.MotionEvent
@@ -23,7 +22,6 @@ import com.example.myplayer.TimeInfoBean
 import com.sam.video.timeline.adapter.VideoFrameAdapter
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.helper.IFrameSearch
-import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
 import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.timeline.listener.SelectAreaMagnetOnChangeListener
 import com.sam.video.timeline.listener.VideoPlayerOperate
@@ -214,6 +212,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
+
+                if (velocity == 0){
+                    val findFirstVisibleItemPosition =
+                        (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+                    Log.e("kzg","***************************tag2:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
+                }
             }
 
             override fun onScrollFast() {
@@ -232,10 +236,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     val findFirstVisibleItemPosition =
                         (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
                     Log.e("kzg","***************************tag:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
-                    rvFrame.getAvFrameHelper()?.clearTargetTimeMap()
-                    for (i in (findFirstVisibleItemPosition-5 .. findFirstVisibleItemPosition+15)){
-                        rvFrame.getAvFrameHelper()?.setTargetTime(((rvFrame.adapter as VideoFrameAdapter).getItem(i)?.frameClipTime?:0) * 1000)
-                    }
                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
@@ -359,12 +359,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
                     if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
                         rvFrame.getAvFrameHelper()?.isScrolling = false
-                        rvFrame.getAvFrameHelper()?.clearTargetTimeMap()
-                        val findFirstVisibleItemPosition =
-                            (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-                        for (i in (findFirstVisibleItemPosition-5 .. findFirstVisibleItemPosition+15)){
-                            rvFrame.getAvFrameHelper()?.setTargetTime(((rvFrame.adapter as VideoFrameAdapter).getItem(i)?.frameClipTime?:0) * 1000)
-                        }
                         rvFrame.getAvFrameHelper()?.seek()
                     }
 
@@ -390,7 +384,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
-
             }
 
             //ZoomFrameLayout 滚动
@@ -487,19 +480,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         })
 
 
-        val avFrameHelper = IFFmpegCodecFrameHelper(inputPath,object :OnGetFrameBitmapCallback{
-            override fun onGetBitmap(bitmap: Bitmap?, usTime: Long) {
-                runOnUiThread {
-                    rvFrame.adapter?.notifyDataSetChanged()
-                }
-            }
-
-            override fun onCodecStart() {
-                TODO("Not yet implemented")
-            }
-
-        })
-
+        val avFrameHelper = IFFmpegCodecFrameHelper(inputPath,null)
         avFrameHelper.setKzgPlayer(kzgPlayer!!)
         rvFrame.setAvFrameHelper(avFrameHelper)
 

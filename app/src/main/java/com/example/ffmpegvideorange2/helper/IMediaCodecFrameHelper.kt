@@ -52,7 +52,7 @@ class IMediaCodecFrameHelper(
     override var isScrolling: Boolean = false
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     //是初始化了recyclerView的Item
-    override var isInitItem = false
+    private var isInitItem = false
     private var lastCodecFramePts = 0L
     private var mapEntry:Map.Entry<ImageView,TargetBean>? = null
     private var startTime = 0L
@@ -90,14 +90,6 @@ class IMediaCodecFrameHelper(
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
         }
-    }
-
-    override fun setTargetTime(timeUs:Long){
-
-    }
-
-    override fun clearTargetTimeMap() {
-
     }
 
     fun initMediaCodec(codecName: String?,

@@ -69,27 +69,6 @@ public class Utils {
         return list;
     }
 
-    /**
-     * 将存放帧时间信息的map进行排序  升序
-     * @param hashMap
-     * @return
-     */
-    public static ArrayList<Map.Entry<Long,Boolean>> sortHashMap2(Hashtable hashMap){
-        ArrayList<Map.Entry<Long,Boolean>> list = new ArrayList(hashMap.entrySet());
-        Collections.sort(list, new Comparator<Map.Entry<Long, Boolean>>() {
-
-            @Override
-            public int compare(Map.Entry<Long, Boolean> t0, Map.Entry<Long, Boolean> t1) {
-                return (int) (t0.getKey() - t1.getKey());
-            }
-
-        });
-        for (int i = 0; i < list.size(); i++) {
-            Log.e("kzg","**************sortHashMap2:"+list.get(i));
-        }
-        return list;
-    }
-
 
     /**
      *  计算缩放到指定宽高，的缩放比

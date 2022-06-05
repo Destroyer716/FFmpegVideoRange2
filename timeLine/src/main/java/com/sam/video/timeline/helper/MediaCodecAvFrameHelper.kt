@@ -25,7 +25,7 @@ import kotlin.math.log
 
 class MediaCodecAvFrameHelper(
     override var filePath: String,
-    override var onGetFrameBitmapCallback: OnGetFrameBitmapCallback?,
+    override var onGetFrameBitmapCallback: OnGetFrameBitmapCallback?
 ) : IAvFrameHelper,Runnable{
 
     private val COLOR_FormatI420 = 1
@@ -50,7 +50,6 @@ class MediaCodecAvFrameHelper(
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     override var lastBitMap: Bitmap? = null
     override var isScrolling: Boolean = false
-    override var isInitItem: Boolean = false
 
     override fun init(){
         OUTPUT_DIR = Environment.getExternalStorageDirectory().toString() + "/jpe/"
@@ -92,14 +91,6 @@ class MediaCodecAvFrameHelper(
             }
         }*/
         //extract?.seekTo(timeMs, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
-    }
-
-    override fun setTargetTime(timeUs: Long) {
-
-    }
-
-    override fun clearTargetTimeMap() {
-
     }
 
     override fun release() {
