@@ -2,9 +2,9 @@ package com.sam.video.timeline.adapter
 
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
-import com.bumptech.glide.Glide
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.BaseViewHolder
 import com.sam.video.R
@@ -56,7 +56,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         }
 
         imageView.tag = item.frameClipTime * 1000
-        Log.e("kzg","************************position:${helper.adapterPosition}  ,timeUs:${imageView.tag}")
+        Log.e("kzg","************************position:${helper}  ,timeUs:${imageView.tag}")
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 
@@ -87,6 +87,16 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
     }
 
 
+    override fun onViewDetachedFromWindow(holder: BaseViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        avframeHelper?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
+        //Log.e("kzg","*******************onViewDetachedFromWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
+    }
+
+    override fun onViewAttachedToWindow(holder: BaseViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        Log.e("kzg","*******************onViewAttachedToWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
+    }
 }
 
 

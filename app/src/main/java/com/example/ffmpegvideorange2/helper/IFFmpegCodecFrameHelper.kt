@@ -6,6 +6,7 @@ import android.os.Environment
 import android.text.TextUtils
 import android.util.Log
 import android.widget.ImageView
+import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.*
 import com.example.myplayer.KzgPlayer
 import com.sam.video.timeline.bean.TargetBean
@@ -16,6 +17,7 @@ import com.sam.video.timeline.helper.OnGetFrameBitmapCallback
 import com.sam.video.util.md5
 import com.sam.video.util.notNull
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 
 class IFFmpegCodecFrameHelper(
@@ -26,7 +28,7 @@ class IFFmpegCodecFrameHelper(
     private var kzgPlayer:KzgPlayer? = null
     var yuvQueue: YuvQueue = YuvQueue()
 
-    var targetViewMap:Hashtable<ImageView, TargetBean> = Hashtable()
+    var targetViewMap: ConcurrentHashMap<ImageView, TargetBean> = ConcurrentHashMap()
     private var childThread:Thread? = null
     //是否停止解码线程
     private var isStop = false
@@ -52,6 +54,10 @@ class IFFmpegCodecFrameHelper(
 
     }
 
+    override fun loadAvFrame(view: RecyclerView.ViewHolder, timeMs: Long) {
+
+    }
+
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
         targetViewMap[view] = targetViewMap[view]?:TargetBean()
         Log.e("kzg","**************seekTime0:${timeMs} , $view , ${view.tag}")
@@ -63,18 +69,19 @@ class IFFmpegCodecFrameHelper(
         if (targetViewMap[view]?.timeUs != timeMs){
             targetViewMap[view]?.timeUs = timeMs
             targetViewMap[view]?.isAddFrame = false
-           /* diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
-                if (targetViewMap[view]?.timeUs == us){
-                    Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
-                    bp?.let {
-                        targetViewMap[view]?.isAddFrame = true
-                        view.setImageBitmap(it)
-                    }
-                }
+            targetViewMap[view]?.isRemoveTag = false
+            /* diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+                 if (targetViewMap[view]?.timeUs == us){
+                     Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
+                     bp?.let {
+                         targetViewMap[view]?.isAddFrame = true
+                         view.setImageBitmap(it)
+                     }
+                 }
 
-            },{
-                Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-            })*/
+             },{
+                 Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
+             })*/
 
         }
 
@@ -82,6 +89,19 @@ class IFFmpegCodecFrameHelper(
         if (!isInitItem) {
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
+        }
+    }
+
+    override fun removeAvFrameTag(view: ImageView) {
+        targetViewMap[view]?.isRemoveTag = true
+    }
+
+    override fun removeAvFrame() {
+        Log.e("kzg","*/****************removeAvFrame size:${targetViewMap.size}")
+        targetViewMap.forEach {
+            if (it.value.isRemoveTag){
+                targetViewMap.remove(it.key)
+            }
         }
     }
 
@@ -114,15 +134,23 @@ class IFFmpegCodecFrameHelper(
 
     override fun run() {
         while (!isStop){
-            if (yuvQueue.queueSize  == 0 || isScrolling){
+
+            if (yuvQueue.queueSize  == 0){
                 Thread.sleep(10)
                 if (!isScrolling){
                     kzgPlayer?.pauseGetPacket(false)
                 }
                 continue
             }
+            if (isScrolling){
+                removeAvFrame()
+                Thread.sleep(10)
+                continue
+            }
+
 
             //遍历ImageView 匹配时间，转换yuv为bitmap
+            Log.e("kzg","*/****************targetViewMap size:${targetViewMap.size}")
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     if (isScrolling){
@@ -186,7 +214,7 @@ class IFFmpegCodecFrameHelper(
     override fun seek() {
         Log.e("kzg","****************开始seek")
         startTime = System.currentTimeMillis()
-        Utils.sortHashMap(targetViewMap).apply {
+        Utils.sortHashMapForHolder(targetViewMap).apply {
             var i=0
             var j=0
             var minTimeUs = Long.MAX_VALUE

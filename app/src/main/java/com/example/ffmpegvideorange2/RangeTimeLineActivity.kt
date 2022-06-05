@@ -7,8 +7,10 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.helper.IFFmpegCodecFrameHelper
 import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
 import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
@@ -237,6 +239,16 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
         })
         rvFrame.addOnScrollListener(handler)
+
+        /*rvFrame.addOnChildAttachStateChangeListener(object:RecyclerView.OnChildAttachStateChangeListener{
+            override fun onChildViewAttachedToWindow(view: View) {
+
+            }
+
+            override fun onChildViewDetachedFromWindow(view: View) {
+            }
+
+        })*/
         bindVideoData()
 
         val duration = VideoUtils.getVideoDuration(this, inputPath)
@@ -268,6 +280,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if (!kzgPlayer!!.enablePlay  || !timeLineScrollIsStop) {
                     return@setOnClickListener
                 }
+                rvFrame.getAvFrameHelper()?.removeAvFrame()
                 kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_DEFAULT
                 iv_play_stop_video.setImageResource(R.drawable.stop_ico)
 

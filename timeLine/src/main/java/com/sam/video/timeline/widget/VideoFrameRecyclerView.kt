@@ -14,7 +14,6 @@ import com.sam.video.timeline.adapter.VideoFrameAdapter
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.bean.VideoFrameData
 import com.sam.video.timeline.helper.IAvFrameHelper
-import com.sam.video.timeline.helper.MediaCodecAvFrameHelper
 import com.sam.video.timeline.helper.VideoDecoder2
 import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.util.dp2px

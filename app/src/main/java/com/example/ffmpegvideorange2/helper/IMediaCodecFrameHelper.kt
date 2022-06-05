@@ -7,6 +7,7 @@ import android.os.Environment
 import android.util.Log
 import android.view.Surface
 import android.widget.ImageView
+import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.ImageViewBitmapBean
 import com.example.ffmpegvideorange2.ShowFrameQueue
 import com.example.ffmpegvideorange2.Utils
@@ -24,6 +25,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 
 class IMediaCodecFrameHelper(
@@ -41,7 +43,7 @@ class IMediaCodecFrameHelper(
     val imageQueue:ShowFrameQueue = ShowFrameQueue()
 
     private var lastIDRIndex: Int = 0
-    var targetViewMap:Hashtable<ImageView, TargetBean> = Hashtable()
+    var targetViewMap: ConcurrentHashMap<ImageView, TargetBean> = ConcurrentHashMap()
     private var childThread:Thread? = null
     private var imageToBitmaptThread:Thread? = null
     //是否停止解码线程
@@ -72,6 +74,10 @@ class IMediaCodecFrameHelper(
         }
     }
 
+    override fun loadAvFrame(view: RecyclerView.ViewHolder, timeMs: Long) {
+
+    }
+
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
         targetViewMap[view] = targetViewMap[view]?:TargetBean()
         Log.e("kzg","**************seekTime0:${timeMs} , $view , ${view.tag}")
@@ -90,6 +96,14 @@ class IMediaCodecFrameHelper(
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
         }
+    }
+
+    override fun removeAvFrameTag(view: ImageView) {
+
+    }
+
+    override fun removeAvFrame() {
+
     }
 
     fun initMediaCodec(codecName: String?,

@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.ImageView;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.sam.video.timeline.bean.TargetBean;
 
 import java.io.File;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ToLongFunction;
 
 /**
@@ -55,7 +58,21 @@ public class Utils {
      * @param hashMap
      * @return
      */
-    public static ArrayList<Map.Entry<ImageView,TargetBean>> sortHashMap(Hashtable hashMap){
+    public static ArrayList<Map.Entry<RecyclerView.ViewHolder,TargetBean>> sortHashMapForHolder(ConcurrentHashMap hashMap){
+        ArrayList<Map.Entry<RecyclerView.ViewHolder,TargetBean>> list = new ArrayList(hashMap.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<RecyclerView.ViewHolder, TargetBean>>() {
+
+            @Override
+            public int compare(Map.Entry<RecyclerView.ViewHolder, TargetBean> t0, Map.Entry<RecyclerView.ViewHolder, TargetBean> t1) {
+                return (int) ((t0.getValue().getTimeUs()) - t1.getValue().getTimeUs());
+            }
+
+        });
+
+        return list;
+    }
+
+    public static ArrayList<Map.Entry<ImageView,TargetBean>> sortHashMap(ConcurrentHashMap hashMap){
         ArrayList<Map.Entry<ImageView,TargetBean>> list = new ArrayList(hashMap.entrySet());
         Collections.sort(list, new Comparator<Map.Entry<ImageView, TargetBean>>() {
 

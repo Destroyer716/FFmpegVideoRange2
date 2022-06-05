@@ -3,6 +3,7 @@ package com.sam.video.timeline.bean;
 public class TargetBean {
     private long timeUs;
     private boolean isAddFrame = false;
+    private boolean removeTag = false;
 
     public long getTimeUs() {
         return timeUs;
@@ -18,6 +19,14 @@ public class TargetBean {
 
     public void setAddFrame(boolean addFrame) {
         isAddFrame = addFrame;
+    }
+
+    public boolean isRemoveTag() {
+        return removeTag;
+    }
+
+    public void setRemoveTag(boolean removeTag) {
+        this.removeTag = removeTag;
     }
 
     @Override
