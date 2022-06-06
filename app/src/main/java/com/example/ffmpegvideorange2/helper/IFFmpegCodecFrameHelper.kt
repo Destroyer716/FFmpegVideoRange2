@@ -43,6 +43,7 @@ class IFFmpegCodecFrameHelper(
     private var startTime = 0L
     private var diskCache:DiskCacheAssist? = null
     private val mainKey = md5(filePath)
+    private var hasPause = false
 
 
     override fun init() {
@@ -55,7 +56,7 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun loadAvFrame(view: RecyclerView.ViewHolder, timeMs: Long) {
-
+        hasPause = false
     }
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
@@ -70,7 +71,8 @@ class IFFmpegCodecFrameHelper(
             targetViewMap[view]?.timeUs = timeMs
             targetViewMap[view]?.isAddFrame = false
             targetViewMap[view]?.isRemoveTag = false
-            /* diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+            hasPause = false
+             diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
                  if (targetViewMap[view]?.timeUs == us){
                      Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
                      bp?.let {
@@ -81,7 +83,7 @@ class IFFmpegCodecFrameHelper(
 
              },{
                  Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-             })*/
+             })
 
         }
 
@@ -147,10 +149,15 @@ class IFFmpegCodecFrameHelper(
                 Thread.sleep(10)
                 continue
             }
+            if (hasPause){
+                Thread.sleep(10)
+                continue
+            }
 
 
             //遍历ImageView 匹配时间，转换yuv为bitmap
             Log.e("kzg","*/****************targetViewMap size:${targetViewMap.size}")
+            hasPause = true
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
                     if (isScrolling){
@@ -158,6 +165,7 @@ class IFFmpegCodecFrameHelper(
                     }
                     yuvQueue.first?.let {bean ->
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
+                            hasPause = false
                             yuvQueue.deQueue()?.apply {
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
                                     || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
@@ -176,11 +184,11 @@ class IFFmpegCodecFrameHelper(
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
-                                           /* diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
                                                 Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
                                             },{ e ->
                                                 Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
-                                            })*/
+                                            })
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->

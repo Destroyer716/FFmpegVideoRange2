@@ -451,6 +451,9 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     }
 
 
+    /**
+     * 添加视频处理的帮助类，并初始化
+     */
     fun setAvFrameHelper(helper: IAvFrameHelper){
         helper.init()
         (adapter as VideoFrameAdapter).setAvframeHelper(helper)
