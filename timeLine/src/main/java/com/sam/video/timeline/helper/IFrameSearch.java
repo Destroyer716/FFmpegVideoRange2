@@ -15,6 +15,8 @@ public class IFrameSearch implements Runnable {
     public static CopyOnWriteArrayList<Long> IframeUs = new CopyOnWriteArrayList();
     private Thread thread;
     private boolean isStop = false;
+    //当前播放到的第几个gop
+    private int currentIFrameIndex = 0;
 
     public IFrameSearch(String path) {
         IframeUs.clear();
@@ -70,6 +72,32 @@ public class IFrameSearch implements Runnable {
         }
         Log.e("kzg","获取所有关键帧所在时间点耗时："+(System.currentTimeMillis() - startTime));
         return IframeUs;
+    }
+
+    /**
+     * 通过当前播放的时间点 获取所属的gop
+     * @param timeUs 微秒
+     * @return
+     */
+    public int getCurrentGopFromTimeUs(long timeUs){
+        for (int i=currentIFrameIndex;i<IframeUs.size();i++){
+            if (i == 1){
+                if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                    currentIFrameIndex = i-1;
+                    break;
+                }
+            }else if (i > 1){
+                if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                    currentIFrameIndex = i-1;
+                    break;
+                }
+            }
+        }
+        return currentIFrameIndex;
+    }
+
+    public long getCurrentIFrameTimeUs(){
+        return IframeUs.get(currentIFrameIndex);
     }
 
     @Override

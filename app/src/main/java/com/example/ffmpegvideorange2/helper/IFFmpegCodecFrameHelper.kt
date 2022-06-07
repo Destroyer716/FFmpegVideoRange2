@@ -156,7 +156,7 @@ class IFFmpegCodecFrameHelper(
 
 
             //遍历ImageView 匹配时间，转换yuv为bitmap
-            Log.e("kzg","*/****************targetViewMap size:${targetViewMap.size}")
+            //Log.e("kzg","*/****************targetViewMap size:${targetViewMap.size}")
             hasPause = true
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {

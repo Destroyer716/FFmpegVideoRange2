@@ -72,6 +72,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
     //是否发生了快速滚动，只要在一次滚动过程中 isDoSeekForPriviewFrame被赋值过为true 就算
     private var hasFastScoll = false
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_range_time_line)
@@ -210,9 +211,9 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                 if (velocity == 0 && hasFastScoll){
                     hasFastScoll = false
-                    Log.e("kzg","***********************开始解码显示最后一帧")
+                    Log.e("kzg","***********************开始解码显示最后一帧:${lastScrollTime}")
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
-                    //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
+
                 }
 
 
@@ -312,12 +313,15 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun updateTimeByScroll(time: Long) {
                 //逐帧预览时，才处理滚动
                 if ( KzgPlayer.PLAY_MODEL_FRAME_PREVIEW == kzgPlayer?.playModel){
+                    keyFramesTime?.getCurrentGopFromTimeUs(time*1000)
                     if (time > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
                             kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false)
                         }else{
-                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,true)
+                            val currentIFrame= keyFramesTime?.currentIFrameTimeUs?:0
+                            Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$time")
+                            kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true)
                         }
 
 
