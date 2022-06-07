@@ -61,7 +61,7 @@ class IFFmpegCodecFrameHelper(
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
         targetViewMap[view] = targetViewMap[view]?:TargetBean()
-        Log.e("kzg","**************seekTime0:${timeMs} , $view , ${view.tag}")
+        Log.e("kzg","**************seekTime0:$view , ${targetViewMap[view]?.timeUs}  ,${timeMs} ")
         lastBitMap?.let {
             if (targetViewMap[view]?.isAddFrame == false){
                 view.setImageBitmap(it)
@@ -95,7 +95,9 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun removeAvFrameTag(view: ImageView) {
+        Log.e("kzg","**************seekTime2:$view , ${targetViewMap[view]?.timeUs}")
         targetViewMap[view]?.isRemoveTag = true
+        targetViewMap[view]?.timeUs = -1L
     }
 
     override fun removeAvFrame() {

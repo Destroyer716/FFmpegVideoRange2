@@ -199,7 +199,7 @@ void *videoPlay(void *arg){
                     }*/
 
                     if (kzgVideo->kzgPlayerStatus->isBackSeekFramePreview || (!kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->kzgPlayerStatus->isBackSeekForAdvance)){
-                        //后退专题的逐帧预览
+                        //后退专题的逐帧预览，或者是快速向前滑动时，
                         if ((avFrame->pts *av_q2d( kzgVideo->time_base)* AV_TIME_BASE) < kzgVideo->seekTime && !kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
                             av_frame_free(&avFrame);
                             av_free(avFrame);
@@ -396,6 +396,7 @@ void *videoPlay(void *arg){
                 if( !kzgVideo->kzgPlayerStatus->isFramePreview){
                     kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
                 }
+                //向前快速滑动时，如果找到要显示的帧就恢复正常解码放队列
                 if (!kzgVideo->kzgPlayerStatus->isBackSeekFramePreview && kzgVideo->kzgPlayerStatus->isBackSeekForAdvance){
                     double pts = currentTime/1000000;
                     //LOGE("视频帧时间：%lf   总时间：%lf ",kzgVideo->showFrameTimestamp ,pts);
@@ -750,6 +751,13 @@ void KzgVideo::showFrame(double timestamp) {
         return;
 
     } else{
+        /**
+         * 当从队列中拿不到帧时，就设置isBackSeekForAdvance 状态，这样解码的时候，判断这个状态，会一直解码到当前时间点才停止
+         * 保证解码显示的准确性
+         */
+
+        this->showFrameTimestamp = timestamp;
+        kzgPlayerStatus->isBackSeekForAdvance = true;
         LOGE("kzgVideo frameQueue is empty");
     }
 

@@ -171,7 +171,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
                 //更新是否停止滚动的状态
-                Log.e("kzg","**********************onVelocityChanged:$velocity")
+                //Log.e("kzg","**********************onVelocityChanged:$velocity")
+                enablePlayStatus(velocity.toFloat())
                 //如果正在播放，就停止播放
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     stopPlayVideo()
@@ -320,7 +321,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false)
                         }else{
                             val currentIFrame= keyFramesTime?.currentIFrameTimeUs?:0
-                            Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$time")
+                            //Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$time")
                             kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true)
                         }
 
@@ -343,12 +344,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
             //惯性滑动才会触发
             override fun onVelocityChange(v: Float) {
                 //更新是否停止滚动的状态
-                timeLineScrollIsStop = v == 0F
+                enablePlayStatus(v)
                 //如果正在播放，就停止播放
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     stopPlayVideo()
                 }
-                Log.e("kzg","**********************onVelocityChange:$v  ,isScrolling:${rvFrame.getAvFrameHelper()?.isScrolling}")
+                //Log.e("kzg","**********************onVelocityChange:$v  ,timeLineScrollIsStop:${timeLineScrollIsStop}")
                 if (v > 0F){
                     //预览条向前滑动
                     if (v >= 200){
@@ -580,6 +581,14 @@ class RangeTimeLineActivity : AppCompatActivity(){
         iv_play_stop_video.setImageResource(R.drawable.play_ico)
     }
 
+
+    private fun enablePlayStatus(v:Float){
+        if (v != 0F){
+            timeLineScrollIsStop = false
+        }else{
+            zoomFrameLayout.postDelayed({ timeLineScrollIsStop = true },200)
+        }
+    }
 
     private fun changeSurfaceViewSize(widht: Int, height: Int) {
         var widht = widht
