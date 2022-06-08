@@ -23,6 +23,8 @@ interface IAvFrameHelper {
      */
     fun loadAvFrame(view: RecyclerView.ViewHolder, timeMs:Long)
 
+    fun addAvFrame(view:ImageView)
+
     fun loadAvFrame(view: ImageView, timeMs:Long)
 
     fun removeAvFrameTag(view:ImageView)

@@ -22,12 +22,12 @@ public interface VelocityTrackListener {
         }
 
         @Override
-        public void onScrollFast() {
+        public void onScrollFast(int velocity) {
 
         }
 
         @Override
-        public void onScrollSlow() {
+        public void onScrollSlow(int velocity) {
 
         }
     };
@@ -40,10 +40,10 @@ public interface VelocityTrackListener {
     /**
      * 快速滚动
      */
-    void onScrollFast();
+    void onScrollFast(int velocity);
 
     /**
      * 慢速滚动或停止滚动
      */
-    void onScrollSlow();
+    void onScrollSlow(int velocity);
 }

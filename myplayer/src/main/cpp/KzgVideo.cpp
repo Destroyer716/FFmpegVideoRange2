@@ -188,10 +188,10 @@ void *videoPlay(void *arg){
 
 
             if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
-                LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld  ,isBackSeekFramePreview:%d   , isBackSeekForAdvance:%d ",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime,kzgVideo->kzgPlayerStatus->isBackSeekFramePreview,kzgVideo->kzgPlayerStatus->isBackSeekForAdvance);
+                //LOGE("子线程解码一个AVframe成功  timestamp:%lf,    seekTime:%lld  ,isBackSeekFramePreview:%d   , isBackSeekForAdvance:%d ",(avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE),kzgVideo->seekTime,kzgVideo->kzgPlayerStatus->isBackSeekFramePreview,kzgVideo->kzgPlayerStatus->isBackSeekForAdvance);
                 //LOGE("codec AV_PIX_FMT_YUV420P");
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
-                    LOGE("codec AV_PIX_FMT_YUV420P  isFramePreview");
+                    //LOGE("codec AV_PIX_FMT_YUV420P  isFramePreview");
                     //逐帧预览
                     /*for (int i = 0; i <100 ; ++i) {
                         //查看YUV对齐
@@ -681,7 +681,7 @@ void KzgVideo::setIsFramePreview(bool isFramePreview) {
 
 void KzgVideo::showFrame(double timestamp) {
 
-    LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
+    //LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
     if (frameQueue != NULL && frameQueue->getQueueSize() > 0){
 
         AVFrame *avFrame = av_frame_alloc();
@@ -758,7 +758,7 @@ void KzgVideo::showFrame(double timestamp) {
 
         this->showFrameTimestamp = timestamp;
         kzgPlayerStatus->isBackSeekForAdvance = true;
-        LOGE("kzgVideo frameQueue is empty");
+        //LOGE("kzgVideo frameQueue is empty");
     }
 
 

@@ -55,8 +55,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
             frameWidth
         }
 
-        imageView.tag = item.frameClipTime * 1000
-        Log.e("kzg","************************position:${helper}  ,timeUs:${imageView.tag}")
+        imageView.tag = helper.adapterPosition
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 
@@ -87,15 +86,18 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
     }
 
 
+
     override fun onViewDetachedFromWindow(holder: BaseViewHolder) {
-        super.onViewDetachedFromWindow(holder)
         avframeHelper?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
         //Log.e("kzg","*******************onViewDetachedFromWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
+        super.onViewDetachedFromWindow(holder)
     }
 
     override fun onViewAttachedToWindow(holder: BaseViewHolder) {
+        /*avframeHelper?.addAvFrame(holder.itemView.findViewById<ImageView>(R.id.iv))
+        Log.e("kzg","*******************onViewAttachedToWindow:${holder.layoutPosition}")*/
         super.onViewAttachedToWindow(holder)
-        Log.e("kzg","*******************onViewAttachedToWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
+
     }
 }
 

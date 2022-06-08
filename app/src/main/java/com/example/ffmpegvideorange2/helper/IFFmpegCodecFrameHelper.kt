@@ -43,7 +43,10 @@ class IFFmpegCodecFrameHelper(
     private var startTime = 0L
     private var diskCache:DiskCacheAssist? = null
     private val mainKey = md5(filePath)
+    //是否应该暂停 循环线程
     private var hasPause = false
+    //是否还有需要显示的抽帧
+    private var hasNeedShowFrame = true
 
 
     override fun init() {
@@ -61,7 +64,7 @@ class IFFmpegCodecFrameHelper(
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
         targetViewMap[view] = targetViewMap[view]?:TargetBean()
-        Log.e("kzg","**************seekTime0:$view , ${targetViewMap[view]?.timeUs}  ,${timeMs} ")
+        Log.e("kzg","**************添加一个view:${view.tag} , ${targetViewMap[view]?.timeUs}  ,${timeMs} ")
         lastBitMap?.let {
             if (targetViewMap[view]?.isAddFrame == false){
                 view.setImageBitmap(it)
@@ -72,41 +75,41 @@ class IFFmpegCodecFrameHelper(
             targetViewMap[view]?.isAddFrame = false
             targetViewMap[view]?.isRemoveTag = false
             hasPause = false
-             diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
-                 if (targetViewMap[view]?.timeUs == us){
-                     Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
-                     bp?.let {
-                         targetViewMap[view]?.isAddFrame = true
-                         view.setImageBitmap(it)
-                     }
+         /*diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+             if (targetViewMap[view]?.timeUs == us){
+                 //Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
+                 bp?.let {
+                     targetViewMap[view]?.isAddFrame = true
+                     view.setImageBitmap(it)
                  }
+             }
 
-             },{
-                 Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-             })
-
+         },{
+             Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
+         })*/
         }
-
-
         if (!isInitItem) {
             isInitItem = true
             kzgPlayer?.pauseGetPacket(false)
         }
     }
 
+    override fun addAvFrame(view: ImageView) {
+
+    }
+
     override fun removeAvFrameTag(view: ImageView) {
-        Log.e("kzg","**************seekTime2:$view , ${targetViewMap[view]?.timeUs}")
+        Log.e("kzg","**************移除一个view:${view.tag} , ${targetViewMap[view]?.timeUs}")
         targetViewMap[view]?.isRemoveTag = true
-        targetViewMap[view]?.timeUs = -1L
     }
 
     override fun removeAvFrame() {
-        Log.e("kzg","*/****************removeAvFrame size:${targetViewMap.size}")
-        targetViewMap.forEach {
+        Log.e("kzg","*****************removeAvFrame size:${targetViewMap.size}")
+        /*targetViewMap.forEach {
             if (it.value.isRemoveTag){
                 targetViewMap.remove(it.key)
             }
-        }
+        }*/
     }
 
 
@@ -137,6 +140,7 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun run() {
+        var index = 0
         while (!isStop){
 
             if (yuvQueue.queueSize  == 0){
@@ -147,7 +151,6 @@ class IFFmpegCodecFrameHelper(
                 continue
             }
             if (isScrolling){
-                removeAvFrame()
                 Thread.sleep(10)
                 continue
             }
@@ -158,14 +161,16 @@ class IFFmpegCodecFrameHelper(
 
 
             //遍历ImageView 匹配时间，转换yuv为bitmap
-            //Log.e("kzg","*/****************targetViewMap size:${targetViewMap.size}")
             hasPause = true
+            index = 0
             run task@{
                 Utils.sortHashMap(targetViewMap).forEach {
+                    index ++
                     if (isScrolling){
                         return@task
                     }
                     yuvQueue.first?.let {bean ->
+                        //需要的展示的视频帧时间 大于 当前解码的帧的时间 并且 需要展示的view 还没有展示帧
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
                             hasPause = false
                             yuvQueue.deQueue()?.apply {
@@ -186,11 +191,11 @@ class IFFmpegCodecFrameHelper(
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
-                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                            /*diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
                                                 Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
                                             },{ e ->
                                                 Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
-                                            })
+                                            })*/
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->
@@ -199,8 +204,6 @@ class IFFmpegCodecFrameHelper(
                                                     }
                                                 }
                                             }
-
-
                                         }
                                     }
                                 }
@@ -209,6 +212,7 @@ class IFFmpegCodecFrameHelper(
                     }
                 }
             }
+
         }
         Log.e("kzg","*******************结束预览条解码线程")
     }
@@ -233,7 +237,7 @@ class IFFmpegCodecFrameHelper(
                 //这里做两个判断，一个是这个imageview 并没有被填充需要的帧，还有就是当前需要的帧与需要显示的最大的那个帧的时间相差不能超过12秒
                 //这是为了进一步精确，因为可能会存在当前imageview标记的时间不是当前需要的最小的时间
                 Log.e("kzg","****************开始seek isAddFrame:${it.value.isAddFrame}  timeus:${it.value.timeUs} , size:${this.size}")
-                if (!it.value.isAddFrame ){
+                if (!it.value.isAddFrame && it.value.timeUs >=0){
                     if (!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs <= 12_000_000)){
                         minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
                         hasNoAddFrame = true
@@ -288,6 +292,10 @@ class IFFmpegCodecFrameHelper(
             }
             Log.e("kzg","****************seek结束")
             kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
+
+            targetViewMap.forEach {
+                Log.e("kzg","*****************targetViewMap.forEach:${it.key.tag}  ,${it.value}")
+            }
         }
     }
 

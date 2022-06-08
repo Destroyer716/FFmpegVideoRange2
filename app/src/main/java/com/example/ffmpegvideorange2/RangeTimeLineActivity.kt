@@ -171,7 +171,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
                 //更新是否停止滚动的状态
-                //Log.e("kzg","**********************onVelocityChanged:$velocity")
+                Log.e("kzg","**********************onVelocityChanged:$velocity")
                 enablePlayStatus(velocity.toFloat())
                 //如果正在播放，就停止播放
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
@@ -214,13 +214,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     hasFastScoll = false
                     Log.e("kzg","***********************开始解码显示最后一帧:${lastScrollTime}")
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
-
                 }
 
 
             }
 
-            override fun onScrollFast() {
+            override fun onScrollFast(velocity:Int) {
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     //快速向前滚动，暂停解码
                     rvFrame.getAvFrameHelper()?.isScrolling = true
@@ -228,15 +227,12 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
             }
 
-            override fun onScrollSlow() {
+            override fun onScrollSlow(velocity:Int) {
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
-                    val findFirstVisibleItemPosition =
-                        (rvFrame.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-                    //Log.e("kzg","***************************tag:${(rvFrame.adapter as VideoFrameAdapter).getItem(findFirstVisibleItemPosition-5)!!.frameClipTime * 1000},  findFirstVisibleItemPosition:${findFirstVisibleItemPosition}")
-                    rvFrame.getAvFrameHelper()?.seek()
+                     rvFrame.getAvFrameHelper()?.seek()
                 }
             }
         })

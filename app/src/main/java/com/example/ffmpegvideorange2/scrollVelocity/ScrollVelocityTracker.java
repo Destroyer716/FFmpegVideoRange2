@@ -136,12 +136,12 @@ public class ScrollVelocityTracker implements VelocityHandler {
                 if (mScrollFast) {
                     if (Math.abs(mVelocity) < mDownThreshold) {
                         mScrollFast = false;
-                        mListener.onScrollSlow();
+                        mListener.onScrollSlow(mVelocity);
                     }
                 } else {
                     if (Math.abs(mVelocity) > mUpThreshold) {
                         mScrollFast = true;
-                        mListener.onScrollFast();
+                        mListener.onScrollFast(mVelocity);
                     }
                 }
             }

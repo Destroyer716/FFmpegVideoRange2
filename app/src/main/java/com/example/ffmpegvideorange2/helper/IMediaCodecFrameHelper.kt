@@ -98,6 +98,10 @@ class IMediaCodecFrameHelper(
         }
     }
 
+    override fun addAvFrame(view: ImageView) {
+
+    }
+
     override fun removeAvFrameTag(view: ImageView) {
 
     }

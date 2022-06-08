@@ -34,6 +34,7 @@ public class TargetBean {
         return "TargetBean{" +
                 "timeUs=" + timeUs +
                 ", isAddFrame=" + isAddFrame +
+                ", removeTag=" + removeTag +
                 '}';
     }
 
