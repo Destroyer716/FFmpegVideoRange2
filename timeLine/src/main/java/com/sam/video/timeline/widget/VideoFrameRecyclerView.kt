@@ -38,6 +38,8 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     private val decorationWidth by lazy(LazyThreadSafetyMode.NONE) { context.dp2px(2f).toInt() }
     val halfDurationSpace = decorationWidth / 2
     private val videoFrameItemDecoration: VideoFrameItemDecoration
+    //每一帧的间隔时间 单位：毫秒
+    var frameForTime = 0L
 
 
     var scrollFlag = 0
@@ -118,6 +120,7 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
         }
         //一帧多少ms
         val frameTime = (frameWidth * 1000 / timeLineValue.pxInSecond).toLong()
+        frameForTime = frameTime
         //间隔对应多少ms
         val decorationTime = (decorationWidth * 1000 / timeLineValue.pxInSecond).toLong()
 
@@ -456,6 +459,7 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
      */
     fun setAvFrameHelper(helper: IAvFrameHelper){
         helper.init()
+        helper.itemFrameForTime = frameForTime
         (adapter as VideoFrameAdapter).setAvframeHelper(helper)
     }
     fun getAvFrameHelper():IAvFrameHelper?{

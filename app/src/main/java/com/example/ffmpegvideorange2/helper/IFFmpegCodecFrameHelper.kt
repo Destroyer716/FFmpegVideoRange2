@@ -32,11 +32,13 @@ class IFFmpegCodecFrameHelper(
     private var childThread:Thread? = null
     //是否停止解码线程
     private var isStop = false
+    override var isPause = false
     //当前最后解码出来的一个帧，用来作为还没有来得及解码的预览帧
     override var lastBitMap: Bitmap? = null
     override var isSeekBack: Boolean = true
     override var isScrolling: Boolean = false
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
+    override var itemFrameForTime:Long= 0
     //是初始化了recyclerView的Item
     private var isInitItem = false
     private var lastCodecFramePts = 0L
@@ -90,6 +92,7 @@ class IFFmpegCodecFrameHelper(
         }
         if (!isInitItem) {
             isInitItem = true
+            isPause = false
             kzgPlayer?.pauseGetPacket(false)
         }
     }
@@ -104,7 +107,7 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun removeAvFrame() {
-        Log.e("kzg","*****************removeAvFrame size:${targetViewMap.size}")
+        //Log.e("kzg","*****************removeAvFrame size:${targetViewMap.size}")
         targetViewMap.forEach {
             if (it.value.isRemoveTag){
                 targetViewMap.remove(it.key)
@@ -136,6 +139,7 @@ class IFFmpegCodecFrameHelper(
 
     override fun pause() {
         Log.e("kzg","**************pause:")
+        isPause = true
         kzgPlayer?.pauseGetPacket(true)
     }
 
@@ -146,6 +150,7 @@ class IFFmpegCodecFrameHelper(
             if (yuvQueue.queueSize  == 0){
                 Thread.sleep(10)
                 if (!isScrolling){
+                    isPause = false
                     kzgPlayer?.pauseGetPacket(false)
                 }
                 continue
@@ -181,6 +186,7 @@ class IFFmpegCodecFrameHelper(
                                     if (isScrolling){
                                         return@task
                                     }
+                                    isPause = false
                                     kzgPlayer?.pauseGetPacket(false)
                                     notNull(y,u,v){
                                         val bitmap = VideoUtils.rawByteArray2RGBABitmap2(VideoUtils.YUVToNv21(y,u,v),width,height,practicalWidth)
@@ -233,22 +239,33 @@ class IFFmpegCodecFrameHelper(
             var j=0
             var minTimeUs = Long.MAX_VALUE
             var hasNoAddFrame = false
+            var index = 0
             this.forEach {
-                //这里做两个判断，一个是这个imageview 并没有被填充需要的帧，还有就是当前需要的帧与需要显示的最大的那个帧的时间相差不能超过12秒
-                //这是为了进一步精确，因为可能会存在当前imageview标记的时间不是当前需要的最小的时间
-                Log.e("kzg","****************开始seek isAddFrame:${it.value.isAddFrame}  timeus:${it.value.timeUs} , size:${this.size}")
+                Log.e("kzg","****************开始seek isAddFrame:${it.value.isAddFrame}  timeus:${it.value.timeUs} , size:${this.size}  ,index:$index")
                 if (!it.value.isAddFrame && it.value.timeUs >=0){
-                    if (!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs <= 12_000_000)){
-                        minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
-                        hasNoAddFrame = true
-                    }else if(!isSeekBack&& (this[this.size - 1].value.timeUs - it.value.timeUs > 12_000_000)){
-                        it.value.isAddFrame = true
-                    }else if (isSeekBack){
-                        //回退的时候不需要判断最小帧与最大帧
-                        minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
-                        hasNoAddFrame = true
+                    if (!isSeekBack){
+                        //判断前后两帧时间间隔，大于每帧实际间隔就跳过这一帧
+                        if ((index + 1) < this.size && this[index + 1].value.timeUs - it.value.timeUs > itemFrameForTime * 1000){
+                            Log.e("kzg","*********************跳过一帧1")
+                            it.value.isAddFrame = true
+                        }else{
+                            minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                            hasNoAddFrame = true
+                        }
+
+                    }else{
+                        //判断前后两帧时间间隔，大于每帧实际间隔就跳过这一帧
+                        if ((index + 1) < this.size && this[index + 1].value.timeUs - it.value.timeUs > itemFrameForTime * 1000){
+                            Log.e("kzg","*********************跳过一帧2")
+                            it.value.isAddFrame = true
+                        }else{
+                            minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                            hasNoAddFrame = true
+                        }
+
                     }
                 }
+                index ++
             }
             //如果没有需要解码的帧，就直接返回
             if (!hasNoAddFrame){

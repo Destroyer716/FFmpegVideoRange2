@@ -49,10 +49,12 @@ class IMediaCodecFrameHelper(
     //是否停止解码线程
     private var isStop = false
     //当前最后解码出来的一个帧，用来作为还没有来得及解码的预览帧
+    override var isPause: Boolean = false
     override var lastBitMap: Bitmap? = null
     override var isSeekBack: Boolean = true
     override var isScrolling: Boolean = false
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
+    override var itemFrameForTime:Long= 0
     //是初始化了recyclerView的Item
     private var isInitItem = false
     private var lastCodecFramePts = 0L

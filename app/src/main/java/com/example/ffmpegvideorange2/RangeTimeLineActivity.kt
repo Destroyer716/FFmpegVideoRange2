@@ -186,7 +186,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                     rvFrame.getAvFrameHelper()?.seek()
                 }
 
@@ -211,6 +210,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     }
                 }
 
+                //这里处理快速滑动后，突然又反方向滑动，可能存在暂停了解码后无法回复解码的情况
+                if (velocity == 0 && rvFrame.getAvFrameHelper()?.isPause == true){
+                    rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.seek()
+                }
+
+                //快速滑动停止后，需要告诉底层最后停留在了那一帧
                 if (velocity == 0 && hasFastScoll){
                     hasFastScoll = false
                     Log.e("kzg","***********************开始解码显示最后一帧:${lastScrollTime}")
@@ -231,10 +237,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onScrollSlow(velocity:Int) {
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
-                Log.e("kzg","*******************onScrollSlow")
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                      rvFrame.getAvFrameHelper()?.seek()
                 }
             }
@@ -372,7 +376,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
                     if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
                         rvFrame.getAvFrameHelper()?.isScrolling = false
-                        rvFrame.getAvFrameHelper()?.removeAvFrame()
                         rvFrame.getAvFrameHelper()?.seek()
                     }
 
@@ -390,7 +393,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 //如果是向后滑动，并且速度为0，并且isScrolling=true,就开始解码
                 if (v == 0F && rvFrame.getAvFrameHelper()?.isScrolling == true){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                     rvFrame.getAvFrameHelper()?.seek()
                 }
 

@@ -783,7 +783,7 @@ int KzgFFmpeg::getAVCodecContext(AVCodecParameters *avCodecParameters,
         return -1;
     }
     (*avCodecContext)->thread_type = FF_THREAD_FRAME;
-    (*avCodecContext)->thread_count = 4;
+    (*avCodecContext)->thread_count = 2;
 
     ret = avcodec_open2(*avCodecContext,avCodec,0);
     if (ret != 0){

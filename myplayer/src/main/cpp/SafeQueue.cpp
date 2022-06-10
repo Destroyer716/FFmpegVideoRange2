@@ -29,26 +29,29 @@ int SafeQueue::putAvPacket(AVPacket *avPacket) {
 }
 
 int SafeQueue::getAvPacket(AVPacket *avPacket) {
-    pthread_mutex_lock(&mutexPacket);
-    while (playerStatus != NULL && !playerStatus->exit){
-        if (queuePacket.size() > 0){
-            AVPacket * packet1 = queuePacket.front();
-            int ret = av_packet_ref(avPacket,packet1);
-            if (ret == 0){
-                queuePacket.pop();
-            }
-            av_packet_free(&packet1);
-            av_free(packet1);
-            packet1 = NULL;
-            //LOGE("取出一个packet  当前剩余 %d 个",queuePacket.size());
-            break;
-        } else{
-            if (playerStatus != NULL && !playerStatus->exit){
-                pthread_cond_wait(&condPacket,&mutexPacket);
+    if (playerStatus != NULL && !playerStatus->exit){
+        pthread_mutex_lock(&mutexPacket);
+        while (playerStatus != NULL && !playerStatus->exit){
+            if (queuePacket.size() > 0){
+                AVPacket * packet1 = queuePacket.front();
+                int ret = av_packet_ref(avPacket,packet1);
+                if (ret == 0){
+                    queuePacket.pop();
+                }
+                av_packet_free(&packet1);
+                av_free(packet1);
+                packet1 = NULL;
+                //LOGE("取出一个packet  当前剩余 %d 个",queuePacket.size());
+                break;
+            } else{
+                if (playerStatus != NULL && !playerStatus->exit){
+                    pthread_cond_wait(&condPacket,&mutexPacket);
+                }
             }
         }
+        pthread_mutex_unlock(&mutexPacket);
     }
-    pthread_mutex_unlock(&mutexPacket);
+
     return 0;
 }
 

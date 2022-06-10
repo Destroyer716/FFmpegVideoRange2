@@ -189,7 +189,6 @@ class ZoomFrameLayout : FrameLayout,
             if (hasEventWithScale(e1, e2)) {
                 return true
             }
-            Log.e("kzg","*********************onScroll")
             scroll(distanceX, distanceY)
             onScrollVelocityChangeListener?.onScrollZoomFl(distanceX.toInt())
             return true
@@ -219,11 +218,11 @@ class ZoomFrameLayout : FrameLayout,
             velocityX: Float,
             velocityY: Float
         ): Boolean {
-            Log.e("kzg","**************onFling:$velocityX")
-            if (hasEventWithScale(e1, e2)) {
+
+
+            if (hasEventWithScale(e1, e2) ) {
                 return true
             }
-
             flingAnimation.apply {
                 cancel()
                 val max = timeLineValue.pxInSecond * timeLineValue.duration / 1000
@@ -311,7 +310,6 @@ class ZoomFrameLayout : FrameLayout,
         if (!scaleEnable) {
             return super.onTouchEvent(event)
         }
-        Log.e("kzg","********************onTouchEvent")
 
         if (event.action == MotionEvent.ACTION_DOWN) {
             timeChangeListener?.startTrackingTouch()
