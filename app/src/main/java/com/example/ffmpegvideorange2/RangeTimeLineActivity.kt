@@ -171,7 +171,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
                 //更新是否停止滚动的状态
-                Log.e("kzg","**********************onVelocityChanged:$velocity")
+                Log.e("kzg","**********************onVelocityChanged:$velocity  , isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack }")
                 enablePlayStatus(velocity.toFloat())
                 //如果正在播放，就停止播放
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
@@ -186,6 +186,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                     rvFrame.getAvFrameHelper()?.seek()
                 }
 
@@ -230,8 +231,10 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onScrollSlow(velocity:Int) {
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
+                Log.e("kzg","*******************onScrollSlow")
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                      rvFrame.getAvFrameHelper()?.seek()
                 }
             }
@@ -345,7 +348,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     stopPlayVideo()
                 }
-                //Log.e("kzg","**********************onVelocityChange:$v  ,timeLineScrollIsStop:${timeLineScrollIsStop}")
+                Log.e("kzg","**********************onVelocityChange:$v  ,timeLineScrollIsStop:${timeLineScrollIsStop}")
                 if (v > 0F){
                     //预览条向前滑动
                     if (v >= 200){
@@ -369,6 +372,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
                     if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
                         rvFrame.getAvFrameHelper()?.isScrolling = false
+                        rvFrame.getAvFrameHelper()?.removeAvFrame()
                         rvFrame.getAvFrameHelper()?.seek()
                     }
 
@@ -386,6 +390,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 //如果是向后滑动，并且速度为0，并且isScrolling=true,就开始解码
                 if (v == 0F && rvFrame.getAvFrameHelper()?.isScrolling == true){
                     rvFrame.getAvFrameHelper()?.isScrolling = false
+                    rvFrame.getAvFrameHelper()?.removeAvFrame()
                     rvFrame.getAvFrameHelper()?.seek()
                 }
 
@@ -545,6 +550,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         bean.y = y
                         bean.u = u
                         bean.v = v
+                        Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
                         (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
                         if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
                             rvFrame.getAvFrameHelper()?.pause()

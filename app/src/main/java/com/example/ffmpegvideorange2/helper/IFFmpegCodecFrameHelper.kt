@@ -105,11 +105,11 @@ class IFFmpegCodecFrameHelper(
 
     override fun removeAvFrame() {
         Log.e("kzg","*****************removeAvFrame size:${targetViewMap.size}")
-        /*targetViewMap.forEach {
+        targetViewMap.forEach {
             if (it.value.isRemoveTag){
                 targetViewMap.remove(it.key)
             }
-        }*/
+        }
     }
 
 
@@ -135,7 +135,7 @@ class IFFmpegCodecFrameHelper(
 
 
     override fun pause() {
-        //Log.e("kzg","**************pause:")
+        Log.e("kzg","**************pause:")
         kzgPlayer?.pauseGetPacket(true)
     }
 

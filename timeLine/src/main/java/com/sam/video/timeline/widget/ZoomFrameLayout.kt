@@ -189,6 +189,7 @@ class ZoomFrameLayout : FrameLayout,
             if (hasEventWithScale(e1, e2)) {
                 return true
             }
+            Log.e("kzg","*********************onScroll")
             scroll(distanceX, distanceY)
             onScrollVelocityChangeListener?.onScrollZoomFl(distanceX.toInt())
             return true
@@ -304,13 +305,13 @@ class ZoomFrameLayout : FrameLayout,
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         return ev.pointerCount > 1 || super.onInterceptTouchEvent(ev)
-
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
 //        Log.d("Sam", " $event ")
         if (!scaleEnable) {
             return super.onTouchEvent(event)
         }
+        Log.e("kzg","********************onTouchEvent")
 
         if (event.action == MotionEvent.ACTION_DOWN) {
             timeChangeListener?.startTrackingTouch()
