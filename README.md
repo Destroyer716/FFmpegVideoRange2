@@ -7,7 +7,7 @@
 这是剪映的预览条加载显示的速度效果
 
 https://i.ibb.co/yWcz7dX/My-Video-1-small.gif
-![image](https://i.ibb.co/yWcz7dX/My-Video-1-small.gif)
+![Image](https://i.ibb.co/yWcz7dX/My-Video-1-small.gif)
 
 
 
