@@ -7,7 +7,7 @@
 这是剪映的预览条加载显示的速度效果
 
 
-![Image](https://www.z4a.net/images/2022/06/14/MyVideo_1_small.gif)
+![Image](http://www.z4a.net/images/2022/06/14/MyVideo_1_small.gif)
 
 
 
