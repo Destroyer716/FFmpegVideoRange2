@@ -5,7 +5,7 @@
 
 下面是效果展示
 这是剪映的预览条加载显示的速度效果
-![Image](https://pic.imgdb.cn/item/62a8420d09475431294481d7.gif)
+![image](http://mytuchuang.test.upcdn.net/MyVideo_1_small.gif)
 
 
 
