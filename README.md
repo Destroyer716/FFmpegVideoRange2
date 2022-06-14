@@ -5,7 +5,8 @@
 
 下面是效果展示
 这是剪映的预览条加载显示的速度效果
-https://ibb.co/6g7KLrm
+
+![Image text](https://ibb.co/6g7KLrm)
 
 
 
