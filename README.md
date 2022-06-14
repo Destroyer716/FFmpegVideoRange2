@@ -5,9 +5,8 @@
 
 下面是效果展示
 这是剪映的预览条加载显示的速度效果
-![image](https://upload-images.jianshu.io/upload_images/12201132-77ac13aabad2bd57.gif)
+![image](http://mytuchuang.test.upcdn.net/MyVideo_1_small.gif)
 
-![MyVideo_1_small.gif](https://upload-images.jianshu.io/upload_images/12201132-77ac13aabad2bd57.gif?imageMogr2/auto-orient/strip)
 
 
 
