@@ -77,7 +77,7 @@ class IFFmpegCodecFrameHelper(
             targetViewMap[view]?.isAddFrame = false
             targetViewMap[view]?.isRemoveTag = false
             hasPause = false
-         /*diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+         diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
              if (targetViewMap[view]?.timeUs == us){
                  //Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
                  bp?.let {
@@ -88,7 +88,7 @@ class IFFmpegCodecFrameHelper(
 
          },{
              Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-         })*/
+         })
         }
         if (!isInitItem) {
             isInitItem = true
@@ -197,11 +197,11 @@ class IFFmpegCodecFrameHelper(
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
-                                            /*diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
                                                 Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
                                             },{ e ->
                                                 Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
-                                            })*/
+                                            })
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->
