@@ -5,7 +5,8 @@
 
 ### demo 需要在内部存储根目录创建一个testVideo目录，将测试视频放到这里
 
-### 开局先上图
+### 开局一张效果图
+![image](https://r.photo.store.qq.com/psc?/V53pYzs02rfsLh2OxXMT3ceYVs0kkY5m/ruAMsa53pVQWN7FLK88i5qoK1N7IVupmc5HnLP5pO6e036nwYkRdROZtREZhpAknqAIOvtltESQl5HleCjT.NfrR4F5CgkdUH411uS1K268!/mnull&bo=HAJ0BBwCdAQBCS4!&rf=photolist&t=5/r/_yake_qzoneimgout.png)
 ### 这是剪映的预览条加载显示的速度效果
 ![image](https://github.com/Destroyer716/tuchuang/blob/master/image/MyVideo_1_small.gif)
 
