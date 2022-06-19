@@ -5,6 +5,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.bumptech.glide.Glide
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.BaseViewHolder
 import com.sam.video.R
@@ -59,16 +60,18 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
 
-
-        /*Glide.with(imageView)
-            .asBitmap()
-            .load(item.videoData.originalFilePath)
-            .frame(item.frameClipTime * 1000)
-            .thumbnail(
-                //todo 更好的方案是往前找一个已经有的缓存帧
-                Glide.with(imageView).asBitmap().load(item.videoData.originalFilePath)
-            )
-            .into(imageView)*/
+        if (avframeHelper == null){
+            Glide.with(imageView)
+                .asBitmap()
+                .load(item.videoData.originalFilePath)
+                .frame(item.frameClipTime * 1000)
+                .thumbnail(
+                    //todo 更好的方案是往前找一个已经有的缓存帧
+                    Glide.with(imageView).asBitmap().load(item.videoData.originalFilePath)
+                )
+                .into(imageView)
+        }
+        /**/
     }
 
     fun setAvframeHelper(helper:IAvFrameHelper){
