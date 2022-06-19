@@ -80,6 +80,9 @@ public class KzgPlayer {
         this.source = source;
     }
 
+    /**
+     * 初始化播放器
+     */
     public void parpared(){
         if (TextUtils.isEmpty(source)){
             Log.e("kzg","source 为空");
@@ -89,6 +92,10 @@ public class KzgPlayer {
     }
 
 
+    /**
+     * 绑定surface view
+     * @param kzgGLSurfaceView
+     */
     public void setKzgGLSurfaceView(KzgGLSurfaceView kzgGLSurfaceView) {
         this.kzgGLSurfaceView = kzgGLSurfaceView;
         kzgGLSurfaceView.getKzgGlRender().setOnSurfaceCreateListener(new KzgGlRender.OnSurfaceCreateListener() {
@@ -100,6 +107,12 @@ public class KzgPlayer {
     }
 
 
+    /**
+     * 逐帧预览时显示目标帧 ，但是这里显示的目标帧还不够精准，需要优化
+     * @param timestamp 时间 单位时秒 可以有小数
+     * @param seekType 前进还是后退，
+     * @param isForAdvance 为了快速滑动后，显示目标帧
+     */
     public void showFrame(double timestamp,int seekType,boolean isForAdvance){
         //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
@@ -113,6 +126,9 @@ public class KzgPlayer {
 
     }
 
+    /**
+     * 开始播放，并设置音量和速度等一些参数
+     */
     public void start(){
         if (isPlaying || isPause){
             return;
@@ -130,6 +146,9 @@ public class KzgPlayer {
         n_play();
     }
 
+    /**
+     * 暂停播放
+     */
     public void pause(){
         if (isPlaying){
             n_pause();
@@ -138,6 +157,9 @@ public class KzgPlayer {
         }
     }
 
+    /**
+     * 继续播放
+     */
     public void resume(){
         if (isPause){
             n_resume();
@@ -146,6 +168,9 @@ public class KzgPlayer {
         }
     }
 
+    /**
+     * 停止播放
+     */
     public void stop() {
         if (!isPlaying){
             return;
@@ -163,16 +188,28 @@ public class KzgPlayer {
 
     }
 
+    /**
+     * 快进到目标时间，单位是秒
+     * @param sec
+     */
     public void seek(int sec){
         n_seek(sec,0);
     }
 
+    /**
+     * 播放下一个视频
+     * @param url
+     */
     public void playNext(String url){
         source = url;
         isPlayNext = true;
         stop();
     }
 
+    /**
+     * 获取视频总时长 单位秒
+     * @return
+     */
     public int getDuration(){
         if (duration < 0){
             duration = n_duration();
@@ -180,6 +217,10 @@ public class KzgPlayer {
         return duration;
     }
 
+    /**
+     * 设置音量
+     * @param vol
+     */
     public void setVolume(int vol){
         if (vol <= 0){
             vol = 0;
@@ -190,21 +231,37 @@ public class KzgPlayer {
         n_volume(vol);
     }
 
+    /**
+     * 设置播放速度
+     * @param speed
+     */
     public void setSpeed(float speed) {
         KzgPlayer.speed = speed;
         n_speed(speed);
     }
 
+    /**
+     * 设置音调
+     * @param pitch
+     */
     public void setPitch(float pitch) {
         KzgPlayer.pitch = pitch;
         n_pitch(pitch);
     }
 
+    /**
+     * 设置音量增益
+     * @param vol
+     */
     public void setAmplifyVol(float vol){
         amplifyVol = vol;
         n_amplifyVol(vol);
     }
 
+    /**
+     * 设置播放模式  分为正常播放和逐帧显示两种模式
+     * @param model
+     */
     public void setPlayModel(int model){
         playModel = model;
         n_playmodel(playModel);
@@ -218,6 +275,10 @@ public class KzgPlayer {
         return seekType;
     }
 
+    /**
+     * 使用mediacodec录制声音
+     * @param outFile
+     */
     public void startRecord(File outFile){
         if (n_sampleRate() > 0 && outFile != null){
             initMediaCodec(n_sampleRate(),outFile);
@@ -225,26 +286,46 @@ public class KzgPlayer {
     }
 
 
+    /**
+     * 初始化预览条抽帧
+     * @param source
+     */
     public void initGetFrame(String source){
         //n_init_frame(source);
         n_init_frame_by_ffmepg(source);
     }
 
+    /**
+     * 开启解码线程
+     */
     public void startGetFrame(){
         //n_start_get_frame();
         n_start_by_ffmpeg();
     }
 
+    /**
+     * 抽取目标帧，并通过判断目标是是否在当前GOP内，来决定是顺序解码还是先seek再解码
+     * @param sec seek时间，单位是秒，如果是在当前GOP 那么这个时间没有用，如果不是在当前GOP,这时间是目标时间GOP I帧的时间
+     * @param isCurrentGop  是否是在目标时间的同一个GOP
+     */
     public void seekFrame(double sec,boolean isCurrentGop){
         Log.e("kzg","***********************seekFrame:"+sec);
         n_frame_seek((int) (sec*1000),isCurrentGop);
     }
 
+    /**
+     * 根据时间情况，暂停抽帧或者开始抽帧
+     * @param isPause
+     */
     public void pauseGetPacket(boolean isPause){
         //Log.e("kzg","**************pauseGetPacket:"+isPause);
         n_pause_get_packet(isPause);
     }
 
+    /**
+     * 获取抽帧的AVPacket队列中 pts最大的那一帧的PTS,暂时没用
+     * @return
+     */
     public double getAvPacketQueueMaxPts(){
         return  n_get_avpacket_queue_max_pts();
     }
@@ -269,7 +350,7 @@ public class KzgPlayer {
     private native void n_showframeFromSeek(double timestamp);
 
 
-/************************按时间抽帧******************************************/
+/************************按时间抽帧 mediaCodec解码******************************************/
     private native void n_init_frame(String source);
     private native void n_start_get_frame();
     private native void n_frame_seek(int sec,boolean isCurrentGOP);
@@ -712,26 +793,6 @@ public class KzgPlayer {
         packetBean.setPts(timestamp);
         packetQueue.enQueue(packetBean);
 
-        /*try {
-            if(surface != null && dataSize > 0 && data != null && mediaCodec != null){
-                //获取可用的输入缓冲区下标
-                int inputBufferIndex = mediaCodec.dequeueInputBuffer(10);
-                if (inputBufferIndex >= 0){
-                    ByteBuffer byteBuffer = mediaCodec.getInputBuffers()[inputBufferIndex];
-                    byteBuffer.clear();
-                    byteBuffer.put(data);
-                    mediaCodec.queueInputBuffer(inputBufferIndex,0,dataSize,0,0);
-                }
-
-                int outputBufferIndex = mediaCodec.dequeueOutputBuffer(videoDecodeInfo, 10);
-                while (outputBufferIndex >= 0){
-                    mediaCodec.releaseOutputBuffer(outputBufferIndex,true);
-                    outputBufferIndex = mediaCodec.dequeueOutputBuffer(videoDecodeInfo, 10);
-                }
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }*/
     }
 
 
