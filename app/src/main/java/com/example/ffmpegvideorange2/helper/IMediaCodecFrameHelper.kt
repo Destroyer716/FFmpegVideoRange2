@@ -3,7 +3,6 @@ package com.example.ffmpegvideorange2.helper
 import android.graphics.*
 import android.media.*
 import android.os.Build
-import android.os.Environment
 import android.util.Log
 import android.view.Surface
 import android.widget.ImageView
@@ -15,7 +14,6 @@ import com.example.ffmpegvideorange2.VideoUtils
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.PacketQueue
 import com.example.myplayer.mediacodec.KzglVideoSupportUtil
-import com.example.myplayer.mediacodecframes.VideoToFrames
 import com.sam.video.timeline.bean.TargetBean
 import com.sam.video.timeline.helper.IAvFrameHelper
 import com.sam.video.timeline.helper.IFrameSearch
@@ -55,6 +53,8 @@ class IMediaCodecFrameHelper(
     override var isScrolling: Boolean = false
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     override var itemFrameForTime:Long= 0
+    override var iframeSearch:IFrameSearch? = null
+    override var videoIndex:Int = 0
     //是初始化了recyclerView的Item
     private var isInitItem = false
     private var lastCodecFramePts = 0L
@@ -96,7 +96,7 @@ class IMediaCodecFrameHelper(
 
         if (!isInitItem) {
             isInitItem = true
-            kzgPlayer?.pauseGetPacket(false)
+            kzgPlayer?.pauseGetPacket(false,videoIndex)
         }
     }
 
@@ -137,8 +137,8 @@ class IMediaCodecFrameHelper(
 
             mediaCodec!!.configure(mediaFormat, null, null, 0)
             mediaCodec!!.start()
-            kzgPlayer?.startGetFrame()
-            kzgPlayer?.getFrameListener?.onStarGetFrame()
+            kzgPlayer?.startGetFrame(videoIndex)
+            kzgPlayer?.getFrameListener?.onStarGetFrame(0)
             Log.e("kzg", "**************mediacodec 开始解码抽帧" )
         } catch (e: IOException) {
             e.printStackTrace()
@@ -173,7 +173,7 @@ class IMediaCodecFrameHelper(
 
     override fun pause() {
         Log.e("kzg","**************pause:")
-        kzgPlayer?.pauseGetPacket(true)
+        kzgPlayer?.pauseGetPacket(true,videoIndex)
     }
 
     override fun run() {
@@ -190,7 +190,7 @@ class IMediaCodecFrameHelper(
                     packetQueue.first?.let {bean ->
                         if ((it.value.timeUs.toDouble() >= bean.pts && !it.value.isAddFrame) || !it.value.isAddFrame){
                             if (packetQueue.queueSize < 10 && !isScrolling){
-                                kzgPlayer?.pauseGetPacket(false)
+                                kzgPlayer?.pauseGetPacket(false,videoIndex)
                             }
                             packetQueue.deQueue().apply {
                                 if (this !=null && this.data != null && this.data.isNotEmpty()){
@@ -249,17 +249,17 @@ class IMediaCodecFrameHelper(
                 return
             }
             val func =  {
-                val ite = IFrameSearch.IframeUs.iterator()
+                val ite = iframeSearch!!.IframeUs.iterator()
                 var index = 0
                 while (ite.hasNext()){
                     val frame = ite.next()
                     //当前recyclerView最小的item帧的时间戳所属的gop index
-                    if (index > 0 && minTimeUs >=IFrameSearch.IframeUs[index - 1] && minTimeUs < frame){
+                    if (index > 0 && minTimeUs >=iframeSearch!!.IframeUs[index - 1] && minTimeUs < frame){
                         i = index
                     }
 
                     //已解码的帧的pts所属的gop
-                    if (index > 0 && lastCodecFramePts >=IFrameSearch.IframeUs[index - 1] && lastCodecFramePts < frame ){
+                    if (index > 0 && lastCodecFramePts >=iframeSearch!!.IframeUs[index - 1] && lastCodecFramePts < frame ){
                         j = index
                     }
                     index ++
@@ -281,10 +281,10 @@ class IMediaCodecFrameHelper(
                 }
             }
             //如果还在一个gop内，就取需要显示的帧的时间（这种情况其实不需要用到这个），如果不在同一个gop,就取要显示的的帧的pts所在的gop
-            val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else IFrameSearch.IframeUs[i-1]/1000_000.0).apply {
+            val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else iframeSearch!!.IframeUs[i-1]/1000_000.0).apply {
                 Log.e("kzg","********************需要seek的I帧:$this  ， 实际需要展示的时间最小帧：${minTimeUs}")
             }
-            kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop)
+            kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop,videoIndex)
         }
     }
 

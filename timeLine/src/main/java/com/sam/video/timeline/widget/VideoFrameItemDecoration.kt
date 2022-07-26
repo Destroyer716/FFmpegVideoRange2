@@ -2,6 +2,7 @@ package com.sam.video.timeline.widget
 
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -64,6 +65,7 @@ class VideoFrameItemDecoration(context: Context) : RecyclerView.ItemDecoration()
     override fun onDrawOver(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
         super.onDrawOver(canvas, parent, state)
         if (!hasBorder) {
+            (parent as? VideoFrameRecyclerView)?.currentCursorVideoIndex()
             return
         }
         val adapter = parent.adapter
@@ -71,7 +73,7 @@ class VideoFrameItemDecoration(context: Context) : RecyclerView.ItemDecoration()
             return
         }
         (parent as? VideoFrameRecyclerView)?.getCurrentCursorVideoRect(rect)
-//        Log.d("SAM", "onDrawOver " +rect.toShortString())
+        //Log.d("SAM", "onDrawOver " +rect.toShortString())
         if (rect.width() == 0f) {
             return
         }

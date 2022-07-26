@@ -27,9 +27,9 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jmid_calljavaqueuesize = env->GetMethodID(jclass1,"onCallJavaQueueSize","()I");
     jmid_getVideoInfo = env->GetMethodID(jclass1,"onGetVideoInfo","(IJII)V");
     jmid_enablePlay = env->GetMethodID(jclass1,"onEnableStartPlay","(Z)V");
-    jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","(Ljava/lang/String;II[B[B)V");
-    jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(ID[B)V");
-    jmid_onCallYUVToBitmap = env->GetMethodID(jclass1,"onCallYUVToBitmap","(II[B[B[BID)V");
+    jmid_onGetFrameInitSuccess = env->GetMethodID(jclass1,"onGetFrameInitSuccess","(Ljava/lang/String;II[B[BI)V");
+    jmid_onGetFramePacket = env->GetMethodID(jclass1,"getFramePacket","(ID[BI)V");
+    jmid_onCallYUVToBitmap = env->GetMethodID(jclass1,"onCallYUVToBitmap","(II[B[B[BIDI)V");
     jmid_onCallYUVToBitmap2 = env->GetMethodID(jclass1,"onCallYUVToBitmap2","(II[BID)V");
 }
 
@@ -344,7 +344,7 @@ void JavaCallHelper::onEnablePlay(bool enable, int thread) {
     }
 }
 
-void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1) {
+void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1,int index) {
     JNIEnv *jniEnv;
     if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
         return;
@@ -355,14 +355,14 @@ void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int h
     jbyteArray csd1 = jniEnv->NewByteArray(csd1_size);
     jniEnv->SetByteArrayRegion(csd1, 0, csd1_size, reinterpret_cast<const jbyte *>(csd_1));
 
-    jniEnv->CallVoidMethod(jobj,jmid_onGetFrameInitSuccess,name,width,height,csd0,csd1);
+    jniEnv->CallVoidMethod(jobj,jmid_onGetFrameInitSuccess,name,width,height,csd0,csd1,index);
     jniEnv->DeleteLocalRef(name);
     jniEnv->DeleteLocalRef(csd0);
     jniEnv->DeleteLocalRef(csd1);
     javaVm->DetachCurrentThread();
 }
 
-void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data) {
+void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data,int index) {
     JNIEnv *jniEnv;
     if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
         return;
@@ -371,13 +371,13 @@ void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data) {
     jbyteArray avpacket = jniEnv->NewByteArray(dataSize);
     jniEnv->SetByteArrayRegion(avpacket, 0, dataSize, reinterpret_cast<const jbyte *>(data));
 
-    jniEnv->CallVoidMethod(jobj,jmid_onGetFramePacket,dataSize,pts,avpacket);
+    jniEnv->CallVoidMethod(jobj,jmid_onGetFramePacket,dataSize,pts,avpacket,index);
     jniEnv->DeleteLocalRef(avpacket);
     javaVm->DetachCurrentThread();
 }
 
 void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv,
-                                       int practicalWidth,double pts, int thread) {
+                                       int practicalWidth,double pts,int index, int thread) {
     if (thread == THREAD_CHILD) {
         JNIEnv *jniEnv;
         if (javaVm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
@@ -394,7 +394,7 @@ void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8
         jniEnv->SetByteArrayRegion(v, 0, width * height / 4, reinterpret_cast<const jbyte *>(fv));
 
         jniEnv->CallVoidMethod(jobj, jmid_onCallYUVToBitmap, width, height, y, u, v, practicalWidth,
-                               pts);
+                               pts,index);
 
         jniEnv->DeleteLocalRef(y);
         jniEnv->DeleteLocalRef(u);
@@ -411,7 +411,7 @@ void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8
         jbyteArray v = env->NewByteArray(width * height / 4);
         env->SetByteArrayRegion(v, 0, width * height / 4, reinterpret_cast<const jbyte *>(fv));
         env->CallVoidMethod(jobj, jmid_onCallYUVToBitmap, width, height, y, u, v, practicalWidth,
-                            pts);
+                            pts,index);
 
         env->DeleteLocalRef(y);
         env->DeleteLocalRef(u);

@@ -168,7 +168,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             @Override
             public void onPrepare() {
                 Log.e("kzg","*********************onPrepare success");
-                kzgPlayer.start();
+                kzgPlayer.start(0);
             }
 
             @Override

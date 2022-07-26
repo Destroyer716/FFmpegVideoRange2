@@ -87,7 +87,7 @@ class ZoomFrameLayout : FrameLayout,
         val offsetTime = (x * 1000 / timeLineValue.pxInSecond).toLong()
         if (offsetTime != 0L) {
             flingAnimation.cancel()
-//            Log.d("Sam", "scroll $x $offsetTime ${timeLineValue.time}")
+            //Log.d("kzg", "scroll $x $offsetTime ${timeLineValue.time}")
             timeLineValue.time += offsetTime
             timeValueHolder.value = timeLineValue.time.toFloat() * timeLineValue.pxInSecond / 1000
             updateTimeByScroll(timeLineValue.time)

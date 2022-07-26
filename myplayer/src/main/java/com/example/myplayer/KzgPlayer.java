@@ -1,3 +1,4 @@
+
 package com.example.myplayer;
 
 import android.graphics.ImageFormat;
@@ -113,15 +114,15 @@ public class KzgPlayer {
      * @param seekType 前进还是后退，
      * @param isForAdvance 为了快速滑动后，显示目标帧
      */
-    public void showFrame(double timestamp,int seekType,boolean isForAdvance){
+    public void showFrame(double timestamp,int seekType,boolean isForAdvance,int index){
         //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
-            n_seek((int) (timestamp*1000),isForAdvance?1:0);
+            n_seek((int) (timestamp*1000),isForAdvance?1:0,index);
         }else {
             //前进时的逐帧显示
-            n_showframe(timestamp,isForAdvance?1:0);
+            n_showframe(timestamp,isForAdvance?1:0,index);
         }
 
     }
@@ -129,7 +130,7 @@ public class KzgPlayer {
     /**
      * 开始播放，并设置音量和速度等一些参数
      */
-    public void start(){
+    public void start(int index){
         if (isPlaying || isPause){
             return;
         }
@@ -139,19 +140,19 @@ public class KzgPlayer {
         }
         isPlaying = true;
         setPlayModel(playModel);
-        setVolume(volume);
-        setPitch(pitch);
-        setSpeed(speed);
-        setAmplifyVol(amplifyVol);
-        n_play();
+        setVolume(volume,index);
+        setPitch(pitch,index);
+        setSpeed(speed,index);
+        setAmplifyVol(amplifyVol,index);
+        n_play(0);
     }
 
     /**
      * 暂停播放
      */
-    public void pause(){
+    public void pause(int index){
         if (isPlaying){
-            n_pause();
+            n_pause(index);
             isPlaying = false;
             isPause = true;
         }
@@ -160,9 +161,9 @@ public class KzgPlayer {
     /**
      * 继续播放
      */
-    public void resume(){
+    public void resume(int index){
         if (isPause){
-            n_resume();
+            n_resume(index);
             isPlaying = true;
             isPause = false;
         }
@@ -192,8 +193,8 @@ public class KzgPlayer {
      * 快进到目标时间，单位是秒
      * @param sec
      */
-    public void seek(int sec){
-        n_seek(sec,0);
+    public void seek(int sec,int index){
+        n_seek(sec,0,index);
     }
 
     /**
@@ -210,9 +211,9 @@ public class KzgPlayer {
      * 获取视频总时长 单位秒
      * @return
      */
-    public int getDuration(){
+    public int getDuration(int index){
         if (duration < 0){
-            duration = n_duration();
+            duration = n_duration(index);
         }
         return duration;
     }
@@ -221,41 +222,41 @@ public class KzgPlayer {
      * 设置音量
      * @param vol
      */
-    public void setVolume(int vol){
+    public void setVolume(int vol,int index){
         if (vol <= 0){
             vol = 0;
         }else if (vol > 100){
             vol = 100;
         }
         volume = vol;
-        n_volume(vol);
+        n_volume(vol,index);
     }
 
     /**
      * 设置播放速度
      * @param speed
      */
-    public void setSpeed(float speed) {
+    public void setSpeed(float speed,int index) {
         KzgPlayer.speed = speed;
-        n_speed(speed);
+        n_speed(speed,index);
     }
 
     /**
      * 设置音调
      * @param pitch
      */
-    public void setPitch(float pitch) {
+    public void setPitch(float pitch,int index) {
         KzgPlayer.pitch = pitch;
-        n_pitch(pitch);
+        n_pitch(pitch,index);
     }
 
     /**
      * 设置音量增益
      * @param vol
      */
-    public void setAmplifyVol(float vol){
+    public void setAmplifyVol(float vol,int index){
         amplifyVol = vol;
-        n_amplifyVol(vol);
+        n_amplifyVol(vol,index);
     }
 
     /**
@@ -279,9 +280,9 @@ public class KzgPlayer {
      * 使用mediacodec录制声音
      * @param outFile
      */
-    public void startRecord(File outFile){
-        if (n_sampleRate() > 0 && outFile != null){
-            initMediaCodec(n_sampleRate(),outFile);
+    public void startRecord(File outFile,int index){
+        if (n_sampleRate(index) > 0 && outFile != null){
+            initMediaCodec(n_sampleRate(index),outFile);
         }
     }
 
@@ -290,17 +291,17 @@ public class KzgPlayer {
      * 初始化预览条抽帧
      * @param source
      */
-    public void initGetFrame(String source){
+    public void initGetFrame(String source,int index){
         //n_init_frame(source);
-        n_init_frame_by_ffmepg(source);
+        n_init_frame_by_ffmepg(source,index);
     }
 
     /**
      * 开启解码线程
      */
-    public void startGetFrame(){
+    public void startGetFrame(int index){
         //n_start_get_frame();
-        n_start_by_ffmpeg();
+        n_start_by_ffmpeg(index);
     }
 
     /**
@@ -308,58 +309,69 @@ public class KzgPlayer {
      * @param sec seek时间，单位是秒，如果是在当前GOP 那么这个时间没有用，如果不是在当前GOP,这时间是目标时间GOP I帧的时间
      * @param isCurrentGop  是否是在目标时间的同一个GOP
      */
-    public void seekFrame(double sec,boolean isCurrentGop){
+    public void seekFrame(double sec,boolean isCurrentGop,int index){
         Log.e("kzg","***********************seekFrame:"+sec);
-        n_frame_seek((int) (sec*1000),isCurrentGop);
+        n_frame_seek((int) (sec*1000),isCurrentGop,index);
     }
 
     /**
      * 根据时间情况，暂停抽帧或者开始抽帧
      * @param isPause
      */
-    public void pauseGetPacket(boolean isPause){
+    public void pauseGetPacket(boolean isPause,int index){
         //Log.e("kzg","**************pauseGetPacket:"+isPause);
-        n_pause_get_packet(isPause);
+        n_pause_get_packet(isPause,index);
     }
 
     /**
      * 获取抽帧的AVPacket队列中 pts最大的那一帧的PTS,暂时没用
      * @return
      */
-    public double getAvPacketQueueMaxPts(){
-        return  n_get_avpacket_queue_max_pts();
+    public double getAvPacketQueueMaxPts(int index){
+        return  n_get_avpacket_queue_max_pts(index);
+    }
+
+
+    /**
+     * 添加视频 要调用ffmpeg初始化，并准备号解码线程
+     * @param path
+     */
+    public void addVideo(String path,int index){
+        initGetFrame(path,index);
     }
 
 
 
 /************************播放视频或者逐帧预览*********************************/
     private native void n_parpared(String source);
-    private native void n_play();
-    private native void n_pause();
-    private native void n_resume();
+    private native void n_play(int index);
+    private native void n_pause(int index);
+    private native void n_resume(int index);
     private native void n_stop();
-    private native void n_seek(int sec,int forAdvance);
-    private native int n_duration();
-    private native void n_volume(int volume);
-    private native void n_pitch(float pitch);
-    private native void n_speed(float speed);
-    private native void n_amplifyVol(float vol);
-    private native int n_sampleRate();
+    private native void n_seek(int sec,int forAdvance,int index);
+    private native int n_duration(int index);
+    private native void n_volume(int volume,int index);
+    private native void n_pitch(float pitch,int index);
+    private native void n_speed(float speed,int index);
+    private native void n_amplifyVol(float vol,int index);
+    private native int n_sampleRate(int index);
     private native void n_playmodel(int model);
-    private native void n_showframe(double timestamp,int forAdvance);
-    private native void n_showframeFromSeek(double timestamp);
+    private native void n_showframe(double timestamp,int forAdvance,int index);
+    private native void n_showframeFromSeek(double timestamp,int index);
 
 
 /************************按时间抽帧 mediaCodec解码******************************************/
-    private native void n_init_frame(String source);
-    private native void n_start_get_frame();
-    private native void n_frame_seek(int sec,boolean isCurrentGOP);
-    private native void n_pause_get_packet(boolean isPause);
+    private native void n_init_frame(String source ,int index);
+    private native void n_start_get_frame(int index);
+    private native void n_frame_seek(int sec,boolean isCurrentGOP,int index);
+    private native void n_pause_get_packet(boolean isPause,int index);
 
 /************************按时间抽帧 使用ffmpeg去解码******************************************/
-    private native void n_init_frame_by_ffmepg(String source);
-    private native void n_start_by_ffmpeg();
-    private native double n_get_avpacket_queue_max_pts();
+    private native void n_init_frame_by_ffmepg(String source,int index);
+    private native void n_start_by_ffmpeg(int index);
+    private native double n_get_avpacket_queue_max_pts(int index);
+
+/************************增加视频******************************************/
 
 
     public void onError(int code,String msg){
@@ -461,22 +473,22 @@ public class KzgPlayer {
     }
 
 
-    public void onGetFrameInitSuccess(String codecName,int width,int height,byte[] csd_0,byte[] csd_1){
+    public void onGetFrameInitSuccess(String codecName,int width,int height,byte[] csd_0,byte[] csd_1,int index){
         if (getFrameListener != null){
-            getFrameListener.onInited(codecName, width, height, csd_0, csd_1);
+            getFrameListener.onInited(codecName, width, height, csd_0, csd_1,index);
         }
     }
 
 
-    public void getFramePacket(int dataSize,double pts,byte[] data){
+    public void getFramePacket(int dataSize,double pts,byte[] data,int index){
         if (getFrameListener != null){
-            getFrameListener.getFramePacket(dataSize,pts,data);
+            getFrameListener.getFramePacket(dataSize,pts,data,index);
         }
     }
 
-    public void onCallYUVToBitmap(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs){
+    public void onCallYUVToBitmap(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs,int index){
         if (getFrameListener != null){
-            getFrameListener.onGetFrameYUV(width,height,y,u,v,practicalWidth,timeUs);
+            getFrameListener.onGetFrameYUV(width,height,y,u,v,practicalWidth,timeUs,index);
         }
     }
 
@@ -519,11 +531,11 @@ public class KzgPlayer {
     }
 
     public interface GetFrameListener{
-        void onInited(String codecName,int width,int height,byte[] csd_0,byte[] csd_1);
-        void onStarGetFrame();
-        void getFramePacket(int dataSize,double pts,byte[] data);
+        void onInited(String codecName,int width,int height,byte[] csd_0,byte[] csd_1,int index);
+        void onStarGetFrame(int index);
+        void getFramePacket(int dataSize,double pts,byte[] data,int index);
         //使用ffmpeg解码得到YUV数据
-        void onGetFrameYUV(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs);
+        void onGetFrameYUV(int width, int height, byte[] y, byte[] u, byte[] v,int practicalWidth,double timeUs,int index);
         void onGetFrameYUV2(int width, int height, byte[] yuv,int practicalWidth,double timeUs);
     }
 

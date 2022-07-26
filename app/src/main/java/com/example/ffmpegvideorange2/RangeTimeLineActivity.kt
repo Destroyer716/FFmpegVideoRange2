@@ -1,34 +1,31 @@
 package com.example.ffmpegvideorange2
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.*
+import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.helper.IFFmpegCodecFrameHelper
 import com.example.ffmpegvideorange2.helper.IMediaCodecFrameHelper
 import com.example.ffmpegvideorange2.scrollVelocity.RecyclerVelocityHandler
 import com.example.ffmpegvideorange2.scrollVelocity.VelocityTrackListener
-import com.example.ffmpegvideorange2.scrollVelocity.ViewVelocityHandler
 import com.example.myplayer.KzgPlayer
 import com.example.myplayer.KzgPlayer.PLAY_MODEL_DEFAULT
 import com.example.myplayer.KzgPlayer.PlayerListener
 import com.example.myplayer.PacketBean
 import com.example.myplayer.TimeInfoBean
-import com.sam.video.timeline.adapter.VideoFrameAdapter
 import com.sam.video.timeline.bean.VideoClip
-import com.sam.video.timeline.helper.IFrameSearch
 import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.timeline.listener.SelectAreaMagnetOnChangeListener
 import com.sam.video.timeline.listener.VideoPlayerOperate
 import com.sam.video.timeline.widget.TimeLineBaseValue
 import com.sam.video.timeline.widget.ZoomFrameLayout
+import com.sam.video.util.MediaStoreUtil
 import com.sam.video.util.VideoUtils
 import com.sam.video.util.getScreenWidth
 import kotlinx.android.synthetic.main.activity_range_time_line.*
@@ -60,7 +57,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
     private val videos = mutableListOf<VideoClip>()
     val timeLineValue = TimeLineBaseValue()
     private var lastScrollTime = 0L
-    private var keyFramesTime:IFrameSearch? = null
+    //private var keyFramesTime:IFrameSearch? = null
 
     private var handler:Handler? = null
     //预览条是否停止滚动
@@ -185,15 +182,19 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
-                    rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.seek()
+                    for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                        rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                        rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                    }
                 }
 
                 //如果是向后滑动，就停止解码
                 if (velocity < 0){
                     if (rvFrame.getAvFrameHelper()?.isScrolling == false){
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
-                        rvFrame.getAvFrameHelper()?.pause()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = true
+                            rvFrame.getAvFrameHelperByIndex(indx)?.pause()
+                        }
                     }
                 }
 
@@ -201,26 +202,34 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     //预览条向前滑动
 
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = false
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isSeekBack = false
+                        }
                     }
                 }else if(velocity < 0){
                     //预览条向后滑动
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isSeekBack = true
+                        }
                     }
                 }
 
                 //这里处理快速滑动后，突然又反方向滑动，可能存在暂停了解码后无法回复解码的情况
                 if (velocity == 0 && rvFrame.getAvFrameHelper()?.isPause == true){
-                    rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.seek()
+
+                    for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                        rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                        rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                    }
+
                 }
 
                 //快速滑动停止后，需要告诉底层最后停留在了那一帧
                 if (velocity == 0 && hasFastScoll){
                     hasFastScoll = false
                     Log.e("kzg","***********************开始解码显示最后一帧:${lastScrollTime}")
-                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
+                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true,rvFrame.currentVideoDataIndex)
                 }
 
 
@@ -229,8 +238,10 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onScrollFast(velocity:Int) {
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
                     //快速向前滚动，暂停解码
-                    rvFrame.getAvFrameHelper()?.isScrolling = true
-                    rvFrame.getAvFrameHelper()?.pause()
+                    for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                        rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = true
+                        rvFrame.getAvFrameHelperByIndex(indx)?.pause()
+                    }
                 }
             }
 
@@ -238,35 +249,26 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                    rvFrame.getAvFrameHelper()?.isScrolling = false
-                     rvFrame.getAvFrameHelper()?.seek()
+                    for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                        rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                        rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                    }
                 }
             }
         })
         rvFrame.addOnScrollListener(handler)
 
-        /*rvFrame.addOnChildAttachStateChangeListener(object:RecyclerView.OnChildAttachStateChangeListener{
-            override fun onChildViewAttachedToWindow(view: View) {
-
-            }
-
-            override fun onChildViewDetachedFromWindow(view: View) {
-            }
-
-        })*/
         bindVideoData()
 
         val duration = VideoUtils.getVideoDuration(this, inputPath)
         videos.add(
             VideoClip(
                 UUID.randomUUID().toString(), inputPath,
-                duration, 0, duration
+                duration, 0, duration,videos.size
             )
         )
         updateVideos()
 
-        //获取每个关键帧的时间点
-        keyFramesTime = IFrameSearch(inputPath)
     }
 
     private fun initAction(){
@@ -317,21 +319,21 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun updateTimeByScroll(time: Long) {
                 //逐帧预览时，才处理滚动
                 if ( KzgPlayer.PLAY_MODEL_FRAME_PREVIEW == kzgPlayer?.playModel){
-                    keyFramesTime?.getCurrentGopFromTimeUs(time*1000)
+                    rvFrame.getAvFrameHelper()?.iframeSearch?.getCurrentGopFromTimeUs(time*1000)
                     if (time > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
-                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false)
+                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false,rvFrame.currentVideoDataIndex)
                         }else{
-                            val currentIFrame= keyFramesTime?.currentIFrameTimeUs?:0
+                            val currentIFrame= rvFrame.getAvFrameHelper()?.iframeSearch?.currentIFrameTimeUs?:0
                             //Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$time")
-                            kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true)
+                            kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true,rvFrame.currentVideoDataIndex)
                         }
 
 
                     }else if(time < lastScrollTime) {
                         //向后滚动
-                        kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,false)
+                        kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
                     }
                     lastScrollTime = time
                     lastTime2 = time * 1000
@@ -363,42 +365,54 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     }
 
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == true){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = false
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isSeekBack = false
+                        }
                     }
 
 
                     //如果向前滑动，并且速度大于60 并且isScrolling=false,就暂停解码
                     if (v > 50F && rvFrame.getAvFrameHelper()?.isScrolling == false){
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
-                        rvFrame.getAvFrameHelper()?.pause()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = true
+                            rvFrame.getAvFrameHelperByIndex(indx)?.pause()
+                        }
                     }
 
                     //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
                     if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
-                        rvFrame.getAvFrameHelper()?.isScrolling = false
-                        rvFrame.getAvFrameHelper()?.seek()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                            rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                        }
                     }
 
                 }else if (v < 0F){
                     //预览条向后滑动
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isSeekBack = true
+                        }
                     }
                     //如果是向后滑动，并且isScrolling=false,速度大于50 就暂停解码
                     if (rvFrame.getAvFrameHelper()?.isScrolling == false && v < -50){
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
-                        rvFrame.getAvFrameHelper()?.pause()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = true
+                            rvFrame.getAvFrameHelperByIndex(indx)?.pause()
+                        }
                     }
                 }
                 //如果是向后滑动，并且速度为0，并且isScrolling=true,就开始解码
                 if (v == 0F && rvFrame.getAvFrameHelper()?.isScrolling == true){
-                    rvFrame.getAvFrameHelper()?.isScrolling = false
-                    rvFrame.getAvFrameHelper()?.seek()
+                    for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                        rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                        rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                    }
                 }
 
                 if (v == 0F && hasFastScoll) {
                     hasFastScoll = false
-                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true)
+                    kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true,rvFrame.currentVideoDataIndex)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
             }
@@ -409,22 +423,33 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if (x <= 0){
                     //预览条向后滑动
                     if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
-                        rvFrame.getAvFrameHelper()?.isSeekBack = true
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isSeekBack = true
+                        }
                     }
 
                     if (rvFrame.getAvFrameHelper()?.isScrolling == false && x < 0){
-                        rvFrame.getAvFrameHelper()?.isScrolling = true
-                        rvFrame.getAvFrameHelper()?.pause()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = true
+                            rvFrame.getAvFrameHelperByIndex(indx)?.pause()
+                        }
                     }
                     //Log.e("kzg","**********************onScrollBack:$x  ,${rvFrame.getAvFrameHelper()?.isScrolling}")
                     if (x > -3 && rvFrame.getAvFrameHelper()?.isScrolling == true){
-                        rvFrame.getAvFrameHelper()?.isScrolling = false
-                        rvFrame.getAvFrameHelper()?.seek()
+                        for (indx in 0 until  (rvFrame.videoData?.size?:0)){
+                            rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
+                            rvFrame.getAvFrameHelperByIndex(indx)?.seek()
+                        }
                     }
                 }
 
             }
 
+        }
+
+        //添加视频
+        iv_add_video.setOnClickListener {
+            startGetVideoIntent()
         }
 
     }
@@ -442,7 +467,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onPrepare() {
                 Log.e("kzg", "*********************onPrepare success")
-                kzgPlayer!!.start()
+                kzgPlayer!!.start(rvFrame.currentVideoDataIndex)
             }
 
             override fun onLoadChange(isLoad: Boolean) {
@@ -501,47 +526,51 @@ class RangeTimeLineActivity : AppCompatActivity(){
         avFrameHelper.setKzgPlayer(kzgPlayer!!)
         rvFrame.setAvFrameHelper(avFrameHelper)
 
-        kzgPlayer!!.initGetFrame(inputPath)
+        kzgPlayer!!.initGetFrame(inputPath,rvFrame.getAvFrameHelper()?.videoIndex?:0)
         kzgPlayer!!.setGetFrameListener(object :KzgPlayer.GetFrameListener{
             override fun onInited(
                 codecName: String?,
                 width: Int,
                 height: Int,
                 csd_0: ByteArray?,
-                csd_1: ByteArray?
+                csd_1: ByteArray?,
+                index:Int
             ) {
                 if (rvFrame.getAvFrameHelper() is IMediaCodecFrameHelper){
                     (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1,sv_video_test.holder.surface)
                 }else if(rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
                     Log.e("kzg","**************onInited")
-                    kzgPlayer!!.startGetFrame()
-                    kzgPlayer?.getFrameListener?.onStarGetFrame()
+                    kzgPlayer!!.startGetFrame(index)
+                    kzgPlayer?.getFrameListener?.onStarGetFrame(index)
                 }
             }
 
-            override fun onStarGetFrame() {
+            override fun onStarGetFrame(index:Int) {
                 runOnUiThread {
+                    if (index >= 1){
+                        return@runOnUiThread
+                    }
                     rvFrame.adapter?.notifyDataSetChanged()
                 }
             }
 
-            override fun getFramePacket(dataSize: Int, pts: Double, data: ByteArray?) {
+            override fun getFramePacket(dataSize: Int, pts: Double, data: ByteArray?,index:Int) {
                 val packetBean = PacketBean()
                 packetBean.data = data
                 packetBean.pts = pts
                 packetBean.dataSize = dataSize
                 //Log.e("kzg","**************getFramePacket 入队一帧")
-                if (rvFrame.getAvFrameHelper() is IMediaCodecFrameHelper){
-                    (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
-                    if ((rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
-                        rvFrame.getAvFrameHelper()?.pause()
+                if (rvFrame.getAvFrameHelperByIndex(index) is IMediaCodecFrameHelper){
+                    (rvFrame.getAvFrameHelperByIndex(index) as IMediaCodecFrameHelper).packetQueue.enQueue(packetBean)
+                    if ((rvFrame.getAvFrameHelperByIndex(index) as IMediaCodecFrameHelper).packetQueue.queueSize >= 30){
+                        rvFrame.getAvFrameHelperByIndex(index)?.pause()
                     }
                 }
 
             }
 
             override fun onGetFrameYUV(width: Int, height: Int, y: ByteArray?, u: ByteArray?, v: ByteArray?,
-                practicalWidth: Int, timeUs:Double) {
+                practicalWidth: Int, timeUs:Double,index:Int) {
                 runOnUiThread {
                     if (rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
                         val bean = YUVDataBean()
@@ -552,10 +581,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         bean.y = y
                         bean.u = u
                         bean.v = v
+
                         Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
-                        (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
-                        if ((rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
-                            rvFrame.getAvFrameHelper()?.pause()
+                        (rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
+                        if ((rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
+                            rvFrame.getAvFrameHelperByIndex(index)?.pause()
                         }
                     }
                 }
@@ -564,6 +594,29 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun onGetFrameYUV2(width: Int,height: Int,yuv: ByteArray?,practicalWidth: Int,timeUs: Double) {}
 
         })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val data = data ?: return
+        if (resultCode == RESULT_OK) {
+            if (requestCode == TimeLineActivity.Constants.REQUEST_VIDEO) {
+                val uri = data.data
+                val path = MediaStoreUtil.audioUriToRealPath(this, uri) ?: return
+                val avFrameHelper = IFFmpegCodecFrameHelper(path,null)
+                avFrameHelper.setKzgPlayer(kzgPlayer!!)
+                rvFrame.setAvFrameHelper(avFrameHelper)
+                val duration = VideoUtils.getVideoDuration(this, path)
+                videos.add(
+                    VideoClip(
+                        UUID.randomUUID().toString(), path,
+                        duration, 0, duration,videos.size
+                    )
+                )
+                updateVideos()
+                kzgPlayer!!.addVideo(path,videos.size - 1)
+            }
+        }
     }
 
 
@@ -859,7 +912,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
             kzgPlayer!!.getFrameListener= null
             kzgPlayer = null
         }
-        keyFramesTime?.release()
 
         if (sv_video_view != null) {
             sv_video_view.removeCallbacks(null)
@@ -870,5 +922,16 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
     fun isMainThread(): Boolean {
         return Looper.getMainLooper() == Looper.myLooper()
+    }
+
+    //打开系统选择视频界面
+    private fun startGetVideoIntent() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.setDataAndType(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            TimeLineActivity.Constants.VIDEO_TYPE
+        )
+        val chooserIntent = Intent.createChooser(intent, null)
+        startActivityForResult(chooserIntent, TimeLineActivity.Constants.REQUEST_VIDEO)
     }
 }

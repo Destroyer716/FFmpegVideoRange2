@@ -113,6 +113,15 @@
             android:layout_marginBottom="70dp" />
     </com.sam.video.timeline.widget.ZoomFrameLayout>
 
+    <ImageView
+        android:id="@+id/iv_add_video"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:src="@drawable/add_video_icon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/zoomFrameLayout"
+        app:layout_constraintBottom_toBottomOf="@+id/zoomFrameLayout"/>
+
     <SurfaceView
         android:id="@+id/sv_video_test"
         android:layout_width="match_parent"

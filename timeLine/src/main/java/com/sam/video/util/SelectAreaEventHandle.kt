@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.os.CountDownTimer
 import android.os.Handler
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.animation.LinearInterpolator

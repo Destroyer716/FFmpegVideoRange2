@@ -13,6 +13,7 @@ import com.sam.video.timeline.bean.VideoFrameData
 import com.sam.video.timeline.helper.IAvFrameHelper
 import com.sam.video.timeline.helper.VideoDecoder2
 import com.sam.video.timeline.widget.RoundRectMask
+import com.sam.video.timeline.widget.VideoFrameRecyclerView
 
 /**
  * 帧列表 adapter
@@ -22,9 +23,7 @@ import com.sam.video.timeline.widget.RoundRectMask
 class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidth: Int) : BaseQuickAdapter<VideoFrameData, BaseViewHolder>(
     R.layout.item_video_frame, data) {
 
-    private var avframeHelper:IAvFrameHelper? = null
     private var index = 0
-    var videoDecoder2: VideoDecoder2? = null
 
     override fun convert(helper: BaseViewHolder, item: VideoFrameData) {
         helper.adapterPosition
@@ -57,10 +56,12 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         }
 
         imageView.tag = helper.adapterPosition
-        avframeHelper?.loadAvFrame(imageView,item.frameClipTime * 1000)
 
+        if (recyclerView is VideoFrameRecyclerView) {
+            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(item.videoData.index)?.loadAvFrame(imageView,item.frameClipTime * 1000)
+        }
 
-        if (avframeHelper == null){
+        if (recyclerView !is VideoFrameRecyclerView ||  (recyclerView as VideoFrameRecyclerView).getAvFrameHelper() == null){
             Glide.with(imageView)
                 .asBitmap()
                 .load(item.videoData.originalFilePath)
@@ -74,24 +75,15 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         /**/
     }
 
-    fun setAvframeHelper(helper:IAvFrameHelper){
-        this.avframeHelper = helper
-        avframeHelper?.decodeFrameListener = object :IAvFrameHelper.DecodeFrameListener{
-            override fun onGetOneFrame() {
-                notifyDataSetChanged()
-            }
-        }
 
-    }
 
-    fun getAvframeHelper():IAvFrameHelper?{
-        return avframeHelper
-    }
 
 
 
     override fun onViewDetachedFromWindow(holder: BaseViewHolder) {
-        avframeHelper?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
+        if (recyclerView is VideoFrameRecyclerView) {
+            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(holder.adapterPosition)?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
+        }
         //Log.e("kzg","*******************onViewDetachedFromWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
         super.onViewDetachedFromWindow(holder)
     }
@@ -102,6 +94,7 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
         super.onViewAttachedToWindow(holder)
 
     }
+
 }
 
 

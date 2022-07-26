@@ -18,6 +18,10 @@ interface IAvFrameHelper {
     var isPause:Boolean
     //每一帧的间隔时间 单位：毫秒
     var itemFrameForTime:Long
+    //视频I帧时间列表
+    var iframeSearch:IFrameSearch?
+    //下标，对应的时第几个视频的helper
+    var videoIndex:Int
 
     fun init()
     /**

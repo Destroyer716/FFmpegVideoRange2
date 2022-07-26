@@ -14,7 +14,6 @@ import com.sam.video.timeline.adapter.VideoFrameAdapter
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.bean.VideoFrameData
 import com.sam.video.timeline.helper.IAvFrameHelper
-import com.sam.video.timeline.helper.VideoDecoder2
 import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.util.dp2px
 import kotlin.math.min
@@ -40,12 +39,15 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     private val videoFrameItemDecoration: VideoFrameItemDecoration
     //每一帧的间隔时间 单位：毫秒
     var frameForTime = 0L
-
-
     var scrollFlag = 0
+    //当前 指针所在的视频数据下标
+    var currentVideoDataIndex = 0
+    //多个视频就有多个avFrameHelper
+    val avFrameHelperList = mutableListOf<IAvFrameHelper>()
 
     init {
         adapter = VideoFrameAdapter(listData, frameWidth)
+        (adapter as VideoFrameAdapter).bindToRecyclerView(this)
         videoFrameItemDecoration = VideoFrameItemDecoration(context)
         addItemDecoration(videoFrameItemDecoration)
 
@@ -177,10 +179,10 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
                     } else {
                         clipTime = item.endAtMs
                     }
-
                 }
 
                 element = VideoFrameData(item, time, clipTime, itemWidth, isFirst, false, left)
+
                 listData.add(element)
 //                Log.d("Sam", "-----: $time, $clipTime")
 
@@ -310,6 +312,7 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
 
     /** 通过X坐标找到对应的视频 */
     fun findVideoByX(x: Float): VideoClip? {
+        Log.e("kzg","**********************findVideoByX")
         val child = findChildViewByX(x) ?: return null
         val position = getChildAdapterPosition(child)
         return listData.getOrNull(position)?.videoData
@@ -417,16 +420,15 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
      *  当前item,
      * */
     fun getCurrentCursorVideoRect(rect: RectF) {
-
         val child = getCurrentCursorView() ?: return
         val videoData = videoData ?: return
         val timeLineValue = timeLineValue ?: return
-
         val position = getChildAdapterPosition(child)
         if (position in 0 until listData.size) {
             val item = listData[position]
             val indexVideo = videoData.indexOfFirst { it === item.videoData }
-
+            //Log.e("kzg","************************indexVideo:$indexVideo")
+            currentVideoDataIndex = indexVideo
             var offset = 0f //手动计算偏移值，防止 timeLineValue.time2px(item.time) 有误差
             for (i in position - 1 downTo 0) {
                 val itemCountWidth = listData[i]
@@ -455,23 +457,56 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
 
 
     /**
+     * 获取当前游标所在的视频对应的index
+     */
+    fun currentCursorVideoIndex(){
+        val child = getCurrentCursorView() ?: return
+        val videoData = videoData ?: return
+        val position = getChildAdapterPosition(child)
+        if (position in 0 until listData.size) {
+            val item = listData[position]
+            currentVideoDataIndex = videoData.indexOfFirst { it === item.videoData }
+        }
+    }
+
+    /**
      * 添加视频处理的帮助类，并初始化
      */
     fun setAvFrameHelper(helper: IAvFrameHelper){
         helper.init()
         helper.itemFrameForTime = frameForTime
-        (adapter as VideoFrameAdapter).setAvframeHelper(helper)
+        helper.videoIndex = avFrameHelperList.size
+        avFrameHelperList.add(helper)
+        helper?.decodeFrameListener = object :IAvFrameHelper.DecodeFrameListener{
+            override fun onGetOneFrame() {
+                adapter?.notifyDataSetChanged()
+            }
+        }
     }
     fun getAvFrameHelper():IAvFrameHelper?{
-        return (adapter as VideoFrameAdapter).getAvframeHelper()
+        if (currentVideoDataIndex >= avFrameHelperList?.size){
+            return null
+        }
+        return avFrameHelperList?.get(currentVideoDataIndex)
     }
 
-    fun setVideoDecoder(decover:VideoDecoder2){
-        (adapter as VideoFrameAdapter).videoDecoder2 = decover
+    fun getAvFrameHelperByIndex(index:Int):IAvFrameHelper?{
+        if (index < 0 || index >= (avFrameHelperList?.size)){
+            if (currentVideoDataIndex >= avFrameHelperList?.size){
+                return null
+            }
+            return avFrameHelperList?.get(currentVideoDataIndex)
+        }
+        return  avFrameHelperList?.get(index)
     }
+
 
     fun release(){
-        (adapter as VideoFrameAdapter).getAvframeHelper()?.release()
+        avFrameHelperList?.let { list ->
+            list.forEach {
+                it.release()
+            }
+        }
     }
 
 

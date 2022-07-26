@@ -101,7 +101,7 @@ void FAvFrameHelper::decodeAVPackate() {
             avCodecContext->extradata_size,
             avCodecContext->extradata_size,
             avCodecContext->extradata,
-            avCodecContext->extradata);
+            avCodecContext->extradata,index);
     pthread_mutex_unlock(&init_mutex);
 }
 
@@ -363,7 +363,7 @@ void FAvFrameHelper::decodeAvPacket() {
                     av_free(tdata);
                 }
 
-                helper->onGetFramePacket(avPacket->size,(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE),avPacket->data);
+                helper->onGetFramePacket(avPacket->size,(avPacket->pts *av_q2d( time_base)* AV_TIME_BASE),avPacket->data,index);
             } else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
@@ -411,9 +411,11 @@ void FAvFrameHelper::decodeFrame() {
         } else if (avPacket->stream_index == avStreamIndex){
             //找到视频avPacket
             //LOGE("找到视频avPacket");
+            double pps = (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE);
+            //LOGE("queue 增加AVpacket:%f",pps);
             if (getAvPacketRefType2(avPacket) > 0){
-                //LOGE("queue 增加AVpacket");
                 queue->putAvPacket(avPacket);
+
             } else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
@@ -482,6 +484,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
                     avFrame->data[2],
                     avCodecContext->width,
                     (avFrame->pts *av_q2d(time_base) * AV_TIME_BASE),
+                    index,
                     THREAD_CHILD);
 
             av_frame_free(&avFrame);

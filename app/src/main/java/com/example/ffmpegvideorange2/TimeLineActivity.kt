@@ -310,6 +310,7 @@ class TimeLineActivity : AppCompatActivity(), View.OnClickListener  {
      * 清除选中模式
      */
     private fun clearTagSelect() {
+
         selectAreaView.visibility = View.GONE
         rvFrame.hasBorder = true
         tagView.activeItem = null

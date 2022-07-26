@@ -12,7 +12,7 @@ public class IFrameSearch implements Runnable {
 
     private MediaExtractor mediaExtractor;
     private long duration;
-    public static CopyOnWriteArrayList<Long> IframeUs = new CopyOnWriteArrayList();
+    public CopyOnWriteArrayList<Long> IframeUs = new CopyOnWriteArrayList();
     private Thread thread;
     private boolean isStop = false;
     //当前播放到的第几个gop

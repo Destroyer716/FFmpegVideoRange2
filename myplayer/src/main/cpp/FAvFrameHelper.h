@@ -40,6 +40,7 @@ public:
     bool isPause = true;
     int64_t seekTime = 0;
     AVBitStreamFilterContext* mimType = NULL;
+    int index = 0;
 
 private:
     JavaCallHelper *helper;

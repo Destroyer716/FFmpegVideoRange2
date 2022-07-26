@@ -30,13 +30,14 @@ extern "C"
 
 JavaVM *javaVm;
 JavaCallHelper *helper;
-KzgFFmpeg *kzgFFmpeg;
 KzgPlayerStatus *kzgPlayerStatus;
 bool nexit = true;
 pthread_t thread_start;
-FAvFrameHelper *fAvFrameHelper;
 pthread_t thread_start_get_frame;
 pthread_t thread_start_decode_frame;
+
+KzgFFmpeg *kzgFFmpegArr[5];
+FAvFrameHelper *fAvFrameHelperArr[5];
 
 
 
@@ -46,7 +47,8 @@ Java_com_example_myplayer_KzgPlayer_n_1parpared(
         jobject jass ,
         jstring source) {
    const char *url = env->GetStringUTFChars(source, 0);
-    if (kzgFFmpeg == NULL){
+
+    if (kzgFFmpegArr[0] == NULL){
         if (helper == NULL){
             helper = new JavaCallHelper(javaVm,env,jass);
         }
@@ -54,8 +56,8 @@ Java_com_example_myplayer_KzgPlayer_n_1parpared(
         if (kzgPlayerStatus == NULL){
             kzgPlayerStatus = new KzgPlayerStatus();
         }
-        kzgFFmpeg = new KzgFFmpeg(helper,url,kzgPlayerStatus);
-        kzgFFmpeg->parpared();
+        kzgFFmpegArr[0] = new KzgFFmpeg(helper,url,kzgPlayerStatus);
+        kzgFFmpegArr[0]->parpared();
     }
 }
 
@@ -70,26 +72,26 @@ void *startCallBack(void *data)
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1play(JNIEnv *env, jobject thiz) {
-    if (kzgFFmpeg != NULL){
-        pthread_create(&thread_start, NULL, startCallBack, kzgFFmpeg);
+Java_com_example_myplayer_KzgPlayer_n_1play(JNIEnv *env, jobject thiz,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        pthread_create(&thread_start, NULL, startCallBack, kzgFFmpegArr[index] );
     }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1pause(JNIEnv *env, jobject thiz) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->pause();
+Java_com_example_myplayer_KzgPlayer_n_1pause(JNIEnv *env, jobject thiz,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->pause();
     }
 }
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1resume(JNIEnv *env, jobject thiz) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->resume();
+Java_com_example_myplayer_KzgPlayer_n_1resume(JNIEnv *env, jobject thiz,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->resume();
     }
 }
 
@@ -104,45 +106,56 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
     jmethodID playNext = env->GetMethodID(jclass1,"onPlayNext","()V");
 
     nexit = false;
-    if(kzgFFmpeg != NULL)
-    {
-        kzgFFmpeg->stop();
-        pthread_join(thread_start,NULL);
+    if (kzgFFmpegArr != NULL){
+        for (int i = 0; i < 5; ++i) {
+            if(kzgFFmpegArr[i] != NULL)
+            {
+                kzgFFmpegArr[i]->stop();
+                pthread_join(thread_start,NULL);
 
-        delete(kzgFFmpeg);
-        kzgFFmpeg = NULL;
-        if(helper != NULL)
-        {
-            delete(helper);
-            helper = NULL;
-        }
+                delete(kzgFFmpegArr[i]);
+                kzgFFmpegArr[i] = NULL;
+                if(helper != NULL)
+                {
+                    delete(helper);
+                    helper = NULL;
+                }
 
-        if (kzgPlayerStatus != NULL){
-            delete kzgPlayerStatus;
-            kzgPlayerStatus = NULL;
-        }
+                if (kzgPlayerStatus != NULL){
+                    delete kzgPlayerStatus;
+                    kzgPlayerStatus = NULL;
+                }
 
-    }
-
-    if (fAvFrameHelper != NULL){
-        fAvFrameHelper->releas();
-        pthread_join(thread_start_get_frame,NULL);
-        pthread_join(thread_start_decode_frame,NULL);
-
-
-        delete fAvFrameHelper;
-        fAvFrameHelper = NULL;
-
-        if (helper != NULL){
-            delete helper;
-            helper = NULL;
-        }
-
-        if (kzgPlayerStatus != NULL){
-            delete kzgPlayerStatus;
-            kzgPlayerStatus = NULL;
+            }
         }
     }
+
+
+
+    if (fAvFrameHelperArr != NULL){
+        for (int i = 0; i < 5; ++i) {
+            if(fAvFrameHelperArr[i] != NULL){
+                fAvFrameHelperArr[i]->releas();
+                pthread_join(thread_start_get_frame,NULL);
+                pthread_join(thread_start_decode_frame,NULL);
+
+
+                delete fAvFrameHelperArr[i];
+                fAvFrameHelperArr[i] = NULL;
+
+                if (helper != NULL){
+                    delete helper;
+                    helper = NULL;
+                }
+
+                if (kzgPlayerStatus != NULL){
+                    delete kzgPlayerStatus;
+                    kzgPlayerStatus = NULL;
+                }
+            }
+        }
+    }
+
     nexit = true;
     env->CallVoidMethod(thiz,playNext);
 }
@@ -150,18 +163,18 @@ Java_com_example_myplayer_KzgPlayer_n_1stop(JNIEnv *env, jobject thiz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1seek(JNIEnv *env, jobject thiz, jint sec,jint forAdvance) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSeekType(0,forAdvance);
-        kzgFFmpeg->seek(sec);
+Java_com_example_myplayer_KzgPlayer_n_1seek(JNIEnv *env, jobject thiz, jint sec,jint forAdvance,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setSeekType(0,forAdvance);
+        kzgFFmpegArr[index]->seek(sec);
     }
 }
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1duration(JNIEnv *env, jobject thiz) {
-    if (kzgFFmpeg != NULL){
-        return kzgFFmpeg->getDuration();
+Java_com_example_myplayer_KzgPlayer_n_1duration(JNIEnv *env, jobject thiz,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        return kzgFFmpegArr[index]->getDuration();
     }
     return 0;
 }
@@ -169,42 +182,42 @@ Java_com_example_myplayer_KzgPlayer_n_1duration(JNIEnv *env, jobject thiz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1volume(JNIEnv *env, jobject thiz, jint volume) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setVolume(volume);
+Java_com_example_myplayer_KzgPlayer_n_1volume(JNIEnv *env, jobject thiz, jint volume,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setVolume(volume);
     }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1pitch(JNIEnv *env, jobject thiz, jfloat pitch) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setPitch(pitch);
+Java_com_example_myplayer_KzgPlayer_n_1pitch(JNIEnv *env, jobject thiz, jfloat pitch,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setPitch(pitch);
     }
 }
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1speed(JNIEnv *env, jobject thiz, jfloat speed) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSpeed(speed);
+Java_com_example_myplayer_KzgPlayer_n_1speed(JNIEnv *env, jobject thiz, jfloat speed,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setSpeed(speed);
     }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1amplifyVol(JNIEnv *env, jobject thiz, jfloat vol) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setAmplifyVol(vol);
+Java_com_example_myplayer_KzgPlayer_n_1amplifyVol(JNIEnv *env, jobject thiz, jfloat vol,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setAmplifyVol(vol);
     }
 }
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1sampleRate(JNIEnv *env, jobject thiz) {
-    if (kzgFFmpeg != NULL){
-        return kzgFFmpeg->getSampleRate();
+Java_com_example_myplayer_KzgPlayer_n_1sampleRate(JNIEnv *env, jobject thiz,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        return kzgFFmpegArr[index]->getSampleRate();
     }
     return 0;
 }
@@ -214,22 +227,27 @@ Java_com_example_myplayer_KzgPlayer_n_1sampleRate(JNIEnv *env, jobject thiz) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1playmodel(JNIEnv *env, jobject thiz, jint model) {
-    if (kzgFFmpeg != NULL){
-        if (model == PLAY_MODEL_FRAME_PREVIEW){
-            kzgFFmpeg->setIsFramePreview(true);
-        } else{
-            kzgFFmpeg->setIsFramePreview(false);
+    if (kzgFFmpegArr != NULL){
+        for (int i = 0; i < 5; ++i) {
+            if (kzgFFmpegArr[i] != NULL){
+                if (model == PLAY_MODEL_FRAME_PREVIEW){
+                    kzgFFmpegArr[i]->setIsFramePreview(true);
+                } else{
+                    kzgFFmpegArr[i]->setIsFramePreview(false);
+                }
+            }
         }
+
 
     }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1showframe(JNIEnv *env, jobject thiz, jdouble timestamp,jint forAdvance) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->setSeekType(1,forAdvance);
-        kzgFFmpeg->showFrame(timestamp);
+Java_com_example_myplayer_KzgPlayer_n_1showframe(JNIEnv *env, jobject thiz, jdouble timestamp,jint forAdvance,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->setSeekType(1,forAdvance);
+        kzgFFmpegArr[index]->showFrame(timestamp);
     }
 }
 
@@ -788,9 +806,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved){
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1showframeFromSeek(JNIEnv *env, jobject thiz, jdouble timestamp) {
-    if (kzgFFmpeg != NULL){
-        kzgFFmpeg->showFrameFromSeek(timestamp);
+Java_com_example_myplayer_KzgPlayer_n_1showframeFromSeek(JNIEnv *env, jobject thiz, jdouble timestamp,jint index) {
+    if (kzgFFmpegArr != NULL && kzgFFmpegArr[index] != NULL){
+        kzgFFmpegArr[index]->showFrameFromSeek(timestamp);
     }
 }
 
@@ -804,12 +822,17 @@ Java_com_example_myplayer_KzgPlayer_n_1init_1frame(JNIEnv *env, jobject thiz, js
     if (kzgPlayerStatus == NULL){
         kzgPlayerStatus = new KzgPlayerStatus();
     }
-    if (fAvFrameHelper == NULL){
-        const char* url = env->GetStringUTFChars(source,0);
-        fAvFrameHelper = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+
+    for (int i = 0; i < 5; ++i) {
+        if (fAvFrameHelperArr[i] == NULL){
+            const char* url = env->GetStringUTFChars(source,0);
+            fAvFrameHelperArr[i] = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+            fAvFrameHelperArr[i]->init();
+            break;
+        }
     }
 
-    fAvFrameHelper->init();
+
 }
 
 
@@ -822,27 +845,27 @@ void *startGetAvPacket(void *args){
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1start_1get_1frame(JNIEnv *env, jobject thiz) {
-    if (fAvFrameHelper != NULL){
-        pthread_create(&thread_start_get_frame, NULL, startGetAvPacket, fAvFrameHelper);
+Java_com_example_myplayer_KzgPlayer_n_1start_1get_1frame(JNIEnv *env, jobject thiz,jint index) {
+    if (fAvFrameHelperArr[index] != NULL){
+        pthread_create(&thread_start_get_frame, NULL, startGetAvPacket, fAvFrameHelperArr[index]);
     }
 }
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1frame_1seek(JNIEnv *env, jobject thiz, jint sec,jboolean isCurrentGop) {
-    if (fAvFrameHelper != NULL){
-        fAvFrameHelper->seekTo(sec,isCurrentGop);
+Java_com_example_myplayer_KzgPlayer_n_1frame_1seek(JNIEnv *env, jobject thiz, jint sec,jboolean isCurrentGop,jint index) {
+    if (fAvFrameHelperArr[index] != NULL){
+        fAvFrameHelperArr[index]->seekTo(sec,isCurrentGop);
     }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1pause_1get_1packet(JNIEnv *env, jobject thiz,
-                                                          jboolean is_pause) {
-    if (fAvFrameHelper != NULL){
-        fAvFrameHelper->pauseOrStar(is_pause);
+                                                          jboolean is_pause,jint index) {
+    if (fAvFrameHelperArr[index] != NULL){
+        fAvFrameHelperArr[index]->pauseOrStar(is_pause);
     }
 }
 
@@ -850,19 +873,20 @@ Java_com_example_myplayer_KzgPlayer_n_1pause_1get_1packet(JNIEnv *env, jobject t
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myplayer_KzgPlayer_n_1init_1frame_1by_1ffmepg(JNIEnv *env, jobject thiz,
-                                                               jstring source) {
+                                                               jstring source,jint index) {
     if (helper == NULL){
         helper = new JavaCallHelper(javaVm,env,thiz);
     }
     if (kzgPlayerStatus == NULL){
         kzgPlayerStatus = new KzgPlayerStatus();
     }
-    if (fAvFrameHelper == NULL){
+    if (fAvFrameHelperArr[index] == NULL){
         const char* url = env->GetStringUTFChars(source,0);
-        fAvFrameHelper = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+        fAvFrameHelperArr[index] = new FAvFrameHelper(helper,url,kzgPlayerStatus);
+        fAvFrameHelperArr[index]->index = index;
     }
 
-    fAvFrameHelper->init();
+    fAvFrameHelperArr[index]->init();
 }
 
 void *startPutAvPacket(void *args){
@@ -880,18 +904,18 @@ void *startGetFrame(void *args){
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1start_1by_1ffmpeg(JNIEnv *env, jobject thiz) {
-    if (fAvFrameHelper != NULL){
-        pthread_create(&thread_start_get_frame, NULL, startPutAvPacket, fAvFrameHelper);
-        pthread_create(&thread_start_decode_frame, NULL, startGetFrame, fAvFrameHelper);
+Java_com_example_myplayer_KzgPlayer_n_1start_1by_1ffmpeg(JNIEnv *env, jobject thiz,jint index) {
+    if (fAvFrameHelperArr[index] != NULL){
+        pthread_create(&thread_start_get_frame, NULL, startPutAvPacket, fAvFrameHelperArr[index]);
+        pthread_create(&thread_start_decode_frame, NULL, startGetFrame, fAvFrameHelperArr[index]);
     }
 }
 
 extern "C"
 JNIEXPORT jdouble JNICALL
-Java_com_example_myplayer_KzgPlayer_n_1get_1avpacket_1queue_1max_1pts(JNIEnv *env, jobject thiz) {
-    if (fAvFrameHelper != NULL){
-        return fAvFrameHelper->getAvpacketQueueMaxPts();
+Java_com_example_myplayer_KzgPlayer_n_1get_1avpacket_1queue_1max_1pts(JNIEnv *env, jobject thiz,jint index) {
+    if (fAvFrameHelperArr[index] != NULL){
+        return fAvFrameHelperArr[index]->getAvpacketQueueMaxPts();
     }
     return 0;
 }

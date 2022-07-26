@@ -11,10 +11,13 @@ data class VideoClip(
     var originalFilePath: String,//文件路径
     var originalDurationMs: Long = 0,//原始文件时长
     var startAtMs: Long = 0, //视频有效起始时刻
-    var endAtMs: Long = 0//视频有效结束时刻
+    var endAtMs: Long = 0,//视频有效结束时刻
+    var index:Int = 0 //第几个视频
 ){
     val durationMs: Long //视频有效播放时长，受节选、速度、转场吃掉时间影响
         get() {
             return endAtMs - startAtMs
         }
+
+
 }
