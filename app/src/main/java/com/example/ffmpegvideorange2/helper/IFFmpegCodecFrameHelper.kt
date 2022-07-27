@@ -108,7 +108,7 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun addAvFrame(view: ImageView) {
-
+        targetViewMap[view]?.isRemoveTag = false
     }
 
     override fun removeAvFrameTag(view: ImageView) {
@@ -196,9 +196,10 @@ class IFFmpegCodecFrameHelper(
                     if (isScrolling){
                         return@task
                     }
+
                     yuvQueue.first?.let {bean ->
                         //需要的展示的视频帧时间 大于 当前解码的帧的时间 并且 需要展示的view 还没有展示帧
-                        if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame) || !it.value.isAddFrame){
+                        if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame && !it.value.isRemoveTag) || (!it.value.isAddFrame && !it.value.isRemoveTag)){
                             hasPause = false
                             yuvQueue.deQueue()?.apply {
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)

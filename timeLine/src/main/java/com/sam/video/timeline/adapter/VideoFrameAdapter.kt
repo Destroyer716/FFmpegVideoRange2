@@ -89,8 +89,9 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
     }
 
     override fun onViewAttachedToWindow(holder: BaseViewHolder) {
-        /*avframeHelper?.addAvFrame(holder.itemView.findViewById<ImageView>(R.id.iv))
-        Log.e("kzg","*******************onViewAttachedToWindow:${holder.layoutPosition}")*/
+        if (recyclerView is VideoFrameRecyclerView) {
+            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(holder.adapterPosition)?.addAvFrame(holder.itemView.findViewById<ImageView>(R.id.iv))
+        }
         super.onViewAttachedToWindow(holder)
 
     }
