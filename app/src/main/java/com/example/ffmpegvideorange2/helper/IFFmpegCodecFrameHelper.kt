@@ -37,10 +37,6 @@ class IFFmpegCodecFrameHelper(
     override var lastBitMap: Bitmap? = null
     override var isSeekBack: Boolean = true
     override var isScrolling: Boolean = false
-    set(value) {
-        Log.e("kzg","*****************set isScrolling:$value")
-        field = value
-    }
     override var decodeFrameListener: IAvFrameHelper.DecodeFrameListener? = null
     override var itemFrameForTime:Long= 0
     override var iframeSearch:IFrameSearch? = null
@@ -74,7 +70,7 @@ class IFFmpegCodecFrameHelper(
 
     override fun loadAvFrame(view: ImageView, timeMs: Long) {
         targetViewMap[view] = targetViewMap[view]?:TargetBean()
-        Log.e("kzg","**************添加一个view:${view.tag} , ${targetViewMap[view]?.timeUs}  ,${timeMs}   index:$videoIndex")
+        Log.e("kzg","**************添加一个view:${view} , ${targetViewMap[view]?.timeUs}  ,${timeMs}   index:$videoIndex")
         lastBitMap?.let {
             if (targetViewMap[view]?.isAddFrame == false){
                 view.setImageBitmap(it)
@@ -112,7 +108,7 @@ class IFFmpegCodecFrameHelper(
     }
 
     override fun removeAvFrameTag(view: ImageView) {
-        Log.e("kzg","**************移除一个view:${view.tag} , ${targetViewMap[view]?.timeUs}  ，index:$videoIndex")
+        Log.e("kzg","**************移除一个view:${view} , ${targetViewMap[view]?.timeUs}  ，index:$videoIndex")
         targetViewMap[view]?.isRemoveTag = true
         if (hasNeedShowFrame){
             //判断是否有需要解码的帧
@@ -123,7 +119,7 @@ class IFFmpegCodecFrameHelper(
                 }
             }
         }
-        Log.e("kzg","********************hasNeedShowFrame:$hasNeedShowFrame")
+        //Log.e("kzg","********************hasNeedShowFrame:$hasNeedShowFrame")
     }
 
     override fun removeAvFrame() {
@@ -159,7 +155,7 @@ class IFFmpegCodecFrameHelper(
 
 
     override fun pause() {
-        Log.e("kzg","**************pause:")
+        //Log.e("kzg","**************pause:")
         isPause = true
         kzgPlayer?.pauseGetPacket(true,videoIndex)
     }
@@ -172,7 +168,7 @@ class IFFmpegCodecFrameHelper(
                 Thread.sleep(10)
                 if (!isScrolling && hasNeedShowFrame){
                     isPause = false
-                    Log.e("kzg","******************pauseGetPacket")
+                    //Log.e("kzg","******************pauseGetPacket")
                     kzgPlayer?.pauseGetPacket(false,videoIndex)
                 }
                 continue
@@ -202,6 +198,7 @@ class IFFmpegCodecFrameHelper(
                         if ((it.value.timeUs.toDouble() >= bean.timeUs && !it.value.isAddFrame && !it.value.isRemoveTag) || (!it.value.isAddFrame && !it.value.isRemoveTag)){
                             hasPause = false
                             yuvQueue.deQueue()?.apply {
+                                lastCodecFramePts = timeUs
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
                                     || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
                                     && !it.value.isAddFrame){
@@ -217,7 +214,8 @@ class IFFmpegCodecFrameHelper(
                                         if (isScrolling){
                                             return@task
                                         }
-                                        Log.e("kzg","**************找到一帧:$timeUs  ,view timeUs:${it.value.timeUs}  ,index:$videoIndex")
+                                        Log.e("kzg","**************找到一帧:${it.key}  ,timeUs:$timeUs  ,view timeUs:${it.value.timeUs}  ,index:$videoIndex  ，isRemoveTag：${it.value.isRemoveTag}")
+
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
@@ -229,7 +227,7 @@ class IFFmpegCodecFrameHelper(
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->
-                                                    if (!mp.value.isAddFrame){
+                                                    if (!mp.value.isAddFrame && !mp.value.isRemoveTag){
                                                         mp.key.setImageBitmap(lastBitMap)
                                                     }
                                                 }
@@ -286,7 +284,6 @@ class IFFmpegCodecFrameHelper(
                             minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
                             hasNoAddFrame = true
                         }
-
                     }
                 }
                 index ++
@@ -298,6 +295,7 @@ class IFFmpegCodecFrameHelper(
             val func =  {
                 val ite = iframeSearch!!.IframeUs.iterator()
                 var index = 0
+                Log.e("kzg","**************minTimeUs:$minTimeUs")
                 while (ite.hasNext()){
                     val frame = ite.next()
                     //当前recyclerView最小的item帧的时间戳所属的gop index

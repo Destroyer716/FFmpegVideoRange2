@@ -81,8 +81,9 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
 
 
     override fun onViewDetachedFromWindow(holder: BaseViewHolder) {
-        if (recyclerView is VideoFrameRecyclerView) {
-            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(holder.adapterPosition)?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
+        if (recyclerView is VideoFrameRecyclerView && holder.adapterPosition >=0) {
+            Log.e("kzg","**************onViewDetachedFromWindow:${holder.adapterPosition}")
+            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(data[holder.adapterPosition].videoData.index)?.removeAvFrameTag(holder.itemView.findViewById<ImageView>(R.id.iv))
         }
         //Log.e("kzg","*******************onViewDetachedFromWindow:${holder.itemView.findViewById<View>(R.id.iv)}")
         super.onViewDetachedFromWindow(holder)
@@ -90,7 +91,8 @@ class VideoFrameAdapter(data: MutableList<VideoFrameData>, private val frameWidt
 
     override fun onViewAttachedToWindow(holder: BaseViewHolder) {
         if (recyclerView is VideoFrameRecyclerView) {
-            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(holder.adapterPosition)?.addAvFrame(holder.itemView.findViewById<ImageView>(R.id.iv))
+                Log.e("kzg","**************onViewAttachedToWindow:${holder.adapterPosition}")
+            (recyclerView as VideoFrameRecyclerView).getAvFrameHelperByIndex(data[holder.adapterPosition].videoData.index)?.addAvFrame(holder.itemView.findViewById<ImageView>(R.id.iv))
         }
         super.onViewAttachedToWindow(holder)
 

@@ -334,7 +334,7 @@ void FAvFrameHelper::decodeAvPacket() {
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
-            LOGE("获取视频avPacket 失败");
+            LOGE("decodeAvPacket 获取视频avPacket 失败");
             av_usleep(1000*10);
             continue;
         }
@@ -398,7 +398,10 @@ void FAvFrameHelper::decodeFrame() {
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
-            LOGE("获取视频avPacket 失败");
+            LOGE("decodeFrame 获取视频avPacket index:%d 失败:%d",index,ret);
+            if (ret == AVERROR_EOF){
+                isPause = true;
+            }
             av_usleep(1000*10);
             continue;
         }
@@ -446,7 +449,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
             av_packet_free(&avPacket);
             av_free(avPacket);
             avPacket = NULL;
-            LOGE("avFrameHelper avframe errer 0");
+            LOGE("avFrameHelper avframe errer %d-0",index);
             continue;
         }
         pthread_mutex_lock(&codecMutex);
@@ -455,7 +458,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
             av_free(avPacket);
             avPacket = NULL;
             pthread_mutex_unlock(&codecMutex);
-            LOGE("avFrameHelper avframe errer 1");
+            LOGE("avFrameHelper avframe errer %d-1",index);
             continue;
         }
 
@@ -468,7 +471,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
             av_free(avPacket);
             avPacket = NULL;
             pthread_mutex_unlock(&codecMutex);
-            LOGE("avFrameHelper avframe errer 2");
+            LOGE("avFrameHelper avframe errer %d-2",index);
             continue;
         }
 

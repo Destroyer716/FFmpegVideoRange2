@@ -168,7 +168,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
         handler.setVelocityTrackerListener(object :VelocityTrackListener{
             override fun onVelocityChanged(velocity: Int) {
                 //更新是否停止滚动的状态
-                Log.e("kzg","**********************onVelocityChanged:$velocity  , isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack }")
+                //Log.e("kzg","**********************onVelocityChanged:$velocity  , isSeekBack:${rvFrame.getAvFrameHelper()?.isSeekBack }")
                 enablePlayStatus(velocity.toFloat())
                 //如果正在播放，就停止播放
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
@@ -182,6 +182,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
                 //如果是向后滑动，只有当速度停下来才开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == true && velocity == 0){
+                    Log.e("kzg","**************seek 4")
                     for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                         rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                         rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -217,7 +218,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                 //这里处理快速滑动后，突然又反方向滑动，可能存在暂停了解码后无法回复解码的情况
                 if (velocity == 0 && rvFrame.getAvFrameHelper()?.isPause == true){
-
+                    Log.e("kzg","**************seek 5")
                     for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                         rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                         rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -249,6 +250,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 clearSelectVideoIfNeed()
                 //向前滚动速度慢下来，开始解码
                 if (rvFrame.getAvFrameHelper()?.isSeekBack == false){
+                    Log.e("kzg","**************seek 6")
                     for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                         rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                         rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -381,6 +383,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                     //如果是向前滑动，并且速度小于60 并且isScrolling=true 就开始解码
                     if (v < 50F && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                        Log.e("kzg","**************seek 1")
                         for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                             rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                             rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -404,6 +407,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 }
                 //如果是向后滑动，并且速度为0，并且isScrolling=true,就开始解码
                 if (v == 0F && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                    Log.e("kzg","**************seek 2")
                     for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                         rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                         rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -436,6 +440,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     }
                     //Log.e("kzg","**********************onScrollBack:$x  ,${rvFrame.getAvFrameHelper()?.isScrolling}")
                     if (x > -3 && rvFrame.getAvFrameHelper()?.isScrolling == true){
+                        Log.e("kzg","**************seek 3")
                         for (indx in 0 until  (rvFrame.videoData?.size?:0)){
                             rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                             rvFrame.getAvFrameHelperByIndex(indx)?.seek()
@@ -582,7 +587,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         bean.u = u
                         bean.v = v
 
-                        Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
+                        //Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
                         (rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
                         if ((rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
                             rvFrame.getAvFrameHelperByIndex(index)?.pause()
