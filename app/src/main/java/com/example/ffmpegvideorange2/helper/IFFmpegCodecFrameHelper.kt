@@ -81,7 +81,7 @@ class IFFmpegCodecFrameHelper(
         targetViewMap[view]?.isAddFrame = false
         targetViewMap[view]?.isRemoveTag = false
         hasPause = false
-        /*diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
+        diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
             if (targetViewMap[view]?.timeUs == us){
                 //Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
                 bp?.let {
@@ -92,7 +92,7 @@ class IFFmpegCodecFrameHelper(
 
         },{
             Log.e("kzg","**************取一帧bitmap失败：${timeMs}")
-        })*/
+        })
         if (targetViewMap[view]?.timeUs != timeMs){
 
         }
@@ -219,11 +219,11 @@ class IFFmpegCodecFrameHelper(
                                         newBitmap?.let { bp ->
                                             lastBitMap = bp
                                             it.value.isAddFrame = true
-                                           /* diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
+                                            diskCache?.writeBitmap("${filePath}_${it.value.timeUs}",bp,{bitmap
                                                 Log.e("kzg","**************缓存一帧bitmap成功：${it.value.timeUs}")
                                             },{ e ->
                                                 Log.e("kzg","**************缓存一帧bitmap失败：${it.value.timeUs}")
-                                            })*/
+                                            })
                                             it.key.post {
                                                 it.key.setImageBitmap(bp)
                                                 targetViewMap.forEach { mp ->
@@ -266,13 +266,17 @@ class IFFmpegCodecFrameHelper(
                 Log.e("kzg","****************开始seek isAddFrame:${it.value.isAddFrame}  timeus:${it.value.timeUs} , size:${this.size}  , index:$videoIndex")
                 if (!it.value.isAddFrame && it.value.timeUs >=0){
                     if (!isSeekBack){
-                        //判断前后两帧时间间隔，大于每帧实际间隔就跳过这一帧
-                        if ((index + 1) < this.size && this[index + 1].value.timeUs - it.value.timeUs > itemFrameForTime * 1000){
+                        //判断前后两帧时间间隔，大于每帧实际间隔就跳过这一帧,并且比较的下一帧isRemoveTag 需要是false
+                        if ((index + 1) < this.size && this[index + 1].value.timeUs - it.value.timeUs > itemFrameForTime * 1000 && !this[index + 1].value.isRemoveTag && !this[index + 1].value.isAddFrame){
                             Log.e("kzg","*********************跳过一帧1")
                             it.value.isAddFrame = true
                         }else{
-                            minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
-                            hasNoAddFrame = true
+                            //如果当前帧和下一帧符合条件，还需要判断这一帧的isRemoveTag 为false
+                            if (!it.value.isRemoveTag){
+                                minTimeUs = if (minTimeUs < it.value.timeUs) minTimeUs else it.value.timeUs
+                                hasNoAddFrame = true
+                            }
+
                         }
 
                     }else{
@@ -329,7 +333,6 @@ class IFFmpegCodecFrameHelper(
             val pts = (if (isCurrentGop) minTimeUs/1000_000.0 else iframeSearch!!.IframeUs[i-1]/1000_000.0).apply {
                 Log.e("kzg","********************需要seek的I帧:$this  ， 实际需要展示的时间最小帧：${minTimeUs}   index:$videoIndex")
             }
-            Log.e("kzg","****************seek结束   index:$videoIndex")
             kzgPlayer?.seekFrame(pts.toDouble(),isCurrentGop,videoIndex)
 
             targetViewMap.forEach {
