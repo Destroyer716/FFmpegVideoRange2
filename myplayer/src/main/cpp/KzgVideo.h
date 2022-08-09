@@ -52,6 +52,7 @@ public:
     double showFrameTimestamp = 0;//拖动预览条后当前显示的帧的时间
     //队列中缓存的帧的数量
     int cacheFrameNum = 60;
+    int videoIndex = 0;
 
 
 public:

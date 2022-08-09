@@ -156,7 +156,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
         Log.e("kzg","**********************begin:"+kzgPlayer);
         kzgPlayer.setSource(inputPath);
         //kzgPlayer.setSource("/storage/emulated/0/嗜人之夜_1080P.x264.官方中文字幕.eng.chs.aac.mp4");
-        kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);
+        kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,0);
         kzgPlayer.parpared();
         kzgPlayer.setPlayerListener(new KzgPlayer.PlayerListener() {
             @Override
@@ -166,7 +166,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             }
 
             @Override
-            public void onPrepare() {
+            public void onPrepare(int index) {
                 Log.e("kzg","*********************onPrepare success");
                 kzgPlayer.start(0);
             }
@@ -219,7 +219,7 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
             @Override
             public void onPlayStop() {
 
-                kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);
+                kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,0);
                 ivPlay.setImageResource(R.drawable.play_ico);
             }
 
@@ -314,14 +314,14 @@ public class VideoRangeActivity extends AppCompatActivity implements View.OnClic
                 }
                 if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
                     //停止
-                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW);
+                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,0);
                     ivPlay.setImageResource(R.drawable.play_ico);
                 }else if (KzgPlayer.playModel == KzgPlayer.PLAY_MODEL_FRAME_PREVIEW){
                     //播放
                     if (!kzgPlayer.enablePlay){
                         return;
                     }
-                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT);
+                    kzgPlayer.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT,0);
                     ivPlay.setImageResource(R.drawable.stop_ico);
                 }
                 break;

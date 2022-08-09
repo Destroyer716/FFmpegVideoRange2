@@ -92,6 +92,14 @@ public class KzgPlayer {
         n_parpared(source);
     }
 
+    public void addVideo(String source){
+        if (TextUtils.isEmpty(source)){
+            Log.e("kzg","source 为空");
+            return;
+        }
+
+    }
+
 
     /**
      * 绑定surface view
@@ -131,6 +139,7 @@ public class KzgPlayer {
      * 开始播放，并设置音量和速度等一些参数
      */
     public void start(int index){
+        Log.e("kzg","*/****************start:"+isPlaying + ",  "+isPause);
         if (isPlaying || isPause){
             return;
         }
@@ -139,12 +148,21 @@ public class KzgPlayer {
             return;
         }
         isPlaying = true;
-        setPlayModel(playModel);
+        setPlayModel(playModel,index);
         setVolume(volume,index);
         setPitch(pitch,index);
         setSpeed(speed,index);
         setAmplifyVol(amplifyVol,index);
-        n_play(0);
+        n_play(index);
+    }
+
+    /**
+     * 追加视频初始化完成后的启动解码线程操作
+     * @param index
+     */
+    public void startForAddVideo(int index){
+        setPlayModel(playModel,index);
+        n_play(index);
     }
 
     /**
@@ -263,9 +281,13 @@ public class KzgPlayer {
      * 设置播放模式  分为正常播放和逐帧显示两种模式
      * @param model
      */
-    public void setPlayModel(int model){
+    public void setPlayModel(int model,int index){
+        n_playmodel(model,index);
+    }
+
+
+    public void setPlayModelAll(int model){
         playModel = model;
-        n_playmodel(playModel);
     }
 
     public int getPlayModel(){
@@ -337,6 +359,7 @@ public class KzgPlayer {
      * @param path
      */
     public void addVideo(String path,int index){
+        n_add_video(path,index);
         initGetFrame(path,index);
     }
 
@@ -355,9 +378,12 @@ public class KzgPlayer {
     private native void n_speed(float speed,int index);
     private native void n_amplifyVol(float vol,int index);
     private native int n_sampleRate(int index);
-    private native void n_playmodel(int model);
+    private native void n_playmodel(int model,int index);
+    private native void n_playmodel_all(int model);
     private native void n_showframe(double timestamp,int forAdvance,int index);
     private native void n_showframeFromSeek(double timestamp,int index);
+
+    private native void n_add_video(String source,int index);
 
 
 /************************按时间抽帧 mediaCodec解码******************************************/
@@ -388,9 +414,9 @@ public class KzgPlayer {
         }
     }
 
-    public void onPrepare(){
+    public void onPrepare(int index){
         if (playerListener != null){
-            playerListener.onPrepare();
+            playerListener.onPrepare(index);
         }
     }
 
@@ -511,7 +537,7 @@ public class KzgPlayer {
 
     public interface PlayerListener{
         void onError(int code,String msg);
-        void onPrepare();
+        void onPrepare(int index);
         void onLoadChange(boolean isLoad);
         void onProgress(long currentTime,long totalTime);
         void onTimeInfo(TimeInfoBean timeInfoBean);

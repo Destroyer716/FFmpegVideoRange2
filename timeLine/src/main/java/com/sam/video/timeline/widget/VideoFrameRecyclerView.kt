@@ -44,6 +44,9 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     var currentVideoDataIndex = 0
     //多个视频就有多个avFrameHelper
     val avFrameHelperList = mutableListOf<IAvFrameHelper>()
+    //多段视频的情况下，当前视频前面的视频的时间总和 单位是毫秒
+    var preVideoTime:Long = 0
+    var onChangeListener:OnVideoChangeListener? = null
 
     init {
         adapter = VideoFrameAdapter(listData, frameWidth)
@@ -427,8 +430,12 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
         if (position in 0 until listData.size) {
             val item = listData[position]
             val indexVideo = videoData.indexOfFirst { it === item.videoData }
-            //Log.e("kzg","************************indexVideo:$indexVideo")
+            if (indexVideo != currentVideoDataIndex && onChangeListener !=null){
+                onChangeListener!!.onChangeVideo(currentVideoDataIndex,indexVideo)
+            }
             currentVideoDataIndex = indexVideo
+            preVideoTimes()
+            Log.e("kzg","************************indexVideo:$indexVideo  ，preVideoTimes：$preVideoTime")
             var offset = 0f //手动计算偏移值，防止 timeLineValue.time2px(item.time) 有误差
             for (i in position - 1 downTo 0) {
                 val itemCountWidth = listData[i]
@@ -501,6 +508,16 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
     }
 
 
+    private fun preVideoTimes(){
+        videoData?.let {
+            preVideoTime = 0
+            for (i in 0 until currentVideoDataIndex){
+                preVideoTime += it[i].durationMs
+            }
+        }
+
+    }
+
     fun release(){
         avFrameHelperList?.let { list ->
             list.forEach {
@@ -509,5 +526,8 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
         }
     }
 
+    interface OnVideoChangeListener{
+        fun onChangeVideo(lastVideoInde:Int, currentVideoIndex:Int)
+    }
 
 }

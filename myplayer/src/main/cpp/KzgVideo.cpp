@@ -54,7 +54,7 @@ int SaveYuv(unsigned char *buf, int wrap, int xsize, int ysize, char *filename)
 
 void *videoPlay(void *arg){
     KzgVideo *kzgVideo = static_cast<KzgVideo *>(arg);
-
+    LOGE("kzgVideo  videoPlay %d",kzgVideo->kzgPlayerStatus->exit);
     while (kzgVideo->kzgPlayerStatus != NULL && !kzgVideo->kzgPlayerStatus->exit){
 
         if (kzgVideo->frameQueue->getQueueSize() == 0){
@@ -392,7 +392,7 @@ void *videoPlay(void *arg){
 
                 //发送进度信息给Java
                 int64_t  currentTime = (avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE);
-                //LOGE("视频帧时间：%lld    总时间：%lld",currentTime,kzgVideo->duration);
+                LOGE("视频帧时间：%lld    总时间：%lld  index:%d",currentTime,kzgVideo->duration,kzgVideo->videoIndex);
                 if( !kzgVideo->kzgPlayerStatus->isFramePreview){
                     kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
                 }
@@ -518,6 +518,7 @@ void *videoPlay(void *arg){
 
 
 void KzgVideo::play() {
+    LOGE("kzgVideo play");
     if (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
         pthread_create(&play_thread,NULL,videoPlay,this);
     }

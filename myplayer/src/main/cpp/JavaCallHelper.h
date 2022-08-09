@@ -42,7 +42,7 @@ public:
 
     void onError(int code,char *msg,int thread=THREAD_MAIN);
 
-    void onPrepare(int thread = THREAD_MAIN);
+    void onPrepare(int index,int thread = THREAD_MAIN);
     void onProgress(int64_t current,int64_t total,int thread = THREAD_MAIN);
     void onLoad(bool isLoad,int thread=THREAD_MAIN);
     void onTimeInfo(int curr,int total,int thread = THREAD_MAIN);

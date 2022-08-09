@@ -10,7 +10,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
     jclass jclass1 = env->GetObjectClass(jobj);
 
     jmid_error = env->GetMethodID(jclass1,"onError","(ILjava/lang/String;)V");
-    jmid_prepera = env->GetMethodID(jclass1,"onPrepare","()V");
+    jmid_prepera = env->GetMethodID(jclass1,"onPrepare","(I)V");
     jmid_progress = env->GetMethodID(jclass1,"onProgress","(JJ)V");
     jmid_load = env->GetMethodID(jclass1,"onLoad","(Z)V");
     jmid_timeInfo = env->GetMethodID(jclass1,"onTimeInfo","(II)V");
@@ -54,16 +54,16 @@ void JavaCallHelper::onError(int code, char *msg,int thread) {
     }
 }
 
-void JavaCallHelper::onPrepare(int thread) {
+void JavaCallHelper::onPrepare(int index,int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
         if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
             return;
         }
-        jniEnv->CallVoidMethod(jobj,jmid_prepera);
+        jniEnv->CallVoidMethod(jobj,jmid_prepera,index);
         javaVm->DetachCurrentThread();
     } else{
-        env->CallVoidMethod(jobj,jmid_prepera);
+        env->CallVoidMethod(jobj,jmid_prepera,index);
     }
 
 }

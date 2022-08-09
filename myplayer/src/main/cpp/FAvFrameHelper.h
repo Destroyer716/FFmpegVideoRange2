@@ -41,6 +41,8 @@ public:
     int64_t seekTime = 0;
     AVBitStreamFilterContext* mimType = NULL;
     int index = 0;
+    pthread_t thread_start_get_frame;
+    pthread_t thread_start_decode_frame;
 
 private:
     JavaCallHelper *helper;

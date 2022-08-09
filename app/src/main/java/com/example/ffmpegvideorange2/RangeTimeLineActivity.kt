@@ -19,11 +19,13 @@ import com.example.myplayer.KzgPlayer.PLAY_MODEL_DEFAULT
 import com.example.myplayer.KzgPlayer.PlayerListener
 import com.example.myplayer.PacketBean
 import com.example.myplayer.TimeInfoBean
+import com.example.myplayer.opengl.KzgGLSurfaceView
 import com.sam.video.timeline.bean.VideoClip
 import com.sam.video.timeline.listener.OnFrameClickListener
 import com.sam.video.timeline.listener.SelectAreaMagnetOnChangeListener
 import com.sam.video.timeline.listener.VideoPlayerOperate
 import com.sam.video.timeline.widget.TimeLineBaseValue
+import com.sam.video.timeline.widget.VideoFrameRecyclerView
 import com.sam.video.timeline.widget.ZoomFrameLayout
 import com.sam.video.util.MediaStoreUtil
 import com.sam.video.util.VideoUtils
@@ -94,7 +96,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             playTimeLine += msg.obj as Long
                             zoomFrameLayout.scrollByTime(20)
 
-                            //Log.e("kzg","***********************playTimeLine:$playTimeLine  , lastTime2:$lastTime2")
+                            Log.e("kzg","***********************playTimeLine:$playTimeLine  , lastTime2:$lastTime2")
                             val message = Message()
                             message.obj = 20_000L
                             message.what = PLAY_TIME_CHANGE_HANDLER
@@ -290,7 +292,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     return@setOnClickListener
                 }
                 rvFrame.getAvFrameHelper()?.removeAvFrame()
-                kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_DEFAULT
+                for (i in 0 until videos.size){
+                    kzgPlayer!!.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,i)
+                }
+                kzgPlayer!!.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT,rvFrame.currentVideoDataIndex)
+                kzgPlayer!!.setPlayModelAll(KzgPlayer.PLAY_MODEL_DEFAULT)
                 iv_play_stop_video.setImageResource(R.drawable.stop_ico)
 
                 if (zoomFrameLayout != null && kzgPlayer!!.playModel == KzgPlayer.PLAY_MODEL_DEFAULT) {
@@ -321,26 +327,29 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun updateTimeByScroll(time: Long) {
                 //逐帧预览时，才处理滚动
                 if ( KzgPlayer.PLAY_MODEL_FRAME_PREVIEW == kzgPlayer?.playModel){
-                    rvFrame.getAvFrameHelper()?.iframeSearch?.getCurrentGopFromTimeUs(time*1000)
-                    if (time > lastScrollTime){
+                    val newTime = time - rvFrame.preVideoTime
+                    rvFrame.getAvFrameHelper()?.iframeSearch?.getCurrentGopFromTimeUs(newTime*1000)
+                    if (newTime > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
-                            kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_advance,false,rvFrame.currentVideoDataIndex)
+                            Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                            kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_advance,false,rvFrame.currentVideoDataIndex)
                         }else{
                             val currentIFrame= rvFrame.getAvFrameHelper()?.iframeSearch?.currentIFrameTimeUs?:0
-                            //Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$time")
+                            Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$newTime , index:${rvFrame.currentVideoDataIndex}")
                             kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true,rvFrame.currentVideoDataIndex)
                         }
 
 
-                    }else if(time < lastScrollTime) {
+                    }else if(newTime < lastScrollTime) {
                         //向后滚动
-                        kzgPlayer?.showFrame(time.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
+                        Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                        kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
                     }
-                    lastScrollTime = time
-                    lastTime2 = time * 1000
+                    lastScrollTime = newTime
+                    lastTime2 = newTime * 1000
                     //更新播放时间
-                    updatePlayTime(time * 1000)
+                    updatePlayTime(newTime * 1000)
                 }
 
             }
@@ -457,12 +466,25 @@ class RangeTimeLineActivity : AppCompatActivity(){
             startGetVideoIntent()
         }
 
+        rvFrame.onChangeListener = object :VideoFrameRecyclerView.OnVideoChangeListener{
+            override fun onChangeVideo(lastVideoInde: Int, currentVideoIndex: Int) {
+                //当发生视频切换的时候
+                if (kzgPlayer?.playModel == KzgPlayer.PLAY_MODEL_DEFAULT){
+                    kzgPlayer?.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,lastVideoInde)
+                    kzgPlayer?.setPlayModel(KzgPlayer.PLAY_MODEL_DEFAULT,currentVideoIndex)
+                }
+
+                Log.e("kzg","******************onChangeVideo last:$lastVideoInde, current:$currentVideoIndex")
+            }
+
+        }
     }
 
 
     fun begin() {
         kzgPlayer!!.setSource(inputPath)
-        kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
+        kzgPlayer!!.setPlayModelAll(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW)
+        kzgPlayer!!.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,0)
         kzgPlayer!!.parpared()
         kzgPlayer!!.setPlayerListener(object : PlayerListener {
             override fun onError(code: Int, msg: String) {
@@ -470,9 +492,13 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 runOnUiThread { av_loading.hide() }
             }
 
-            override fun onPrepare() {
+            override fun onPrepare(index: Int) {
                 Log.e("kzg", "*********************onPrepare success")
-                kzgPlayer!!.start(rvFrame.currentVideoDataIndex)
+                if (index == 0){
+                    kzgPlayer!!.start(index)
+                }else{
+                    kzgPlayer!!.startForAddVideo(index)
+                }
             }
 
             override fun onLoadChange(isLoad: Boolean) {
@@ -509,7 +535,10 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
             override fun onPlayStop() {
-                kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
+                kzgPlayer!!.setPlayModelAll(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW)
+                for (i in 0 until videos.size){
+                    kzgPlayer!!.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,i)
+                }
                 iv_play_stop_video.setImageResource(R.drawable.play_ico)
             }
 
@@ -639,7 +668,10 @@ class RangeTimeLineActivity : AppCompatActivity(){
     }
 
     private fun stopPlayVideo(){
-        kzgPlayer!!.playModel = KzgPlayer.PLAY_MODEL_FRAME_PREVIEW
+        for (i in 0 until videos.size){
+            kzgPlayer!!.setPlayModel(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW,i)
+        }
+        kzgPlayer!!.setPlayModelAll(KzgPlayer.PLAY_MODEL_FRAME_PREVIEW)
         iv_play_stop_video.setImageResource(R.drawable.play_ico)
     }
 

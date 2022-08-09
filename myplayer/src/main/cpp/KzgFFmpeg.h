@@ -49,6 +49,8 @@ public:
     pthread_t showFrameThread;
     KzgPlayerStatus *kzgPlayerStatus;
     KzgVideo *kzgVideo = NULL;
+    int videoIndex = 0;
+    pthread_t thread_start;
 
 private:
     JavaCallHelper *helper = NULL;
