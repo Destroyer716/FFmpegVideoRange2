@@ -677,7 +677,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         sec = 0;
     }
 
-    LOGE("start  seeking %lld  , duration:%lld  ,index:%d",sec,duration ,videoIndex);
+    //LOGE("start  seeking %lld  , duration:%lld  ,index:%d",sec,duration ,videoIndex);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;

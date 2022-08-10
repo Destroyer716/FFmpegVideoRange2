@@ -225,7 +225,6 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         rvFrame.getAvFrameHelperByIndex(indx)?.isScrolling = false
                         rvFrame.getAvFrameHelperByIndex(indx)?.seek()
                     }
-
                 }
 
                 //快速滑动停止后，需要告诉底层最后停留在了那一帧
@@ -332,24 +331,24 @@ class RangeTimeLineActivity : AppCompatActivity(){
                     if (newTime > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
-                            Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                            //Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
                             kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_advance,false,rvFrame.currentVideoDataIndex)
                         }else{
                             val currentIFrame= rvFrame.getAvFrameHelper()?.iframeSearch?.currentIFrameTimeUs?:0
-                            Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$newTime , index:${rvFrame.currentVideoDataIndex}")
+                            //Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$newTime , index:${rvFrame.currentVideoDataIndex}")
                             kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true,rvFrame.currentVideoDataIndex)
                         }
 
 
                     }else if(newTime < lastScrollTime) {
                         //向后滚动
-                        Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                        //Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
                         kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
                     }
                     lastScrollTime = newTime
-                    lastTime2 = newTime * 1000
+                    lastTime2 = time * 1000
                     //更新播放时间
-                    updatePlayTime(newTime * 1000)
+                    updatePlayTime(time * 1000)
                 }
 
             }
@@ -511,11 +510,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onProgress(currentTime: Long, totalTime: Long) {
                 //正常播放进度
-                //Log.e("kzg", "******************onProgress:$currentTime ,totalTime:$totalTime")
+                //Log.e("kzg", "******************onProgress:$currentTime ,preVideoTime:${rvFrame.preVideoTime}")
                 if (kzgPlayer?.playModel == PLAY_MODEL_DEFAULT){
-                    lastTime2 = currentTime
+                    lastTime2 = currentTime + rvFrame.preVideoTime*1000
                     //更新播放时间
-                    updatePlayTime(currentTime)
+                    updatePlayTime(currentTime + rvFrame.preVideoTime*1000)
                 }
 
             }

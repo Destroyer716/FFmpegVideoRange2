@@ -83,7 +83,7 @@ class IFFmpegCodecFrameHelper(
         hasPause = false
         diskCache?.asyncReadBitmap("${filePath}_${timeMs}",timeMs,{bp,us ->
             if (targetViewMap[view]?.timeUs == us){
-                //Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
+                Log.e("kzg","**************取一帧bitmap成功：${timeMs}")
                 bp?.let {
                     targetViewMap[view]?.isAddFrame = true
                     view.setImageBitmap(it)

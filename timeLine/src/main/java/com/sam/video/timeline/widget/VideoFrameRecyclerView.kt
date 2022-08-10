@@ -415,7 +415,6 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
             return time
         }
         return null
-
     }
 
     /**
@@ -435,7 +434,7 @@ class VideoFrameRecyclerView @JvmOverloads constructor(
             }
             currentVideoDataIndex = indexVideo
             preVideoTimes()
-            Log.e("kzg","************************indexVideo:$indexVideo  ，preVideoTimes：$preVideoTime")
+            //Log.e("kzg","************************indexVideo:$indexVideo  ，preVideoTimes：$preVideoTime")
             var offset = 0f //手动计算偏移值，防止 timeLineValue.time2px(item.time) 有误差
             for (i in position - 1 downTo 0) {
                 val itemCountWidth = listData[i]
