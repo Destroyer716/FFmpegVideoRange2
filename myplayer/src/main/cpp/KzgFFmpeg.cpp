@@ -591,7 +591,7 @@ void KzgFFmpeg::start() {
     }
 
     if (helper != NULL){
-        helper->onComplete(THREAD_CHILD);
+        //helper->onComplete(THREAD_CHILD);
     }
     exit = true;
     LOGE("解码完成");

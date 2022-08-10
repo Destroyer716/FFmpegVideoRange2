@@ -2,10 +2,12 @@ package com.example.ffmpegvideorange2.helper
 
 import android.graphics.*
 import android.media.*
+import android.os.Build
 import android.os.Environment
 import android.text.TextUtils
 import android.util.Log
 import android.widget.ImageView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ffmpegvideorange2.*
 import com.example.myplayer.KzgPlayer
@@ -200,7 +202,7 @@ class IFFmpegCodecFrameHelper(
                             yuvQueue.deQueue()?.apply {
                                 lastCodecFramePts = timeUs
                                 if (((it.value.timeUs >= this.timeUs-20_000 && it.value.timeUs<=this.timeUs+20_000)
-                                    || (this.timeUs-it.value.timeUs>=30_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs))
+                                    || (this.timeUs-it.value.timeUs in 30_000..500_000) || (it.value.timeUs < 30_000 && this.timeUs > it.value.timeUs && this.timeUs < 100_000))
                                     && !it.value.isAddFrame){
                                         //Log.e("kzg","**************timeUs:$timeUs  ,view timeUs:${it.value.timeUs}")
                                     if (isScrolling){
@@ -343,4 +345,10 @@ class IFFmpegCodecFrameHelper(
 
 
 
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun showTargetViewMap(){
+        targetViewMap.forEach { t, u ->
+            Log.e("kzg","****************showTargetViewMap:$t   ,$u")
+        }
+    }
 }

@@ -477,6 +477,11 @@ class RangeTimeLineActivity : AppCompatActivity(){
             }
 
         }
+
+        tv_chakan.setOnClickListener {
+            (rvFrame.getAvFrameHelperByIndex(1) as IFFmpegCodecFrameHelper).showTargetViewMap()
+
+        }
     }
 
 
