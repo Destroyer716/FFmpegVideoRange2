@@ -123,7 +123,7 @@ public class KzgPlayer {
      * @param isForAdvance 为了快速滑动后，显示目标帧
      */
     public void showFrame(double timestamp,int seekType,boolean isForAdvance,int index){
-        //Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
+        Log.e("kzg","**********************showFrame:"+timestamp   + "     ,type :" + seekType);
         this.seekType = seekType;
         if (seekType == seek_back){
             //后退时的逐帧显示
@@ -341,7 +341,7 @@ public class KzgPlayer {
      * @param isPause
      */
     public void pauseGetPacket(boolean isPause,int index){
-        //Log.e("kzg","**************pauseGetPacket:"+isPause);
+        Log.e("kzg","**************pauseGetPacket:"+isPause);
         n_pause_get_packet(isPause,index);
     }
 

@@ -46,6 +46,7 @@ int SafeQueue::getAvPacket(AVPacket *avPacket) {
             } else{
                 if (playerStatus != NULL && !playerStatus->exit){
                     pthread_cond_wait(&condPacket,&mutexPacket);
+
                 }
             }
         }

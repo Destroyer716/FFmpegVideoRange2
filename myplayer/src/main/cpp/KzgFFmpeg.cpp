@@ -488,7 +488,7 @@ void KzgFFmpeg::start() {
     kzgAudio->play();
     kzgVideo->play();
     while (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
-
+        //LOGE("get AvPacket thread : %d",videoIndex);
         if (!kzgVideo->kzgPlayerStatus->isFramePreview){
             //正常播放只缓存40帧解码前的音频
             if (kzgAudio->queue->getQueueSize() > 40){
@@ -677,7 +677,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         sec = 0;
     }
 
-    //LOGE("start  seeking %lld  , duration:%lld  ,index:%d",sec,duration ,videoIndex);
+    LOGE("start  seeking %lld  , duration:%lld  ,index:%d",sec,duration ,videoIndex);
     if (sec > 0 && sec <= duration){
         pthread_mutex_lock(&seek_mutex);
         kzgPlayerStatus->seeking = true;
@@ -687,6 +687,7 @@ void KzgFFmpeg::seek(int64_t sec) {
             if (!kzgVideo->kzgPlayerStatus->isShowSeekFrame){
                 pthread_mutex_unlock(&seek_mutex);
                 kzgPlayerStatus->seeking = false;
+                LOGE("seeking1 ***************");
                 return;
             }
         }
@@ -710,7 +711,7 @@ void KzgFFmpeg::seek(int64_t sec) {
             }
             kzgVideo->queue->clearAvPacket();
             kzgVideo->lock = 0;
-            LOGE("seeking %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
+            LOGE("seeking2 %lld,   kzgVideo->seekTime: %lld",sec,kzgVideo->seekTime);
             pthread_mutex_lock(&kzgVideo->codecMutex);
             avcodec_flush_buffers(kzgVideo->avCodecContext);
             pthread_mutex_unlock(&kzgVideo->codecMutex);
@@ -724,7 +725,7 @@ void KzgFFmpeg::seek(int64_t sec) {
         kzgVideo->kzgPlayerStatus->isSeekPause = false;
         pthread_mutex_unlock(&seek_mutex);
         kzgPlayerStatus->seeking = false;
-        //LOGE("***********seeking:%d",kzgPlayerStatus->seeking);
+        LOGE("***********seeking3:%d",kzgPlayerStatus->seeking);
     }
 }
 

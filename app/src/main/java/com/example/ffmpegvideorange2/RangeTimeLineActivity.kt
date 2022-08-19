@@ -96,7 +96,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             playTimeLine += msg.obj as Long
                             zoomFrameLayout.scrollByTime(20)
 
-                            Log.e("kzg","***********************playTimeLine:$playTimeLine  , lastTime2:$lastTime2")
+                            //Log.e("kzg","***********************playTimeLine:$playTimeLine  , lastTime2:$lastTime2")
                             val message = Message()
                             message.obj = 20_000L
                             message.what = PLAY_TIME_CHANGE_HANDLER
@@ -326,24 +326,32 @@ class RangeTimeLineActivity : AppCompatActivity(){
             override fun updateTimeByScroll(time: Long) {
                 //逐帧预览时，才处理滚动
                 if ( KzgPlayer.PLAY_MODEL_FRAME_PREVIEW == kzgPlayer?.playModel){
-                    val newTime = time - rvFrame.preVideoTime
+                    //计算正确的时间，即：需要减去之前的视频段的时间，再加上偏移的开始时间
+                    val newTime = time - rvFrame.preVideoTime + videos[rvFrame.currentVideoDataIndex].startAtMs
+
                     rvFrame.getAvFrameHelper()?.iframeSearch?.getCurrentGopFromTimeUs(newTime*1000)
+
                     if (newTime > lastScrollTime){
                         //向前滚动
                         if (!isDoSeekForPriviewFrame) {
-                            //Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                            Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
                             kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_advance,false,rvFrame.currentVideoDataIndex)
                         }else{
                             val currentIFrame= rvFrame.getAvFrameHelper()?.iframeSearch?.currentIFrameTimeUs?:0
-                            //Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$newTime , index:${rvFrame.currentVideoDataIndex}")
+                            Log.e("kzg","*********************currentIFrame:$currentIFrame  , time:$newTime , index:${rvFrame.currentVideoDataIndex}")
                             kzgPlayer?.showFrame(currentIFrame.toDouble()/1000_000, KzgPlayer.seek_back,true,rvFrame.currentVideoDataIndex)
                         }
 
 
                     }else if(newTime < lastScrollTime) {
                         //向后滚动
-                        //Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
-                        kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
+                        Log.e("kzg","*********************currentIFrame: , time:$newTime  , index:${rvFrame.currentVideoDataIndex}")
+                        if (newTime < 0 && rvFrame.currentVideoDataIndex > 0){
+                            kzgPlayer?.showFrame((rvFrame!!.videoData!![rvFrame.currentVideoDataIndex - 1].durationMs + newTime).toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex - 1)
+                        }else{
+                            kzgPlayer?.showFrame(newTime.toDouble()/1000, KzgPlayer.seek_back,false,rvFrame.currentVideoDataIndex)
+                        }
+
                     }
                     lastScrollTime = newTime
                     lastTime2 = time * 1000
@@ -424,6 +432,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
                 if (v == 0F && hasFastScoll) {
                     hasFastScoll = false
+                    Log.e("kzg","************************lastScrollTime:$lastScrollTime")
                     kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_advance,true,rvFrame.currentVideoDataIndex)
                     //kzgPlayer?.showFrame(lastScrollTime.toDouble()/1000, KzgPlayer.seek_back,true)
                 }
@@ -620,7 +629,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                         bean.u = u
                         bean.v = v
 
-                        //Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelper() as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
+                        Log.e("kzg","********************yuvQueue:${ (rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.queueSize}")
                         (rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.enQueue(bean)
                         if ((rvFrame.getAvFrameHelperByIndex(index) as IFFmpegCodecFrameHelper).yuvQueue.queueSize > 2){
                             rvFrame.getAvFrameHelperByIndex(index)?.pause()
@@ -784,6 +793,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                             timeLineValue.time = 0
                         }
                     }
+                    Log.e("kzg","*************************startAtMs:${selectVideo.startAtMs}")
                     updateVideoClip()
                     return realOffsetTime != 0L
                 } else if (endOffset != 0L) {

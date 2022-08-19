@@ -35,14 +35,14 @@ JavaCallHelper::JavaCallHelper(JavaVM *_javaVM,JNIEnv * _env,jobject &_jobj):jav
 
 JavaCallHelper::~JavaCallHelper() {
     //env->DeleteGlobalRef(jobj);
-    jobj = 0;
+    jobj = NULL;
 }
 
 void JavaCallHelper::onError(int code, char *msg,int thread) {
 
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jstring jmsg = jniEnv->NewStringUTF(msg);
@@ -57,7 +57,7 @@ void JavaCallHelper::onError(int code, char *msg,int thread) {
 void JavaCallHelper::onPrepare(int index,int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_prepera,index);
@@ -72,7 +72,7 @@ void JavaCallHelper::onPrepare(int index,int thread) {
 void JavaCallHelper::onProgress(int64_t current,int64_t total, int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_progress,current,total);
@@ -85,7 +85,7 @@ void JavaCallHelper::onProgress(int64_t current,int64_t total, int thread) {
 void JavaCallHelper::onLoad(bool isLoad, int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_load,isLoad);
@@ -98,7 +98,7 @@ void JavaCallHelper::onLoad(bool isLoad, int thread) {
 void JavaCallHelper::onTimeInfo(int curr, int total, int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if (javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_timeInfo,curr,total);
@@ -111,7 +111,7 @@ void JavaCallHelper::onTimeInfo(int curr, int total, int thread) {
 void JavaCallHelper::onComplete(int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_complete);
@@ -124,7 +124,7 @@ void JavaCallHelper::onComplete(int thread) {
 void JavaCallHelper::onPlayStop(int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_playStop);
@@ -138,7 +138,7 @@ void JavaCallHelper::onPlayStop(int thread) {
 void JavaCallHelper::onGetDB(int db, int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jniEnv->CallVoidMethod(jobj,jmid_getDB,db);
@@ -151,7 +151,7 @@ void JavaCallHelper::onGetDB(int db, int thread) {
 void JavaCallHelper::onPcmToAac(int size, void *data, int thread) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
         jbyteArray byteArr = jniEnv->NewByteArray(size);
@@ -172,7 +172,7 @@ void JavaCallHelper::onPcmToAac(int size, void *data, int thread) {
 void JavaCallHelper::onCallRenderYUV(int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv,int practicalWidth,int thread ) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
 
@@ -215,7 +215,7 @@ bool JavaCallHelper::onCallIsSupperMediaCodec(const char *ffcodecname, int threa
     bool isSupper = false;
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return isSupper;
         }
 
@@ -235,7 +235,7 @@ void
 JavaCallHelper::onCallInitMediaCodec(const char *codecName, int width, int height, int csd0_size, int csd1_size, uint8_t *csd_0,
                                      uint8_t *csd_1) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
     jstring name = jniEnv->NewStringUTF(reinterpret_cast<const char *>(codecName));
@@ -253,7 +253,7 @@ JavaCallHelper::onCallInitMediaCodec(const char *codecName, int width, int heigh
 
 void JavaCallHelper::onCallDecodeAVPacket(int dataSize, uint8_t *data) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
 
@@ -269,7 +269,7 @@ void JavaCallHelper::onCallInitMediaCodecByYUV(const char *codecName, int width,
                                                int csd0_size, int csd1_size, uint8_t *csd_0,
                                                uint8_t *csd_1) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
 
@@ -288,7 +288,7 @@ void JavaCallHelper::onCallInitMediaCodecByYUV(const char *codecName, int width,
 
 void JavaCallHelper::onCallDecodeAVPacketByYUV(int dataSize, uint8_t *data, int width, int height, double timstamp) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
 
@@ -304,7 +304,7 @@ int JavaCallHelper::onCallJavaQueueSize(int thread) {
     int size = 0;
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return size;
         }
 
@@ -320,7 +320,7 @@ void
 JavaCallHelper::onCallVideoInfo(int thread, int fps, int64_t duration, int width, int height) {
     if (thread == THREAD_CHILD){
         JNIEnv *jniEnv;
-        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+        if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
             return;
         }
 
@@ -346,7 +346,7 @@ void JavaCallHelper::onEnablePlay(bool enable, int thread) {
 
 void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int height, int csd0_size, int csd1_size,uint8_t *csd_0,uint8_t *csd_1,int index) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
     jstring name = jniEnv->NewStringUTF(reinterpret_cast<const char *>(codecName));
@@ -364,7 +364,7 @@ void JavaCallHelper::onGetFrameInitSuccess(const char *codecName,int width,int h
 
 void JavaCallHelper::onGetFramePacket(int dataSize, double pts, uint8_t *data,int index) {
     JNIEnv *jniEnv;
-    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK){
+    if(javaVm->AttachCurrentThread(&jniEnv,0) != JNI_OK || jobj == NULL){
         return;
     }
 
@@ -380,7 +380,7 @@ void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8
                                        int practicalWidth,double pts,int index, int thread) {
     if (thread == THREAD_CHILD) {
         JNIEnv *jniEnv;
-        if (javaVm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+        if (javaVm->AttachCurrentThread(&jniEnv, 0) != JNI_OK || jobj == NULL) {
             return;
         }
 
@@ -422,7 +422,7 @@ void JavaCallHelper::onCallYUVToBitmap(int width, int height, uint8_t *fy, uint8
  void JavaCallHelper::onCallYUVToBitmap2(int width, int height, uint8_t *fyuv, int practicalWidth,double pts, int thread) {
         if (thread == THREAD_CHILD) {
             JNIEnv *jniEnv;
-            if (javaVm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            if (javaVm->AttachCurrentThread(&jniEnv, 0) != JNI_OK || jobj == NULL) {
                 return;
             }
 

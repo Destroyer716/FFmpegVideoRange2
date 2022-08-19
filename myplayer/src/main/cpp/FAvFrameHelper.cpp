@@ -478,7 +478,7 @@ void FAvFrameHelper::decodeFrameFromQueue() {
         if (avFrame->format == AV_PIX_FMT_YUV420P || avFrame->format == AV_PIX_FMT_YUVJ420P){
             avFrame->pts = av_frame_get_best_effort_timestamp(avFrame);
             int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;
-            //LOGE("avFrameHelper avframe yuv420p %d  ,%d",width,avCodecContext->width);
+            LOGE("avFrameHelper avframe yuv420p %lf ",(avFrame->pts *av_q2d(time_base) * AV_TIME_BASE));
             helper->onCallYUVToBitmap(
                     width,
                     avCodecContext->height,

@@ -80,19 +80,40 @@ public class IFrameSearch implements Runnable {
      * @return
      */
     public int getCurrentGopFromTimeUs(long timeUs){
-        for (int i=currentIFrameIndex;i<IframeUs.size();i++){
-            if (i == 1){
-                if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
-                    currentIFrameIndex = i-1;
-                    break;
-                }
-            }else if (i > 1){
-                if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
-                    currentIFrameIndex = i-1;
-                    break;
+        Log.e("kzg","*************************getCurrentGopFromTimeUs:" + timeUs + "  , " +IframeUs.get(currentIFrameIndex) +"  , "+currentIFrameIndex);
+        if (timeUs > IframeUs.get(currentIFrameIndex)){
+            for (int i=currentIFrameIndex;i<IframeUs.size();i++){
+                if (i == 1){
+                    if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                        currentIFrameIndex = i-1;
+                        break;
+                    }
+                }else if (i > 1){
+                    if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                        currentIFrameIndex = i-1;
+                        break;
+                    }
                 }
             }
+        }else  if (timeUs < IframeUs.get(currentIFrameIndex)){
+            for (int i=currentIFrameIndex;i>=0;i--){
+                if (i == 1){
+                    if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                        currentIFrameIndex = i-1;
+                        break;
+                    }
+                }else if (i > 1){
+                    if (timeUs >= IframeUs.get(i-1) && timeUs < IframeUs.get(i)){
+                        currentIFrameIndex = i-1;
+                        break;
+                    }
+                }
+            }
+        }else {
+            return currentIFrameIndex;
         }
+
+        Log.e("kzg","*************************getCurrentGopFromTimeUs:" + timeUs + "  , "+currentIFrameIndex);
         return currentIFrameIndex;
     }
 

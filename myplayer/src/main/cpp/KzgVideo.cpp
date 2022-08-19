@@ -56,7 +56,7 @@ void *videoPlay(void *arg){
     KzgVideo *kzgVideo = static_cast<KzgVideo *>(arg);
     LOGE("kzgVideo  videoPlay %d",kzgVideo->kzgPlayerStatus->exit);
     while (kzgVideo->kzgPlayerStatus != NULL && !kzgVideo->kzgPlayerStatus->exit){
-
+        //LOGE("播放线程 seeking：%d",kzgVideo->videoIndex);
         if (kzgVideo->frameQueue->getQueueSize() == 0){
             gettimeofday(&tv,NULL);
             startTime = tv.tv_sec*1000 + tv.tv_usec/1000;
@@ -69,6 +69,9 @@ void *videoPlay(void *arg){
 
         if (kzgVideo->kzgPlayerStatus->isPause){
             av_usleep(1000 * 100);
+            if (!kzgVideo->kzgPlayerStatus->isShowSeekFrame){
+                kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
+            }
             continue;
         }
 
@@ -104,6 +107,7 @@ void *videoPlay(void *arg){
             }
         }
 
+
         if(kzgVideo->kzgPlayerStatus->isSeekPause && kzgVideo->kzgPlayerStatus->isBackSeekFramePreview){
             av_usleep(1000*1);
             continue;
@@ -133,7 +137,7 @@ void *videoPlay(void *arg){
                 continue;
             }
             while (av_bsf_receive_packet(kzgVideo->avbsfContext,avPacket) == 0){
-
+                LOGE("kzgVideo  videoPlay2 $d",kzgVideo->videoIndex);
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
                     double pts = avPacket->pts;
                     kzgVideo->helper->onCallDecodeAVPacketByYUV(avPacket->size,avPacket->data,kzgVideo->avCodecContext->width,kzgVideo->avCodecContext->height,pts * av_q2d(kzgVideo->time_base));
@@ -164,6 +168,7 @@ void *videoPlay(void *arg){
                     av_free(avPacket);
                     avPacket = NULL;
                     pthread_mutex_unlock(&kzgVideo->codecMutex);
+
                     continue;
                 }
             }
@@ -182,6 +187,7 @@ void *videoPlay(void *arg){
                     av_free(avPacket);
                     avPacket = NULL;
                     pthread_mutex_unlock(&kzgVideo->codecMutex);
+
                     continue;
                 }
             }
@@ -208,6 +214,7 @@ void *videoPlay(void *arg){
                             av_free(avPacket);
                             avPacket = NULL;
                             pthread_mutex_unlock(&kzgVideo->codecMutex);
+
                             continue;
                         }
                         kzgVideo->kzgPlayerStatus->isSeekPause = true;
@@ -332,6 +339,9 @@ void *videoPlay(void *arg){
                     }
                 }
 
+                if (!kzgVideo->kzgPlayerStatus->isShowSeekFrame){
+                    kzgVideo->kzgPlayerStatus->isShowSeekFrame = true;
+                }
                 if (!kzgVideo->kzgPlayerStatus->isFramePreview){
                     //享学课堂的同步算法
                     //av_usleep(kzgVideo->myGetDelayTime(avFrame) * AV_TIME_BASE);
@@ -392,7 +402,7 @@ void *videoPlay(void *arg){
 
                 //发送进度信息给Java
                 int64_t  currentTime = (avFrame->pts *av_q2d( kzgVideo->time_base) * AV_TIME_BASE);
-                LOGE("视频帧时间：%lld    总时间：%lld  index:%d",currentTime,kzgVideo->duration,kzgVideo->videoIndex);
+                //LOGE("视频帧时间：%lld    总时间：%lld  index:%d",currentTime,kzgVideo->duration,kzgVideo->videoIndex);
                 if( !kzgVideo->kzgPlayerStatus->isFramePreview){
                     kzgVideo->helper->onProgress(currentTime,kzgVideo->duration,THREAD_CHILD);
                 }
@@ -521,6 +531,7 @@ void KzgVideo::play() {
     LOGE("kzgVideo play");
     if (kzgPlayerStatus != NULL && !kzgPlayerStatus->exit){
         pthread_create(&play_thread,NULL,videoPlay,this);
+        LOGE("kzgVideo play over");
     }
 }
 
@@ -533,6 +544,7 @@ void KzgVideo::release() {
     if (queue != NULL){
         queue->noticeQueue();
     }
+    LOGE("kzgVideo release %d",videoIndex);
     pthread_join(play_thread,NULL);
 
     if (frameQueue != NULL){
@@ -682,7 +694,10 @@ void KzgVideo::setIsFramePreview(bool isFramePreview) {
 
 void KzgVideo::showFrame(double timestamp) {
 
-    //LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
+    LOGE("kzgVideo get showFrame ,   timestamp:%lf",timestamp);
+    if (kzgPlayerStatus != NULL && kzgPlayerStatus->exit){
+        return;
+    }
     if (frameQueue != NULL && frameQueue->getQueueSize() > 0){
 
         AVFrame *avFrame = av_frame_alloc();
