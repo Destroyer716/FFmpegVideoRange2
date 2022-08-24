@@ -46,6 +46,7 @@ int avformat_ff_callback(void *ctx){
 void FAvFrameHelper::decodeAVPackate() {
     pthread_mutex_lock(&init_mutex);
     av_register_all();
+    avformat_network_init();
 
     avFormatContext = avformat_alloc_context();
     avFormatContext->interrupt_callback.callback = avformat_ff_callback;
@@ -88,7 +89,7 @@ void FAvFrameHelper::decodeAVPackate() {
     }
 
     if (getAvCodecContent(avFormatContext->streams[avStreamIndex]->codecpar,&avCodecContext) != 0){
-        LOGE("获取解码器信息失败");
+        LOGE(" avframeHelper  获取解码器信息失败");
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return;
@@ -103,6 +104,7 @@ void FAvFrameHelper::decodeAVPackate() {
             avCodecContext->extradata,
             avCodecContext->extradata,index);
     pthread_mutex_unlock(&init_mutex);
+    LOGE("avframeHelper 初始化成功");
 }
 
 
@@ -345,8 +347,7 @@ void FAvFrameHelper::decodeAvPacket() {
             avPacket = NULL;
         } else if (avPacket->stream_index == avStreamIndex){
             //找到视频avPacket
-
-            //LOGE("seekTo sec2 %f" , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
+            LOGE("avframeHelper 找到一个avpacket" , (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE));
             if (getAvPacketRefType2(avPacket) > 0){
                 uint8_t *data;
                 av_bitstream_filter_filter(mimType, avFormatContext->streams[avStreamIndex]->codec, NULL, &data, &avPacket->size, avPacket->data, avPacket->size, 0);
@@ -398,9 +399,9 @@ void FAvFrameHelper::decodeFrame() {
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(avFormatContext,avPacket);
         if (ret != 0){
-            LOGE("decodeFrame 获取视频avPacket index:%d 失败:%d",index,ret);
+            //LOGE("decodeFrame 获取视频avPacket index:%d 失败:%d , %d",index,ret,ret == AVERROR_EOF);
             if (ret == AVERROR_EOF){
-                isPause = true;
+                //isPause = true;
             }
             av_usleep(1000*10);
             continue;
@@ -415,15 +416,16 @@ void FAvFrameHelper::decodeFrame() {
             //找到视频avPacket
             //LOGE("找到视频avPacket");
             double pps = (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE);
-            //LOGE("queue 增加AVpacket:%f",pps);
-            if (getAvPacketRefType2(avPacket) > 0){
+            avCodecContext->skip_frame = AVDISCARD_NONREF;
+            //LOGE("queue 增加AVpacket:%f  , %d",pps,getAvPacketRefType2(avPacket));
+            queue->putAvPacket(avPacket);
+            /*if (getAvPacketRefType2(avPacket) > 0){
                 queue->putAvPacket(avPacket);
-
             } else{
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 avPacket = NULL;
-            }
+            }*/
         } else{
             av_packet_free(&avPacket);
             av_free(avPacket);

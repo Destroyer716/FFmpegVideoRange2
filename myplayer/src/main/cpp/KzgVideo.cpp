@@ -707,7 +707,7 @@ void KzgVideo::showFrame(double timestamp) {
             }
             double pts = avFrame->pts;
             pts *= av_q2d(time_base);
-            //LOGE("kzgVideo get frameQueue pts:%lf ,   timestamp:%lf",pts,timestamp);
+            LOGE("kzgVideo get frameQueue showFrame pts:%lf ,   timestamp:%lf",pts,timestamp);
             if (timestamp >= (pts - 0.03) && timestamp <= (pts + 0.03)){
                 kzgPlayerStatus->isBackSeekForAdvance = false;
                 int width = avFrame->linesize[0] > avCodecContext->width? avFrame->linesize[0]:avCodecContext->width;

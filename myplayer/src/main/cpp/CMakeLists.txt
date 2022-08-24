@@ -61,11 +61,6 @@ set_target_properties(
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libavutil.so)
 
-add_library(avdevice SHARED IMPORTED)
-set_target_properties(
-        avdevice
-        PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libavdevice.so)
 
 add_library(postproc SHARED IMPORTED)
 set_target_properties(
@@ -97,7 +92,6 @@ target_link_libraries(
                        avfilter
                        avformat
                        avutil
-                       avdevice
                        postproc
                        swresample
                        swscale

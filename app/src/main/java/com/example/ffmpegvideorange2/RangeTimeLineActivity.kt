@@ -524,7 +524,8 @@ class RangeTimeLineActivity : AppCompatActivity(){
 
             override fun onProgress(currentTime: Long, totalTime: Long) {
                 //正常播放进度
-                //Log.e("kzg", "******************onProgress:$currentTime ,preVideoTime:${rvFrame.preVideoTime}")
+                //
+                // -++Log.e("kzg", "******************onProgress:$currentTime ,preVideoTime:${rvFrame.preVideoTime}")
                 if (kzgPlayer?.playModel == PLAY_MODEL_DEFAULT){
                     lastTime2 = currentTime + rvFrame.preVideoTime*1000
                     //更新播放时间
@@ -586,7 +587,7 @@ class RangeTimeLineActivity : AppCompatActivity(){
                 if (rvFrame.getAvFrameHelper() is IMediaCodecFrameHelper){
                     (rvFrame.getAvFrameHelper() as IMediaCodecFrameHelper).initMediaCodec(codecName,width, height, csd_0, csd_1,sv_video_test.holder.surface)
                 }else if(rvFrame.getAvFrameHelper() is IFFmpegCodecFrameHelper){
-                    Log.e("kzg","**************onInited")
+                    Log.e("kzg","**************onInited:$width,$height,$codecName")
                     kzgPlayer!!.startGetFrame(index)
                     kzgPlayer?.getFrameListener?.onStarGetFrame(index)
                 }
