@@ -466,10 +466,7 @@ void *videoPlay(void *arg){
 
                 if (kzgVideo->kzgPlayerStatus->isFramePreview){
                     //逐帧预览
-                    /*AVFrame *copyFrame = av_frame_alloc();
-                    av_frame_get_buffer(copyFrame, 0);
-                    memcpy(copyFrame->data, avFrameYUV420P->data, sizeof(avFrameYUV420P->data));
-                    copyFrame->pts = av_frame_get_best_effort_timestamp(avFrame);*/
+
                     avFrameYUV420P->pts = av_frame_get_best_effort_timestamp(avFrame);
                     kzgVideo->frameQueue->putAvFrame(avFrameYUV420P);
                     //LOGE("put frameQueue pts:%lf   queueSize:%d ",(pts * av_q2d(kzgVideo->time_base)),kzgVideo->frameQueue->getQueueSize());
@@ -478,12 +475,7 @@ void *videoPlay(void *arg){
                         long endTime = tv.tv_sec*1000 + tv.tv_usec/1000;
                         //LOGE("软解码60帧耗时：%ld" ,(endTime-startTime));
                     }
-                    /*av_free(buffer);
-                    sws_freeContext(swsContext);
 
-                    av_packet_free(&avPacket);
-                    av_free(avPacket);
-                    avPacket = NULL;*/
                     pthread_mutex_unlock(&kzgVideo->codecMutex);
                     continue;
                 }
