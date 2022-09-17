@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(/include)
 include_directories(/soundtouch/include)
 include_directories(/soundtouch/SoundTouch)
+include_directories(/sliceheaderparse)
 
 
 
@@ -33,6 +34,14 @@ add_library(native-lib
         mediametadataretriever/ffmpeg_mediametadataretriever.c
         mediametadataretriever/wseemann_media_MediaMetadataRetriever.cpp
         mediametadataretriever/mediametadataretriever.cpp
+        sliceheaderparse/NALUnit.cpp
+        sliceheaderparse/PicParamSet.cpp
+        sliceheaderparse/SeqParamSet.cpp
+        sliceheaderparse/SliceHeader.cpp
+        sliceheaderparse/SliceStruct.cpp
+        sliceheaderparse/stdafx.cpp
+        sliceheaderparse/Stream.cpp
+        sliceheaderparse/Utils.cpp
         )
 
 message(WARNING "CMAKE_BINARY_DIR = ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libavcodec.so")

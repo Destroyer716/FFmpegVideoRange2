@@ -3,6 +3,7 @@
 //
 
 #include "FAvFrameHelper.h"
+#include "sliceheaderparse/Stream.h"
 
 FAvFrameHelper::FAvFrameHelper(JavaCallHelper *_helper, const char *_url,
                                KzgPlayerStatus *_kzgPlayerStatus) {
@@ -119,6 +120,29 @@ int getAvPacketRefType2(AVPacket *pAvPkt){
     int i;
     unsigned char nalHeader, nalType,refType;
 
+    int skipNalSize = 0;
+    int currentNalSize = 0;
+/*    while (skipNalSize + currentNalSize < dataSize){
+        currentNalSize = 0;
+        for(i = 0; i < 4; i++){
+            currentNalSize <<= 8;
+            currentNalSize |= pData[i];
+        }
+
+        LOGE("currentNalSize:%d",currentNalSize);
+        skipNalSize += currentNalSize + 4;
+        if (skipNalSize + currentNalSize < dataSize){
+            pData += 4;
+            pData += currentNalSize;
+        }
+
+    }*/
+
+
+    LOGE("avpacket 前十个：%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x   size:%d" ,pData[0],pData[1],pData[2],pData[3],pData[4],pData[5],pData[6]
+    ,pData[7],pData[8],pData[9],pData[10],pData[11],pData[12],pData[13],pData[14],pData[15],pData[16]
+    ,pData[17],pData[18],pData[19],dataSize);
+
     while(curSize < dataSize){
         if(pEnd-pData < 4)
             goto fail;
@@ -128,7 +152,6 @@ int getAvPacketRefType2(AVPacket *pAvPkt){
             naluSize <<= 8;
             naluSize |= pData[i];
         }
-
         pData += 4;
 
         if(naluSize > (pEnd-pData+1) || naluSize <= 0){
@@ -152,6 +175,11 @@ int getAvPacketRefType2(AVPacket *pAvPkt){
 
     fail:
     return 0;
+}
+
+int getAvPacketRefType3(AVPacket *pAvPkt){
+    CStreamFile h264stream = CStreamFile(pAvPkt->data,pAvPkt->size);
+    return h264stream.Parse_h264_bitstream();
 }
 
 
@@ -418,14 +446,16 @@ void FAvFrameHelper::decodeFrame() {
             double pps = (avPacket->pts *av_q2d( time_base)* AV_TIME_BASE);
             avCodecContext->skip_frame = AVDISCARD_NONREF;
             //LOGE("queue 增加AVpacket:%f  , %d",pps,getAvPacketRefType2(avPacket));
-            queue->putAvPacket(avPacket);
-            /*if (getAvPacketRefType2(avPacket) > 0){
-                queue->putAvPacket(avPacket);
-            } else{
+
+            /*if(getAvPacketRefType3(avPacket) == 1){
+                LOGE("跳过一个B帧");
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 avPacket = NULL;
+            } else{
+
             }*/
+            queue->putAvPacket(avPacket);
         } else{
             av_packet_free(&avPacket);
             av_free(avPacket);
